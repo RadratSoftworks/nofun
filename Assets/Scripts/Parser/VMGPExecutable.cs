@@ -22,7 +22,7 @@ namespace Nofun.Parser
 
             codeSectionOffset = VMGPHeader.TotalSize;
             dataSectionOffset = codeSectionOffset + header.codeSize;
-            resourceSectionOffset = dataSectionOffset + header.dataSize + header.bssSize;
+            resourceSectionOffset = dataSectionOffset + header.dataSize;
             
             UInt32 poolSectionOffset = resourceSectionOffset + header.resourceSize;
             reader.BaseStream.Seek(poolSectionOffset, SeekOrigin.Begin);

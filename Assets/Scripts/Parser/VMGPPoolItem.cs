@@ -3,21 +3,27 @@ using System.IO;
 
 namespace Nofun.Parser
 {
-    public enum SegmentRelocateCommand
+    public enum PoolItemType
     {
-        RelocateNull = 0,
-        RelocatePoolDataToCode = 1,
-        RelocatePoolDataImport = 2,
-        RelocateInMemorySection = 4,
-        RelocateFromAnotherPoolItem = 8
+        End = 0,
+
+        // Symbol
+        LocalSymbol = 1,
+        ImportSymbol = 2,
+        GlobalSymbol = 3,
+
+        SectionRelativeReloc = 4,
+        Swap16Reloc = 5,
+        Swap32Reloc = 6,
+        SymbolAdd = 8
     };
 
     public class VMGPPoolItem
     {
-        public SegmentRelocateCommand segmentRelocateCommand;
-        public byte segmentRelocateType;
-        public UInt32 segmentOffset;
-        public UInt32 extra;
+        public PoolItemType poolType;
+        public byte itemTarget;
+        public UInt32 metaOffset;
+        public UInt32 targetOffset;
 
         public const int TotalSize = 8;
 
@@ -26,11 +32,11 @@ namespace Nofun.Parser
             UInt32 segmentWord = reader.ReadUInt32();
             byte segment = (byte)(segmentWord & 0xFF);
 
-            segmentRelocateCommand = (SegmentRelocateCommand)(segment & 0xF);
-            segmentRelocateType = (byte)(segment >> 4);
+            poolType = (PoolItemType)(segment & 0xF);
+            itemTarget = (byte)(segment >> 4);
 
-            segmentOffset = (segmentWord >> 8);
-            extra = reader.ReadUInt32();
+            metaOffset = (segmentWord >> 8);
+            targetOffset = reader.ReadUInt32();
         }
     }
 }

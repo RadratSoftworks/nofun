@@ -42,89 +42,116 @@ namespace Nofun.VM
             return EstimatedCodeSectionSize() + EstimatedDataSectionSize();
         }
 
-        private void ProcessInMemoryRelocatePoolItem(VMGPPoolItem item, Span<byte> codeData, Span<byte> dataSpan, UInt32 codeAddress, UInt32 dataAddress)
+        private void ProcessRelocation(VMGPPoolItem item, Span<byte> codeData, Span<byte> dataSpan, UInt32 codeAddress, UInt32 dataAddress, UInt32 bssAddress)
         {
-            if (item.segmentRelocateType != 2)
+            if ((item.itemTarget != 1) && (item.itemTarget != 2))
             {
                 throw new InvalidOperationException("Unknown segment relocate type!");
             }
 
-            Span<byte> targetValue = dataSpan.Slice((int)item.extra, 4);
+            Span<byte> targetValue = (item.itemTarget == 1) ? codeData.Slice((int)item.targetOffset, 4) : dataSpan.Slice((int)item.targetOffset, 4);
             UInt32 value = BinaryPrimitives.ReadUInt32LittleEndian(targetValue);
 
-            switch (item.segmentOffset)
+            if (item.poolType == PoolItemType.SectionRelativeReloc)
             {
-                case 1:
-                    {
-                        BinaryPrimitives.WriteUInt32LittleEndian(targetValue, value + codeAddress);
-                        break;
-                    }
+                switch (item.metaOffset)
+                {
+                    case 1:
+                        {
+                            BinaryPrimitives.WriteUInt32LittleEndian(targetValue, value + codeAddress);
+                            break;
+                        }
 
-                case 2:
-                    {
-                        BinaryPrimitives.WriteUInt32LittleEndian(targetValue, value + dataAddress);
-                        break;
-                    }
+                    case 2:
+                        {
+                            BinaryPrimitives.WriteUInt32LittleEndian(targetValue, value + dataAddress);
+                            break;
+                        }
 
-                default:
-                    {
-                        throw new InvalidOperationException("Unknown segment to relocate data value to!");
-                    }
+                    case 4:
+                        {
+                            BinaryPrimitives.WriteUInt32LittleEndian(targetValue, value + bssAddress);
+                            break;
+                        }
+
+                    default:
+                        {
+                            throw new InvalidOperationException("Unknown segment to relocate data value to!");
+                        }
+                }
+            }
+            else
+            {
+                // Swap relocation. Replace with base section address + meta
+                UInt32 additionValue = item.metaOffset;
+                if (item.poolType == PoolItemType.Swap16Reloc)
+                {
+                    // NOTE: Maybe wrong
+                    additionValue &= 0xFFFF;
+                }
+
+                uint baseAddr = (item.itemTarget == 1) ? codeAddress : dataAddress;
+                BinaryPrimitives.WriteUInt32LittleEndian(targetValue, baseAddr + additionValue);
             }
         }
 
-        private PoolData ProcessRelocateItemToData(VMGPPoolItem poolItem, UInt32 codeAddress, UInt32 dataAddress, UInt32 bssAddress, ICallResolver resolver)
+        private PoolData ProcessGenerateSymbol(VMGPPoolItem poolItem, UInt32 codeAddress, UInt32 dataAddress, UInt32 bssAddress, ICallResolver resolver)
         {
-            switch (poolItem.segmentRelocateType)
+            switch (poolItem.itemTarget)
             {
-                // Import
-                case 0:
+                case 1:
+                    return new PoolData(poolItem.targetOffset + codeAddress);
+
+                case 2:
+                    return new PoolData(poolItem.targetOffset + dataAddress);
+
+                case 4:
+                    return new PoolData(poolItem.targetOffset + bssAddress);
+
+                default:
+                    throw new InvalidProgramException("Unknown pool data produce action: " + poolItem.itemTarget);
+            }
+        }
+
+        private PoolData ProcessPoolItem(List<VMGPPoolItem> poolItems, List<PoolData> poolDatas, VMGPPoolItem poolItem, Span<byte> codeData, Span<byte> dataSpan, UInt32 codeAddress, UInt32 dataAddress, UInt32 bssAddress, ICallResolver resolver)
+        {
+            switch (poolItem.poolType)
+            {
+                case PoolItemType.ImportSymbol:
                     {
-                        string value = executable.GetString(poolItem.segmentOffset);
+                        string value = executable.GetString(poolItem.metaOffset);
                         return new PoolData(resolver.Resolve(value));
                     }
 
-                case 1:
-                    return new PoolData(poolItem.extra + codeAddress);
-
-                case 2:
-                    return new PoolData(poolItem.extra + dataAddress);
-
-                case 4:
-                    return new PoolData(poolItem.extra + bssAddress);
-
-                default:
-                    throw new InvalidProgramException("Unknown pool data produce action: " + poolItem.segmentRelocateType);
-            }
-        }
-
-        private PoolData ProcessPoolItem(List<VMGPPoolItem> poolItems, VMGPPoolItem poolItem, Span<byte> codeData, Span<byte> dataSpan, UInt32 codeAddress, UInt32 dataAddress, UInt32 bssAddress, ICallResolver resolver)
-        {
-            switch (poolItem.segmentRelocateCommand)
-            {
-                case SegmentRelocateCommand.RelocateFromAnotherPoolItem:
+                case PoolItemType.LocalSymbol:
+                case PoolItemType.GlobalSymbol:     // Does not really matter to us if it has name or not
                     {
-                        PoolData decoded = ProcessPoolItem(poolItems, poolItems[(int)poolItem.segmentOffset - 1], codeData, dataSpan, codeAddress, dataAddress, bssAddress, resolver);
-                        if ((decoded == null) || (decoded.DataType != PoolDataType.ImmInteger))
-                        {
-                            throw new InvalidOperationException("Result of relocation from another pool item is not of integer type!");
-                        }
-                        return new PoolData((int)poolItem.extra + (int)decoded.ImmediateInteger);
+                        return ProcessGenerateSymbol(poolItem, codeAddress, dataAddress, bssAddress, resolver);
                     }
 
-                case SegmentRelocateCommand.RelocateInMemorySection:
+                case PoolItemType.SymbolAdd:
                     {
-                        ProcessInMemoryRelocatePoolItem(poolItem, codeData, dataSpan, codeAddress, dataAddress);
+                        if ((poolItem.metaOffset - 1) < poolItems.Count)
+                        {
+                            return new PoolData((uint)poolDatas[(int)poolItem.metaOffset - 1].ImmediateInteger + poolItem.targetOffset); 
+                        }
+                        else
+                        {
+                            return new PoolData((uint)(ProcessPoolItem(poolItems, poolDatas, poolItems[(int)poolItem.metaOffset - 1], codeData,
+                                dataSpan, codeAddress, dataAddress, bssAddress, resolver).ImmediateInteger) + poolItem.targetOffset);
+                        }
+                    }
+
+                case PoolItemType.SectionRelativeReloc:
+                case PoolItemType.Swap32Reloc:
+                case PoolItemType.Swap16Reloc:
+                    {
+                        ProcessRelocation(poolItem, codeData, dataSpan, codeAddress, dataAddress, bssAddress);
                         return null;
                     }
 
-                case SegmentRelocateCommand.RelocatePoolDataToCode:
-                case SegmentRelocateCommand.RelocatePoolDataImport:
-                    {
-                        return ProcessRelocateItemToData(poolItem, codeAddress, dataAddress, bssAddress, resolver);
-                    }
 
-                case SegmentRelocateCommand.RelocateNull:
+                case PoolItemType.End:
                     {
                         return null;
                     }
@@ -139,9 +166,10 @@ namespace Nofun.VM
         private List<PoolData> ProcessPoolItems(List<VMGPPoolItem> poolItems, Span<byte> codeData, Span<byte> dataSpan, UInt32 codeAddress, UInt32 dataAddress, UInt32 bssAddress, ICallResolver resolver)
         {
             List<PoolData> poolDatas = new List<PoolData>();
+
             foreach (VMGPPoolItem poolItem in poolItems)
             {
-                PoolData result = ProcessPoolItem(poolItems, poolItem, codeData, dataSpan, codeAddress, dataAddress, bssAddress, resolver);
+                PoolData result = ProcessPoolItem(poolItems, poolDatas, poolItem, codeData, dataSpan, codeAddress, dataAddress, bssAddress, resolver);
                 if (result == null)
                 {
                     result = new PoolData();
