@@ -8,11 +8,8 @@ namespace Nofun.Parser
         public const int TotalSize = 40;
 
         public byte[] magic;
-        public UInt16 unk1;
-        public UInt16 unk2;
-        public UInt16 stackSize;
-        public byte unk3;
-        public byte unk4;
+        public UInt32 dynamicDataHeapSize;
+        public UInt32 stackSize;
         public UInt32 codeSize;
         public UInt32 dataSize;
         public UInt32 bssSize;
@@ -34,11 +31,9 @@ namespace Nofun.Parser
                 throw new VMGPInvalidHeaderException("The magic is wrong!");
             }
 
-            unk1 = reader.ReadUInt16();
-            unk2 = reader.ReadUInt16();
-            stackSize = reader.ReadUInt16();
-            unk3 = reader.ReadByte();
-            unk4 = reader.ReadByte();
+            // Heap and stack size are both in 4-bytes unit
+            dynamicDataHeapSize = reader.ReadUInt32() << 2;
+            stackSize = reader.ReadUInt32() << 2;
             codeSize = reader.ReadUInt32();
             dataSize = reader.ReadUInt32();
             bssSize = reader.ReadUInt32();
