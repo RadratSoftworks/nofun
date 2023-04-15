@@ -1,10 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
-using System.IO;
-using System.Reflection.Metadata;
 using System.Text;
-using System.Threading;
 
 namespace ModuleCallBindingGenerator
 {
@@ -23,12 +19,12 @@ namespace ModuleCallBindingGenerator
 
             if (allocatedCount < 16)
             {
-                resultString = $"processor.Reg(Register.P{allocatedCount >> 2})";
+                resultString = $"processor.Reg[Register.P{allocatedCount >> 2}]";
             }
             else
             {
                 // Take it to the stack
-                resultString = $"memory.ReadMemory32(processor.Reg(Register.SP) + {allocatedCount - 16})";
+                resultString = $"memory.ReadMemory32(processor.Reg[Register.SP] + {allocatedCount - 16})";
             }
 
             allocatedCount += 4;
@@ -41,16 +37,16 @@ namespace ModuleCallBindingGenerator
 
             if (allocatedCount < 12)
             {
-                resultString = $"processor.Reg(Register.P{(allocatedCount >> 2) + 1}) | ((UInt64)processor.Reg(Register.P{allocatedCount >> 2}) << 32)";
+                resultString = $"processor.Reg[Register.P{(allocatedCount >> 2) + 1}] | ((UInt64)processor.Reg[Register.P{allocatedCount >> 2}] << 32)";
             }
             else if (allocatedCount == 12)
             {
-                resultString = $"(UInt64)processor.Reg(Register.P3) << 32 | memory.ReadMemory32(processor.Reg(Register.SP))";
+                resultString = $"(UInt64)processor.Reg[Register.P3] << 32 | memory.ReadMemory32(processor.Reg[Register.SP])";
             }
             else
             {
                 // Take it to the stack
-                resultString = $"memory.ReadMemory64(processor.Reg(Register.SP) + {allocatedCount - 16})";
+                resultString = $"memory.ReadMemory64(processor.Reg[Register.SP] + {allocatedCount - 16})";
             }
 
             allocatedCount += 8;
@@ -119,26 +115,26 @@ $@"
                 {
                     builder.Append(
 @"
-            processor.Reg(Register.R0) = result.Value;");
+            processor.Reg[Register.R0] = result.Value;");
                 }
                 else if (returnType.Contains("VMString"))
                 {
                     builder.Append(
 @"
-            processor.Reg(Register.R0) = result.Address;");
+            processor.Reg[Register.R0] = result.Address;");
                 }
                 else if (Is64BitIntegerType(returnType))
                 {
                     builder.Append(
 @"
-            processor.Reg(Register.R0) = (uint)(result >> 32);
-            processor.Reg(Register.R1) = (uint)(result & 0xFFFFFFFF);");
+            processor.Reg[Register.R0] = (uint)(result & 0xFFFFFFFF);
+            processor.Reg[Register.R1] = (uint)(result >> 32);");
                 }
                 else
                 {
                     builder.Append(
 @"
-            processor.Reg(Register.R0) = (uint)result;");
+            processor.Reg[Register.R0] = (uint)result;");
                 }
             }
 

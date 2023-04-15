@@ -1,10 +1,21 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Nofun.PIP2
 {
-    public abstract class Processor
+    public abstract class Processor : Processor.IRegIndexer, Processor.IReg16Indexer
     {
+        public interface IRegIndexer
+        {
+            UInt32 this[uint index] { get; set; }
+        };
+
+        public interface IReg16Indexer
+        {
+            UInt16 this[uint index] { get; set; }
+        }
+
         public const int InstructionSize = 4;
         public const int RegSize = 4;
 
@@ -47,33 +58,104 @@ namespace Nofun.PIP2
             registers = context.registers;
         }
 
+        public IRegIndexer Reg => this;
+        public IReg16Indexer Reg16 => this;
+
         /// <summary>
         /// Return a register reference, given a register index.
         /// </summary>
         /// <param name="value">The register indexg.</param>
         /// <returns>The reference to the register</returns>
         /// <exception cref="InvalidOperationException">The register index is out of range</exception>
-        public ref UInt32 Reg(UInt32 value)
+        uint IRegIndexer.this[uint index]
         {
-            if (value > Register.PC)
+            get
             {
-                throw new InvalidOperationException("Trying to access out-of-range register (index=" + value + ")");
-            }
+                if (index > Register.PC)
+                {
+                    throw new InvalidOperationException("Trying to access out-of-range register (index=" + index + ")");
+                }
 
-            if ((value & 3) != 0)
+                if ((index & 3) != 0)
+                {
+                    throw new InvalidOperationException($"Access to 32-bit register is unaligned! (value={index})");
+                }
+
+                if (index == 0)
+                {
+                    return 0;
+                }
+
+                return registers[index >> 2];
+            }
+            set
             {
-                throw new InvalidOperationException($"Access to 32-bit register is unaligned! (value={value})");
+
+                if (index > Register.PC)
+                {
+                    throw new InvalidOperationException("Trying to access out-of-range register (index=" + index + ")");
+                }
+
+                if ((index & 3) != 0)
+                {
+                    throw new InvalidOperationException($"Access to 32-bit register is unaligned! (value={index})");
+                }
+
+                if (index == 0)
+                {
+                    throw new InvalidOperationException("Register 0 is read-only zero!");
+                }
+
+                registers[index >> 2] = value;
             }
+        }
 
-            value >>= 2;
-
-            if (value == 0)
+        ushort IReg16Indexer.this[uint index]
+        {
+            get
             {
-                // Always reassign to make sure no one does try to modify it. We sadly can't keep track
-                registers[0] = 0;
-            }
+                if (index > Register.PC)
+                {
+                    throw new InvalidOperationException("Trying to access out-of-range register (index=" + index + ")");
+                }
 
-            return ref registers[value];
+                if ((index & 1) != 0)
+                {
+                    throw new InvalidOperationException($"Access to 16-bit register is unaligned! (value={index})");
+                }
+
+                ushort ownReg32 = (ushort)(index >> 2);
+                ushort byteOff = (ushort)((index & 3) << 3);
+
+                if (ownReg32 == 0)
+                {
+                    return 0;
+                }
+
+                return (ushort)((registers[ownReg32] >> byteOff) & 0xFFFF);
+            }
+            set
+            {
+                if (index > Register.PC)
+                {
+                    throw new InvalidOperationException("Trying to access out-of-range register (index=" + index + ")");
+                }
+
+                if ((index & 1) != 0)
+                {
+                    throw new InvalidOperationException($"Access to 16-bit register is unaligned! (value={index})");
+                }
+
+                ushort ownReg32 = (ushort)(index >> 2);
+                ushort byteOff = (ushort)((index & 3) << 3);
+
+                if (ownReg32 == 0)
+                {
+                    throw new InvalidOperationException("Register 0 and 1 is read-only zero!");
+                }
+
+                registers[ownReg32] = (registers[ownReg32] & (0xFFFF0000u >> byteOff)) | (uint)(value << byteOff);
+            }
         }
     }
 }

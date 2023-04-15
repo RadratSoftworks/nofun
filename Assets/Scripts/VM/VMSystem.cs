@@ -27,8 +27,8 @@ namespace Nofun.VM
             var result = loader.Load(memory.GetMemorySpan((int)ProgramStartOffset, (int)loader.EstimateNeededProgramSize()),
                 ProgramStartOffset, callMap);
 
-            processor.Reg(Register.PC) = ProgramStartOffset;
-            processor.Reg(Register.SP) = stackStartAddress;
+            processor.Reg[Register.PC] = ProgramStartOffset;
+            processor.Reg[Register.SP] = stackStartAddress;
 
             processor.PoolDatas = result;
         }

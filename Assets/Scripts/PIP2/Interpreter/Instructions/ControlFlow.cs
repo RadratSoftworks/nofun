@@ -7,20 +7,20 @@ namespace Nofun.PIP2.Interpreter
     {
         private void CALLl(UndefinedEncoding encoding)
         {
-            UInt32 poolItemNumber = config.ReadDword(Reg(Register.PC));
+            UInt32 poolItemNumber = config.ReadDword(Reg[Register.PC]);
             PoolData poolItem = GetPoolData(poolItemNumber);
 
             if (poolItem.Function != null)
             {
                 // Add to skip the pool item number
-                Reg(Register.PC) += 4;
+                Reg[Register.PC] += 4;
 
                 poolItem.Function();
             }
             else if (poolItem.DataType == PoolDataType.ImmInteger)
             {
-                Reg(Register.RA) = Reg(Register.PC) + 4;
-                Reg(Register.PC) = (uint)poolItem.ImmediateInteger;
+                Reg[Register.RA] = Reg[Register.PC] + 4;
+                Reg[Register.PC] = (uint)poolItem.ImmediateInteger;
             }
             else
             {
