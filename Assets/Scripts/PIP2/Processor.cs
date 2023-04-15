@@ -6,6 +6,7 @@ namespace Nofun.PIP2
     public abstract class Processor
     {
         public const int InstructionSize = 4;
+        public const int RegSize = 4;
 
         protected UInt32[] registers;
         protected List<PoolData> poolDatas;
@@ -54,10 +55,17 @@ namespace Nofun.PIP2
         /// <exception cref="InvalidOperationException">The register index is out of range</exception>
         public ref UInt32 Reg(UInt32 value)
         {
-            if (value > Register.LastReg)
+            if (value > Register.PC)
             {
                 throw new InvalidOperationException("Trying to access out-of-range register (index=" + value + ")");
             }
+
+            if ((value & 3) != 0)
+            {
+                throw new InvalidOperationException($"Access to 32-bit register is unaligned! (value={value})");
+            }
+
+            value >>= 2;
 
             if (value == 0)
             {

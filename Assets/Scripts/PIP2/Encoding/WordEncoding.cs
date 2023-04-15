@@ -14,7 +14,7 @@ namespace Nofun.PIP2.Encoding
             set
             {
                 opcode = (byte)(value & 0xFF);
-                d = (byte)(((value >> 8) & 0xFF) >> IEncoding.RegisterRealIndexShift);
+                d = (byte)((value >> 8) & 0xFF);
                 imm = (UInt16)((value >> 16) & 0xFFFF);
             }
         }

@@ -23,7 +23,7 @@ namespace Nofun.PIP2.Interpreter
                 null, null, null, null, null, null, null, null,    // 0x28
                 null, null, null, null, null, null, null, null,    // 0x30
                 null, null, null, null, null, null, null, null,    // 0x38
-                I(LDQ), null, null, null, null, null, null, null,    // 0x40
+                I(LDQ), null, null, I(STORE), I(RESTORE), null, null, null,    // 0x40
                 null, null, null, null, null, null, null, null,    // 0x48
                 null, null, null, null, null, null, null, null,    // 0x50
                 null, null, I(LDI), null, I(CALLl), null, null, null,    // 0x58
@@ -61,6 +61,10 @@ namespace Nofun.PIP2.Interpreter
         {
             return InstructionWrapper<WordEncoding>(handler);
         }
+        private Action<UInt32> I(Action<RangeRegEncoding> handler)
+        {
+            return InstructionWrapper<RangeRegEncoding>(handler);
+        }
         #endregion
 
         public override void Run()
@@ -75,7 +79,7 @@ namespace Nofun.PIP2.Interpreter
 
             while (!shouldStop)
             {
-                uint value = config.ReadCode(registers[Register.PC]);
+                uint value = config.ReadCode(registers[Register.PCIndex]);
                 Action<UInt32> handler = OpcodeTables[value & 0xFF];
 
                 if (handler == null)
@@ -83,7 +87,7 @@ namespace Nofun.PIP2.Interpreter
                     throw new InvalidOperationException("Unimplemented opcode " + ((Opcode)(value & 0xFF)).ToString());
                 }
 
-                registers[Register.PC] += InstructionSize;
+                registers[Register.PCIndex] += InstructionSize;
                 handler(value);
             }
 

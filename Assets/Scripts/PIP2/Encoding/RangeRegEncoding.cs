@@ -1,11 +1,10 @@
 namespace Nofun.PIP2.Encoding
 {
-    public struct TwoSourcesEncoding : IEncoding
+    public struct RangeRegEncoding : IEncoding
     {
         public byte opcode;
         public byte d;
         public byte s;
-        public byte t;
 
         public uint Instruction
         {
@@ -14,7 +13,13 @@ namespace Nofun.PIP2.Encoding
                 opcode = (byte)(value & 0xFF);
                 d = (byte)((value >> 8) & 0xFF);
                 s = (byte)((value >> 16) & 0xFF);
-                t = (byte)((value >> 24) & 0xFF);
+
+                if (s == 0)
+                {
+                    throw new InvalidPIP2EncodingException("The register range count can not be 0!");
+                }
+
+                d = (byte)(d + s - 1);
             }
         }
     }

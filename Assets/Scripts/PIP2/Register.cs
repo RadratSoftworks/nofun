@@ -3,45 +3,46 @@ namespace Nofun.PIP2
     public static class Register
     {
         public const int Zero = 0;
-        public const int SP = 1;
-        public const int RA = 2;
-        public const int FP = 3;
+        public const int SP = 4;
+        public const int RA = 8;
+        public const int FP = 12;
 
-        public const int S0 = 4;
-        public const int S1 = 5;
-        public const int S2 = 6;
-        public const int S3 = 7;
-        public const int S4 = 8;
-        public const int S5 = 9;
-        public const int S6 = 10;
-        public const int S7 = 11;
+        public const int S0 = 16;
+        public const int S1 = 20;
+        public const int S2 = 24;
+        public const int S3 = 28;
+        public const int S4 = 32;
+        public const int S5 = 36;
+        public const int S6 = 40;
+        public const int S7 = 44;
 
-        public const int P0 = 12;
-        public const int P1 = 13;
-        public const int P2 = 14;
-        public const int P3 = 15;
+        public const int P0 = 48;
+        public const int P1 = 52;
+        public const int P2 = 56;
+        public const int P3 = 60;
 
-        public const int G0 = 16;
-        public const int G1 = 17;
-        public const int G2 = 18;
-        public const int G3 = 19;
-        public const int G4 = 20;
-        public const int G5 = 21;
-        public const int G6 = 22;
-        public const int G7 = 23;
-        public const int G8 = 24;
-        public const int G9 = 25;
-        public const int G10 = 26;
-        public const int G11 = 27;
-        public const int G12 = 28;
-        public const int G13 = 29;
+        public const int G0 = 64;
+        public const int G1 = 68;
+        public const int G2 = 72;
+        public const int G3 = 76;
+        public const int G4 = 80;
+        public const int G5 = 84;
+        public const int G6 = 88;
+        public const int G7 = 92;
+        public const int G8 = 96;
+        public const int G9 = 100;
+        public const int G10 = 104;
+        public const int G11 = 108;
+        public const int G12 = 112;
+        public const int G13 = 116;
 
-        public const int R0 = 30;
-        public const int R1 = 31;
+        public const int R0 = 120;
+        public const int R1 = 124;
 
-        public const int PC = 32;
+        public const int PC = 128;
 
-        public const int LastReg = PC;
-        public const int TotalReg = PC + 1;
+        public const int PCIndex = 32;
+
+        public const int TotalReg = 33;
     }
 }

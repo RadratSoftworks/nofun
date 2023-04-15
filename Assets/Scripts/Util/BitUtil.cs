@@ -1,12 +1,15 @@
-using System;
-
 namespace Nofun.Util
 {
     public static class BitUtil
     {
-        public static UInt32 SignExtend(UInt16 value)
+        public static uint SignExtend(ushort value)
         {
-            return (value & 0x7FFFu) | ((value & 0x8000u) << 16);
+            return (uint)((short)value);
+        }
+
+        public static uint SignExtend(byte value)
+        {
+            return (uint)((sbyte)value);
         }
     }
 }
