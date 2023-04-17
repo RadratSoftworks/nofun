@@ -11,5 +11,10 @@ namespace Nofun.Util
         {
             return (uint)((sbyte)value);
         }
+
+        public static ushort SignExtendToShort(byte value)
+        {
+            return (ushort)((sbyte)value);
+        }
     }
 }
