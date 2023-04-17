@@ -26,5 +26,10 @@ namespace Nofun.PIP2.Interpreter
             // Then, we can cast back to ushort
             Reg16[encoding.d] = (ushort)((short)Reg16[encoding.s] >> encoding.t);
         }
+
+        private void MOVB(TwoSourcesEncoding encoding)
+        {
+            Reg8[encoding.d] = Reg8[encoding.s];
+        }
     }
 }

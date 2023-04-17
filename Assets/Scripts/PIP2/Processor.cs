@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Nofun.PIP2
 {
-    public abstract class Processor : Processor.IRegIndexer, Processor.IReg16Indexer
+    public abstract class Processor : Processor.IRegIndexer, Processor.IReg16Indexer, Processor.IReg8Indexer
     {
         public interface IRegIndexer
         {
@@ -13,6 +13,11 @@ namespace Nofun.PIP2
         public interface IReg16Indexer
         {
             UInt16 this[uint index] { get; set; }
+        }
+
+        public interface IReg8Indexer
+        {
+            byte this[uint index] { get; set; }
         }
 
         public const int InstructionSize = 4;
@@ -59,6 +64,7 @@ namespace Nofun.PIP2
 
         public IRegIndexer Reg => this;
         public IReg16Indexer Reg16 => this;
+        public IReg8Indexer Reg8 => this;
 
         /// <summary>
         /// Return a register reference, given a register index.
@@ -153,7 +159,45 @@ namespace Nofun.PIP2
                     throw new InvalidOperationException("Register 0 and 1 is read-only zero!");
                 }
 
-                registers[ownReg32] = (registers[ownReg32] & (0xFFFF0000u >> byteOff)) | (uint)(value << byteOff);
+                registers[ownReg32] = (registers[ownReg32] & (uint)~(0xFFFF << byteOff)) | (uint)(value << byteOff);
+            }
+        }
+
+        byte IReg8Indexer.this[uint index]
+        {
+            get
+            {
+                if (index > Register.PC)
+                {
+                    throw new InvalidOperationException("Trying to access out-of-range register (index=" + index + ")");
+                }
+
+                ushort ownReg32 = (ushort)(index >> 2);
+                byte byteOff = (byte)((index & 3) << 3);
+
+                if (ownReg32 == 0)
+                {
+                    return 0;
+                }
+
+                return (byte)((registers[ownReg32] >> byteOff) & 0xFF);
+            }
+            set
+            {
+                if (index > Register.PC)
+                {
+                    throw new InvalidOperationException("Trying to access out-of-range register (index=" + index + ")");
+                }
+
+                ushort ownReg32 = (ushort)(index >> 2);
+                byte byteOff = (byte)((index & 3) << 3);
+
+                if (ownReg32 == 0)
+                {
+                    throw new InvalidOperationException("Register 0 and 1 is read-only zero!");
+                }
+
+                registers[ownReg32] = (registers[ownReg32] & (uint)~(0xFF << byteOff)) | (uint)(value << byteOff);
             }
         }
     }
