@@ -8,6 +8,7 @@ namespace Nofun.Module.VMGP
     {
         private SColor foregroundColor;
         private SColor backgroundColor;
+        private TransferMode currentTransferMode = TransferMode.Transparent;
 
         [ModuleCall]
         private void vClearScreen(Int32 color)
@@ -39,6 +40,12 @@ namespace Nofun.Module.VMGP
         private void vSetClipWindow(ushort x0, ushort y0, ushort x1, ushort y1)
         {
             system.GraphicDriver.SetClipRect(x0, y0, x1, y1);
+        }
+
+        [ModuleCall]
+        private void vSetTransferMode(TransferMode transferMode)
+        {
+            currentTransferMode = transferMode;
         }
     }
 }
