@@ -34,5 +34,11 @@ namespace Nofun.Module.VMGP
             // This should always block
             system.GraphicDriver.FlipScreen();
         }
+
+        [ModuleCall]
+        private void vSetClipWindow(ushort x0, ushort y0, ushort x1, ushort y1)
+        {
+            system.GraphicDriver.SetClipRect(x0, y0, x1, y1);
+        }
     }
 }

@@ -15,6 +15,8 @@ namespace Nofun.Driver.Graphics
 
         void FlipScreen();
 
+        void SetClipRect(ushort x0, ushort y0, ushort x1, ushort y1);
+
         int ScreenWidth { get; }
 
         int ScreenHeight { get; }

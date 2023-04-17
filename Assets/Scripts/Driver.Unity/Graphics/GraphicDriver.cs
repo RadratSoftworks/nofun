@@ -11,6 +11,7 @@ namespace Nofun.Driver.Unity.Graphics
         private RenderTexture screenTexture;
         private bool began = false;
         private Action stopProcessor;
+        private Rect scissorRect;
 
         public RenderTexture DisplayResult => screenTexture;
 
@@ -41,6 +42,8 @@ namespace Nofun.Driver.Unity.Graphics
 
             GL.PushMatrix();
             GL.LoadPixelMatrix(0, screenTexture.width, 0, screenTexture.height);
+
+            // NOTE!: Remember to set scissor rect through CommandBuffer
         }
 
         public void EndFrame()
@@ -101,6 +104,11 @@ namespace Nofun.Driver.Unity.Graphics
         {
             // Exit the processing so that Update can begin
             stopProcessor();
+        }
+
+        public void SetClipRect(ushort x0, ushort y0, ushort x1, ushort y1)
+        {
+            scissorRect = new Rect(x0, y0, x1 - x0, y1 - y0);
         }
 
         public int ScreenWidth => screenTexture.width;
