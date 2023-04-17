@@ -102,5 +102,9 @@ namespace Nofun.Driver.Unity.Graphics
             // Exit the processing so that Update can begin
             stopProcessor();
         }
+
+        public int ScreenWidth => screenTexture.width;
+
+        public int ScreenHeight => screenTexture.height;
     } 
 }

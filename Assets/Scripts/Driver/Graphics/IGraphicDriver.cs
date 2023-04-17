@@ -14,5 +14,9 @@ namespace Nofun.Driver.Graphics
         void EndFrame();
 
         void FlipScreen();
+
+        int ScreenWidth { get; }
+
+        int ScreenHeight { get; }
     };
 }

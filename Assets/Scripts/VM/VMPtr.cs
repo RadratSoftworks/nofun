@@ -1,9 +1,12 @@
 using System;
-using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
 namespace Nofun.VM
 {
+    public struct Any
+    {
+    };
+
     public struct VMPtr<T> where T : struct
     {
         public UInt32 address;
@@ -54,5 +57,10 @@ namespace Nofun.VM
         }
 
         public static VMPtr<T> Null => new VMPtr<T>(0);
+
+        public VMPtr<Q> Cast<Q>() where Q : struct
+        {
+            return new VMPtr<Q>(address);
+        }
     }
 }
