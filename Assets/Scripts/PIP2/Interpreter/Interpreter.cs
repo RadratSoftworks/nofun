@@ -17,7 +17,7 @@ namespace Nofun.PIP2.Interpreter
             {
                 null, null, null, null, null, null, null, null,    // 0x00
                 null, I(SUB), null, null, null, null, null, null,    // 0x08
-                null, null, null, null, null, null, I(MOVB), null,    // 0x10
+                null, I(MOV), null, null, null, null, I(MOVB), null,    // 0x10
                 null, null, null, null, null, null, null, I(ADDQ),    // 0x18
                 null, null, null, null, null, null, null, I(ADDHi),    // 0x20
                 null, null, I(SRAH), null, null, null, null, null,    // 0x28

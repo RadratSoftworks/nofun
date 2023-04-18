@@ -31,5 +31,10 @@ namespace Nofun.PIP2.Interpreter
         {
             Reg8[encoding.d] = Reg8[encoding.s];
         }
+
+        private void MOV(TwoSourcesEncoding encoding)
+        {
+            Reg[encoding.d] = Reg[encoding.s];
+        }
     }
 }
