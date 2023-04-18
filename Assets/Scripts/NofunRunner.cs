@@ -16,20 +16,17 @@ namespace Nofun
         private GraphicDriver graphicDriver;
 
         private bool updateRan = false;
-        private const string testFile = "E:\\Fonts.mpn";
+        private const string testFile = "E:\\Jeff.mpn";
 
         private void Start()
         {
             graphicDriver = new GraphicDriver(new Vector2(176, 208));
 
-            using (FileStream file = File.OpenRead(testFile))
-            {
-                executable = new VMGPExecutable(file);
-                system = new VMSystem(executable, graphicDriver);
+            executable = new VMGPExecutable(File.OpenRead(testFile));
+            system = new VMSystem(executable, graphicDriver);
 
-                // Setup graphics driver
-                graphicDriver.StopProcessorAction = () => system.Processor.Stop();
-            }
+            // Setup graphics driver
+            graphicDriver.StopProcessorAction = () => system.Processor.Stop();
         }
 
         private void Update()

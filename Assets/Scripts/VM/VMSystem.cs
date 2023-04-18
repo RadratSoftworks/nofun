@@ -12,6 +12,7 @@ namespace Nofun.VM
         private VMCallMap callMap;
         private Processor processor;
         private IGraphicDriver graphicDriver;
+        private VMGPExecutable executable;
 
         private uint stackStartAddress;
         private uint heapAddress;
@@ -19,6 +20,7 @@ namespace Nofun.VM
         public VMMemory Memory => memory;
         public Processor Processor => processor;
         public IGraphicDriver GraphicDriver => graphicDriver;
+        public VMGPExecutable Executable => executable;
 
         private void LoadModulesAndProgram(VMLoader loader)
         {
@@ -36,6 +38,8 @@ namespace Nofun.VM
         public VMSystem(VMGPExecutable executable, IGraphicDriver graphicDriver)
         {
             this.graphicDriver = graphicDriver;
+            this.executable = executable;
+
             callMap = new VMCallMap(this);
 
             VMLoader loader = new VMLoader(executable);
