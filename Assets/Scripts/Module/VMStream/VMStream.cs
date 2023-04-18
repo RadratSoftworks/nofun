@@ -1,4 +1,5 @@
 using Nofun.VM;
+using System;
 
 namespace Nofun.Module.VMStream
 {
@@ -41,6 +42,25 @@ namespace Nofun.Module.VMStream
             }
 
             return streams.Add(targetedStream);
-        } 
+        }
+
+        [ModuleCall]
+        private int vStreamRead(int handle, VMPtr<byte> buffer, int count)
+        {
+            IVMHostStream stream = streams.Get(handle);
+            if (stream == null)
+            {
+                return -1;
+            }
+
+            Span<byte> bufferSpan = buffer.AsSpan(system.Memory, count);
+            return stream.Read(bufferSpan, null);
+        }
+
+        [ModuleCall]
+        private void vStreamClose(int handle)
+        {
+            streams.Remove(handle);
+        }
     };
 }

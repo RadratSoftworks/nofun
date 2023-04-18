@@ -20,7 +20,7 @@ namespace Nofun.Module
             this.maxFd = maxFd;
         }
 
-        T Get(int handle)
+        public T Get(int handle)
         {
             if (objects.TryGetValue(handle, out T obj))
             {
