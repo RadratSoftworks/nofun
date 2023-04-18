@@ -71,10 +71,21 @@ namespace Nofun.PIP2.Interpreter
             config.WriteWord(Reg[encoding.s] + FetchLoadStoreImmediate(), Reg16[encoding.d]);
         }
 
+        private void STBd(TwoSourcesEncoding encoding)
+        {
+            config.WriteByte(Reg[encoding.s] + FetchLoadStoreImmediate(), Reg8[encoding.d]);
+        }
+
         private void LDHu(TwoSourcesEncoding encoding)
         {
             // All operate on 32-bit registers
             Reg[encoding.d] = config.ReadWord(Reg[encoding.s] + FetchLoadStoreImmediate());
+        }
+
+        private void LDBud(TwoSourcesEncoding encoding)
+        {
+            // All operate on 32-bit registers
+            Reg[encoding.d] = config.ReadByte(Reg[encoding.s] + FetchLoadStoreImmediate());
         }
     }
 }

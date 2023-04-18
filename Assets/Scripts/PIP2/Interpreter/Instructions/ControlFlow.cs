@@ -19,7 +19,8 @@ namespace Nofun.PIP2.Interpreter
             }
             else if (poolItem.DataType == PoolDataType.ImmInteger)
             {
-                Reg[Register.RA] = Reg[Register.PC];
+                // NOTE: Skip the pool item number
+                Reg[Register.RA] = Reg[Register.PC] + 4;
                 Reg[Register.PC] = (uint)poolItem.ImmediateInteger;
             }
             else
@@ -33,6 +34,27 @@ namespace Nofun.PIP2.Interpreter
             if (Reg8[encoding.d] != encoding.s)
             {
                 Reg[Register.PC] += (uint)(encoding.t - 1) * 4;
+            }
+        }
+
+        private void BEQIB(TwoSourcesEncoding encoding)
+        {
+            if (Reg8[encoding.d] == encoding.s)
+            {
+                Reg[Register.PC] += (uint)(encoding.t - 1) * 4;
+            }
+        }
+
+        private void JPr(TwoSourcesEncoding encoding)
+        {
+            Reg[Register.PC] = Reg[encoding.d];
+        }
+
+        private void BLTUI(TwoSourcesEncoding encoding)
+        {
+            if (Reg[encoding.d] < encoding.s)
+            {
+                Reg[Register.PC] += (uint)((encoding.t - 1) * 4);
             }
         }
     }
