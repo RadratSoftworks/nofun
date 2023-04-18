@@ -1,4 +1,5 @@
 using Nofun.Driver.Graphics;
+using Nofun.VM;
 using System;
 
 namespace Nofun.Module.VMGP
@@ -9,6 +10,23 @@ namespace Nofun.Module.VMGP
         private SColor foregroundColor;
         private SColor backgroundColor;
         private TransferMode currentTransferMode = TransferMode.Transparent;
+
+        private SpriteCache spriteCache;
+
+        private int GetSimpleSpriteRotation()
+        {
+            switch (currentTransferMode)
+            {
+                case TransferMode.FlipX:
+                    return 90;
+
+                case TransferMode.FlipY:
+                    return 180;
+
+                default:
+                    return 0;
+            }
+        }
 
         [ModuleCall]
         private void vClearScreen(Int32 color)
@@ -46,6 +64,27 @@ namespace Nofun.Module.VMGP
         private void vSetTransferMode(TransferMode transferMode)
         {
             currentTransferMode = transferMode;
+        }
+
+
+        [ModuleCall]
+        private void vDrawObject(short x, short y, VMPtr<NativeSprite> sprite)
+        {
+            NativeSprite spriteInfo = sprite.Read(system.Memory);
+            long spriteSizeInBits = TextureUtil.GetTextureSizeInBits(spriteInfo.width, spriteInfo.height,
+                (TextureFormat)spriteInfo.format);
+
+            int spriteSizeInBytes = (int)((spriteSizeInBits + 7) / 8);
+
+            Span<byte> spriteData = sprite[1].Cast<byte>().AsSpan(system.Memory, spriteSizeInBytes);
+            Span<byte> paletteData = new Span<byte>();
+
+            ITexture drawTexture = spriteCache.Retrieve(system.GraphicDriver, spriteInfo, spriteData,
+                paletteData);
+
+            // Draw it to the screen
+            system.GraphicDriver.DrawTexture(x, y, spriteInfo.centerX, spriteInfo.centerY,
+                GetSimpleSpriteRotation(), drawTexture);
         }
     }
 }

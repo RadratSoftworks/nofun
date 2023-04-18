@@ -17,6 +17,8 @@ namespace Nofun.Driver.Graphics
 
         void SetClipRect(ushort x0, ushort y0, ushort x1, ushort y1);
 
+        void DrawTexture(int posX, int posY, int centerX, int centerY, int rotation, ITexture texture);
+
         int ScreenWidth { get; }
 
         int ScreenHeight { get; }

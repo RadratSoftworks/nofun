@@ -1,6 +1,7 @@
 using Nofun.Driver.Graphics;
 using Nofun.Parser;
 using Nofun.PIP2;
+using System;
 
 namespace Nofun.VM
 {
@@ -16,6 +17,8 @@ namespace Nofun.VM
 
         private uint stackStartAddress;
         private uint heapAddress;
+
+        private bool shouldStop = false;
 
         public VMMemory Memory => memory;
         public Processor Processor => processor;
@@ -69,7 +72,21 @@ namespace Nofun.VM
 
         public void Run()
         {
-            processor.Run();
+            if (shouldStop)
+            {
+                return;
+            }
+
+            try
+            {
+                processor.Run();
+            }
+            catch (Exception ex)
+            {
+                shouldStop = true;
+                throw ex;
+            }
+
             graphicDriver.EndFrame();
         }
     }

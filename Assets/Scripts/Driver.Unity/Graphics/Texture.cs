@@ -55,6 +55,8 @@ namespace Nofun.Driver.Unity.Graphics
 
             for (int i = 0; (i < mipCount) && (width !=0) && (height != 0); i++)
             {
+                int dataSizeInBits = width * height * bitsPerPixel;
+
                 // Gurantee that this is in byte-unit.
                 if (!needTransform)
                 {
@@ -62,11 +64,35 @@ namespace Nofun.Driver.Unity.Graphics
                 }
                 else
                 {
+                    byte[] finalConverData = null;
+
                     // Transform data into separate buffer, then set pixel data
-                    throw new Exception("Format that need to be converted is unhandled!");
+                    if ((bitsPerPixel % 8) == 0)
+                    {
+                        Span<byte> dataSpan = new Span<byte>(data, dataPointerInBits >> 3, dataSizeInBits >> 3);
+
+                        switch (format)
+                        {
+                            case Driver.Graphics.TextureFormat.RGB332:
+                                finalConverData = DataConvertor.RGB332ToRGB888(dataSpan, width, height);
+                                break;
+
+                            default:
+                                break;
+                        }
+                    }
+
+                    if (finalConverData == null)
+                    {
+                        throw new Exception("Format that need to be converted is unhandled!");
+                    }
+                    else
+                    {
+                        uTexture.SetPixelData(finalConverData, i);
+                    }
                 }
 
-                dataPointerInBits += width * height * bitsPerPixel;
+                dataPointerInBits += dataSizeInBits;
 
                 width >>= 2;
                 height >>= 2;
@@ -82,7 +108,7 @@ namespace Nofun.Driver.Unity.Graphics
             this.format = format;
             this.mipCount = mipCount;
 
-            uTexture = new Texture2D(width, height, needTransform ? UnityEngine.TextureFormat.ARGB32 : MapMophunFormatToUnity(format), true);
+            uTexture = new Texture2D(width, height, needTransform ? UnityEngine.TextureFormat.RGB24 : MapMophunFormatToUnity(format), true);
             UploadData(data, width, height, mipCount);
         }
 

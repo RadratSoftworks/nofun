@@ -15,7 +15,6 @@ namespace Nofun
         private VMSystem system;
         private GraphicDriver graphicDriver;
 
-        private bool updateRan = false;
         private const string testFile = "E:\\Jeff.mpn";
 
         private void Start()
@@ -27,19 +26,12 @@ namespace Nofun
 
             // Setup graphics driver
             graphicDriver.StopProcessorAction = () => system.Processor.Stop();
+            displayImage.texture = graphicDriver.DisplayResult;
         }
 
         private void Update()
         {
-            if (updateRan)
-            {
-                return;
-            }
-
-            updateRan = true;
             system.Run();
-
-            displayImage.texture = graphicDriver.DisplayResult;
         }
     }
 }

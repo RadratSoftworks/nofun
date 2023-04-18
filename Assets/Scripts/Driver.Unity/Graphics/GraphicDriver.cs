@@ -30,6 +30,11 @@ namespace Nofun.Driver.Unity.Graphics
             return new Rect(x, screenTexture.height - y, width, height);
         }
 
+        private Vector2 GetUnityCoords(int x, int y)
+        {
+            return new Vector2(x, screenTexture.height - y);
+        }
+
         private void BeginRender()
         {
             if (began)
@@ -42,8 +47,6 @@ namespace Nofun.Driver.Unity.Graphics
 
             GL.PushMatrix();
             GL.LoadPixelMatrix(0, screenTexture.width, 0, screenTexture.height);
-
-            // NOTE!: Remember to set scissor rect through CommandBuffer
         }
 
         public void EndFrame()
@@ -98,6 +101,27 @@ namespace Nofun.Driver.Unity.Graphics
                 posX += advX;
                 posY += advY;
             }
+        }
+
+        public void DrawTexture(int posX, int posY, int centerX, int centerY, int rotation, ITexture texture)
+        {
+            BeginRender();
+
+            // The position in its original form, non-rotation is (posX - centerX, posY - centerY),
+            // while the center (pivot) is actually (posX, posY)
+            // We translate the matrix to pivot and rotate, and later translate back, it's the standard
+            Vector3 relatePosition = GetUnityCoords(posX, posY);
+
+            Matrix4x4 modelMatrix = Matrix4x4.TRS(relatePosition, Quaternion.AngleAxis(rotation, Vector3.forward),
+                Vector3.one) * Matrix4x4.Translate(-relatePosition);
+
+            GL.PushMatrix();
+            GL.MultMatrix(modelMatrix);
+
+            Rect destRect = GetUnityScreenRect(posX - centerX, posY - centerY, texture.Width, texture.Height);
+            UnityEngine.Graphics.DrawTexture(destRect, ((Texture)texture).NativeTexture);
+
+            GL.PopMatrix();
         }
 
         public void FlipScreen()
