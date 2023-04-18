@@ -19,12 +19,20 @@ namespace Nofun.PIP2.Interpreter
             }
             else if (poolItem.DataType == PoolDataType.ImmInteger)
             {
-                Reg[Register.RA] = Reg[Register.PC] + 4;
+                Reg[Register.RA] = Reg[Register.PC];
                 Reg[Register.PC] = (uint)poolItem.ImmediateInteger;
             }
             else
             {
                 throw new InvalidOperationException("Trying to call a non-import/non-integer pool data!");
+            }
+        }
+
+        private void BNEIB(TwoSourcesEncoding encoding)
+        {
+            if (Reg8[encoding.d] != encoding.s)
+            {
+                Reg[Register.PC] += (uint)(encoding.t - 1) * 4;
             }
         }
     }
