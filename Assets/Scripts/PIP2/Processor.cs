@@ -49,7 +49,7 @@ namespace Nofun.PIP2
             return poolDatas[(int)numbering - 1];
         }
 
-        public abstract void Run();
+        public abstract void Run(int instructionPerRun);
         public abstract void Stop();
 
         public virtual ProcessorContext SaveContext()
@@ -200,5 +200,7 @@ namespace Nofun.PIP2
                 registers[ownReg32] = (registers[ownReg32] & (uint)~(0xFF << byteOff)) | (uint)(value << byteOff);
             }
         }
+
+        public abstract int InstructionRan { get; }
     }
 }

@@ -19,6 +19,11 @@ namespace Nofun.VM
             return new Span<byte>(memory, offset, size);
         }
 
+        public Memory<byte> GetMemoryMemory(int offset, int size)
+        {
+            return new Memory<byte>(memory, offset, size);
+        }
+
         #region Memory Access
         public UInt32 ReadMemory32(UInt32 address)
         {
@@ -48,6 +53,16 @@ namespace Nofun.VM
         public void WriteMemory8(UInt32 address, byte value)
         {
             memory[address] = value;
+        }
+
+        public void MemoryCopy(UInt32 destAddr, UInt32 sourceAddr, UInt32 count)
+        {
+            Buffer.BlockCopy(memory, (int)sourceAddr, memory, (int)destAddr, (int)count);
+        }
+
+        public void MemorySet(UInt32 destAddr, byte fillByte, UInt32 count)
+        {
+            Array.Fill(memory, fillByte, (int)destAddr, (int)count);
         }
         #endregion
     }

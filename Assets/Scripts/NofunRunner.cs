@@ -1,5 +1,8 @@
+using Nofun.Driver.Unity.Audio;
 using Nofun.Driver.Unity.Graphics;
+using Nofun.Driver.Unity.Input;
 using Nofun.Parser;
+using Nofun.Util.Unity;
 using Nofun.VM;
 using System.IO;
 using UnityEngine;
@@ -9,24 +12,33 @@ namespace Nofun
     public class NofunRunner: MonoBehaviour
     {
         [SerializeField]
-        private UnityEngine.UI.RawImage displayImage;
+        private InputDriver inputDriver;
+
+        [SerializeField]
+        private AudioDriver audioDriver;
+
+        [SerializeField]
+        private GraphicDriver graphicDriver;
 
         private VMGPExecutable executable;
         private VMSystem system;
-        private GraphicDriver graphicDriver;
 
         private const string testFile = "E:\\Jeff.mpn";
 
+        private void SetupLogger()
+        {
+            Util.Logging.Logger.AddTarget(new UnityLogTarget());
+        }
+
         private void Start()
         {
-            graphicDriver = new GraphicDriver(new Vector2(176, 208));
+            SetupLogger();
 
             executable = new VMGPExecutable(File.OpenRead(testFile));
-            system = new VMSystem(executable, graphicDriver);
+            system = new VMSystem(executable, graphicDriver, inputDriver, audioDriver);
 
             // Setup graphics driver
             graphicDriver.StopProcessorAction = () => system.Processor.Stop();
-            displayImage.texture = graphicDriver.DisplayResult;
         }
 
         private void Update()

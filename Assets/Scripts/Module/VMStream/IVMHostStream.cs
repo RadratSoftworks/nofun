@@ -10,6 +10,8 @@ namespace Nofun.Module.VMStream
 
         int Seek(int offset, StreamSeekMode whence);
 
+        int Tell();
+
         int Ready();
     };
 }

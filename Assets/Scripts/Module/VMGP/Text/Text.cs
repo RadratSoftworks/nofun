@@ -32,5 +32,27 @@ namespace Nofun.Module.VMGP
             activeFont.DrawText(system.GraphicDriver, system.Memory, x, y, value.Get(system.Memory),
                 foregroundColor);
         }
+
+        [ModuleCall]
+        private uint vSelectFont(uint size, uint flags, ushort charShouldAvailable)
+        {
+            system.GraphicDriver.SelectSystemFont(size, flags, (int)charShouldAvailable);
+            
+            // Assume we use all
+            return flags;
+        }
+
+        [ModuleCall]
+        private void vTextOut(short x, short y, VMString text)
+        {
+            string textDraw = text.Get(system.Memory);
+            system.GraphicDriver.DrawSystemText(x, y, textDraw, backgroundColor, foregroundColor);
+        }
+
+        [ModuleCall]
+        private int vCharExtent(ushort charValue)
+        {
+            return system.GraphicDriver.GetStringExtentRelativeToSystemFont(char.ConvertFromUtf32(charValue));
+        }
     }
 }

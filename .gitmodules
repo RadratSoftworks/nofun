@@ -1,0 +1,3 @@
+[submodule "Native/TSFMidiRender/tsf"]
+	path = Native/TSFMidiRender/tsf
+	url = https://github.com/schellingb/TinySoundFont/

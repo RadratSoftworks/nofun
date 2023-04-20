@@ -1,6 +1,5 @@
 using System;
 using Nofun.PIP2.Encoding;
-using Unity.VisualScripting;
 
 namespace Nofun.PIP2.Interpreter
 {
@@ -10,24 +9,27 @@ namespace Nofun.PIP2.Interpreter
 
         private bool shouldStop = false;
         private bool isRunning = false;
+        private int instructionRan = 0;
+
+        public override int InstructionRan => instructionRan;
 
         public Interpreter(ProcessorConfig config) : base(config)
         {
             OpcodeTables = new Action<UInt32>[116]
             {
-                null, null, null, null, null, null, null, null,    // 0x00
-                null, I(SUB), null, null, null, null, null, null,    // 0x08
-                null, I(MOV), null, null, null, null, I(MOVB), null,    // 0x10
-                null, null, null, null, null, null, null, I(ADDQ),    // 0x18
-                null, null, null, null, null, null, null, I(ADDHi),    // 0x20
-                null, null, I(SRAH), null, null, null, null, null,    // 0x28
-                null, null, null, null, null, I(BLTUI), I(BEQIB), I(BNEIB),    // 0x30
-                null, null, null, null, null, null, null, null,    // 0x38
-                I(LDQ), I(JPr), null, I(STORE), I(RESTORE), null, null, null,    // 0x40
-                null, null, null, null, null, null, null, null,    // 0x48
-                null, null, I(STBd), I(STHd), null, null, null, null,    // 0x50
-                I(LDBud), I(LDHu), I(LDI), null, I(CALLl), null, null, null,    // 0x58
-                null, null, null, null, null, null, null, null,    // 0x60
+                null, null, I(ADD), I(AND), I(MUL), I(DIV), I(DIVU), null,    // 0x00
+                null, I(SUB), null, null, null, null, null, I(EXSB),    // 0x08
+                I(EXSH), I(MOV), I(ADDB), null, I(ANDB), null, I(MOVB), I(ADDH),    // 0x10
+                null, null, null, I(MOVH), I(SLLi), I(SRAi), I(SRLi), I(ADDQ),    // 0x18
+                I(MULQ), I(ADDBi), I(ANDBi), I(ORBi), null, I(SRLB), null, I(ADDHi),    // 0x20
+                null, I(SLLH), I(SRAH), null, I(BEQI), I(BNEI), I(BGEI), null,    // 0x28
+                I(BGTI), I(BGTUI), I(BLEI), I(BLEUI), I(BLTI), I(BLTUI), I(BEQIB), I(BNEIB),    // 0x30
+                I(BGEIB), null, I(BGTIB), I(BGTUIB), I(BLEIB), I(BLEUIB), I(BLTIB), I(BLTUIB),    // 0x38
+                I(LDQ), I(JPr), null, I(STORE), I(RESTORE), I(RET), null, null,    // 0x40
+                I(SYSCPY), I(SYSSET), I(ADDi), I(ANDi), null, I(DIVi), I(DIVUi), null,    // 0x48
+                null, I(SUBi), I(STBd), I(STHd), I(STWd), I(LDBd), null, I(LDWd),    // 0x50
+                I(LDBud), I(LDHu), I(LDI), I(JPl), I(CALLl), I(BEQ), I(BNE), I(BGE),    // 0x58
+                I(BGEU), I(BGT), I(BGTU), I(BLE), I(BLEU), I(BLT), I(BLTU), null,    // 0x60
                 null, null, null, null, null, null, null, null,    // 0x68
                 null, null, null, null                             // 0x70
             };
@@ -67,7 +69,7 @@ namespace Nofun.PIP2.Interpreter
         }
         #endregion
 
-        public override void Run()
+        public override void Run(int instructionPerRun)
         {
             if (isRunning)
             {
@@ -77,7 +79,9 @@ namespace Nofun.PIP2.Interpreter
             shouldStop = false;
             isRunning = true;
 
-            while (!shouldStop)
+            instructionRan = 0;
+
+            while (!shouldStop && (instructionRan < instructionPerRun))
             {
                 uint value = config.ReadCode(registers[Register.PCIndex]);
                 Action<UInt32> handler = OpcodeTables[value & 0xFF];
@@ -89,6 +93,8 @@ namespace Nofun.PIP2.Interpreter
 
                 registers[Register.PCIndex] += InstructionSize;
                 handler(value);
+
+                instructionRan++;
             }
 
             isRunning = false;

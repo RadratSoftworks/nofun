@@ -12,6 +12,11 @@ namespace ModuleCallBindingGenerator
 
         private void VisitMethod(ModuleRegisteration registeration, MethodDeclarationSyntax method)
         {
+            if (method.Identifier.Text == "OnSystemLoaded")
+            {
+                registeration.containSystemLoadedCallback = true;
+            }
+
             if (method.AttributeLists.Count == 0)
             {
                 return;

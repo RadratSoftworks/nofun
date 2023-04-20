@@ -8,6 +8,8 @@ namespace ModuleCallBindingGenerator
     {
         public string className;
         public string namespaceName;
+        public bool containSystemLoadedCallback = false;
+
         public List<MethodDeclarationSyntax> methods = new List<MethodDeclarationSyntax>();
     }
 }

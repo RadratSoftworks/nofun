@@ -41,6 +41,11 @@ namespace Nofun.Module.VMStream
             return (int)memStream.Seek(offset, StreamTranslationUtils.ToSeekOrigin(whence));
         }
 
+        public int Tell()
+        {
+            return Seek(0, StreamSeekMode.Cur);
+        }
+
         public int Write(Span<byte> buffer, object extraArgs)
         {
             return -1;

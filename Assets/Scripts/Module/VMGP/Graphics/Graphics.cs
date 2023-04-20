@@ -1,6 +1,8 @@
 using Nofun.Driver.Graphics;
+using Nofun.Driver.Unity.Graphics;
 using Nofun.VM;
 using System;
+using System.Linq;
 
 namespace Nofun.Module.VMGP
 {
@@ -46,6 +48,31 @@ namespace Nofun.Module.VMGP
             foregroundColor = GetColor(color);
         }
 
+        [ModuleCall]
+        private uint vGetPaletteEntry(byte index)
+        {
+            return ScreenPalette[index].ToRgb555();
+        }
+
+        [ModuleCall]
+        private int vFindRGBIndex(uint rgb)
+        {
+            SColor colorMatch = SColor.FromRgb555(rgb);
+            float diffSmallest = float.MaxValue;
+            int targetIndex = 0;
+
+            for (int i = 0; i < ScreenPalette.Length; i++)
+            {
+                float diff = colorMatch.Difference(ScreenPalette[i]);
+                if (diff < diffSmallest)
+                {
+                    diffSmallest = diff;
+                    targetIndex = i;
+                }
+            }
+
+            return targetIndex;
+        }
 
         [ModuleCall]
         private void vFlipScreen(Int32 block)
@@ -66,6 +93,16 @@ namespace Nofun.Module.VMGP
             currentTransferMode = transferMode;
         }
 
+        [ModuleCall]
+        private void vFillRect(short x0, short y0, short x1, short y1)
+        {
+            if ((x0 >= x1) || (y0 >= y1))
+            {
+                return;
+            }
+
+            system.GraphicDriver.FillRect(x0, y0, x1, y1, foregroundColor);
+        }
 
         [ModuleCall]
         private void vDrawObject(short x, short y, VMPtr<NativeSprite> sprite)

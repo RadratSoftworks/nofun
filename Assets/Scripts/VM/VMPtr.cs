@@ -13,6 +13,8 @@ namespace Nofun.VM
 
         public UInt32 Value => address;
 
+        public bool IsNull => address == 0;
+
         public VMPtr(UInt32 address)
         {
             this.address = address;
@@ -21,6 +23,36 @@ namespace Nofun.VM
         public static VMPtr<T> operator + (VMPtr<T> lhs, int rhs)
         {
             return new VMPtr<T>(lhs.address + (uint)(rhs * Marshal.SizeOf<T>()));
+        }
+
+        public static bool operator <(VMPtr<T> lhs, uint addr)
+        {
+            return lhs.address < addr;
+        }
+
+        public static bool operator <=(VMPtr<T> lhs, uint addr)
+        {
+            return lhs.address <= addr;
+        }
+
+        public static bool operator >(VMPtr<T> lhs, uint addr)
+        {
+            return lhs.address > addr;
+        }
+
+        public static bool operator >=(VMPtr<T> lhs, uint addr)
+        {
+            return lhs.address > addr;
+        }
+
+        public static bool operator ==(VMPtr<T> lhs, uint addr)
+        {
+            return lhs.address == addr;
+        }
+
+        public static bool operator !=(VMPtr<T> lhs, uint addr)
+        {
+            return lhs.address != addr;
         }
 
         public static bool operator == (VMPtr<T> lhs, VMPtr<T> rhs)
@@ -49,6 +81,11 @@ namespace Nofun.VM
         public Span<T> AsSpan(VMMemory memory, int count, int startOffset = 0)
         {
             return MemoryMarshal.Cast<byte, T>(memory.GetMemorySpan((int)address + startOffset, Marshal.SizeOf<T>() * count));
+        }
+
+        public Memory<byte> AsRawMemory(VMMemory memory, int count, int startOffset = 0)
+        {
+            return memory.GetMemoryMemory((int)address + startOffset, Marshal.SizeOf<T>() * count);
         }
 
         public void Write(VMMemory memory, T value)

@@ -1,19 +1,26 @@
 using Nofun.Driver.Graphics;
+using Nofun.Driver.Input;
+using Nofun.Driver.Audio;
 using Nofun.Parser;
 using Nofun.PIP2;
 using System;
+using Nofun.Util;
 
 namespace Nofun.VM
 {
     public partial class VMSystem
     {
         private const uint ProgramStartOffset = VMMemory.DataAlignment;
+        private const int InstructionPerRun = 1000;
 
         private VMMemory memory;
         private VMCallMap callMap;
         private Processor processor;
         private IGraphicDriver graphicDriver;
+        private IInputDriver inputDriver;
+        private IAudioDriver audioDriver;
         private VMGPExecutable executable;
+        private uint roundedHeapSize;
 
         private uint stackStartAddress;
         private uint heapAddress;
@@ -23,7 +30,12 @@ namespace Nofun.VM
         public VMMemory Memory => memory;
         public Processor Processor => processor;
         public IGraphicDriver GraphicDriver => graphicDriver;
+        public IInputDriver InputDriver => inputDriver;
+        public IAudioDriver AudioDriver => audioDriver;
         public VMGPExecutable Executable => executable;
+        public uint HeapStart => heapAddress;
+        public uint HeapSize => roundedHeapSize;
+        public uint HeapEnd => HeapStart + HeapSize;
 
         private void LoadModulesAndProgram(VMLoader loader)
         {
@@ -38,9 +50,11 @@ namespace Nofun.VM
             processor.PoolDatas = result;
         }
 
-        public VMSystem(VMGPExecutable executable, IGraphicDriver graphicDriver)
+        public VMSystem(VMGPExecutable executable, IGraphicDriver graphicDriver, IInputDriver inputDriver, IAudioDriver audioDriver)
         {
             this.graphicDriver = graphicDriver;
+            this.inputDriver = inputDriver;
+            this.audioDriver = audioDriver;
             this.executable = executable;
 
             callMap = new VMCallMap(this);
@@ -53,7 +67,8 @@ namespace Nofun.VM
             stackStartAddress = totalSize;
             heapAddress = stackStartAddress + VMMemory.DataAlignment;       // Make a gap to avoid weird stack manipulation
 
-            totalSize += VMMemory.DataAlignment + executable.Header.dynamicDataHeapSize;
+            roundedHeapSize = MemoryUtil.AlignUp(executable.Header.dynamicDataHeapSize, VMMemory.DataAlignment);
+            totalSize += VMMemory.DataAlignment + roundedHeapSize;
 
             memory = new VMMemory(totalSize);
             processor = new PIP2.Interpreter.Interpreter(new PIP2.ProcessorConfig()
@@ -64,10 +79,18 @@ namespace Nofun.VM
                 ReadByte = memory.ReadMemory8,
                 WriteDword = memory.WriteMemory32,
                 WriteWord = memory.WriteMemory16,
-                WriteByte = memory.WriteMemory8
+                WriteByte = memory.WriteMemory8,
+                MemoryCopy = memory.MemoryCopy,
+                MemorySet = memory.MemorySet
             });
 
             LoadModulesAndProgram(loader);
+        }
+
+        public void Stop()
+        {
+            shouldStop = true;
+            processor.Stop();
         }
 
         public void Run()
@@ -79,7 +102,7 @@ namespace Nofun.VM
 
             try
             {
-                processor.Run();
+                processor.Run(InstructionPerRun);
             }
             catch (Exception ex)
             {
@@ -87,6 +110,7 @@ namespace Nofun.VM
                 throw ex;
             }
 
+            inputDriver.EndFrame();
             graphicDriver.EndFrame();
         }
     }

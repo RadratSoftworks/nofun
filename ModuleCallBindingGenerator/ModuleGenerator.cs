@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.IO;
 using System.Text;
 
 namespace ModuleCallBindingGenerator
@@ -97,7 +98,14 @@ $@"
                 }
             }
 
-            accumulatedCall += ")";
+            if (accumulatedCall.Length == 0)
+            {
+                accumulatedCall = "()";
+            }
+            else
+            {
+                accumulatedCall += ")";
+            }
 
             string returnType = syntax.ReturnType.ToString();
             bool isVoid = (returnType == "void");
@@ -211,15 +219,50 @@ $@"
 
 namespace Nofun.VM {
     public partial class VMSystem {
+");
+
+            foreach (var module in receiver.moduleCalls)
+            {
+                sb.Append(
+$@"
+        private Nofun.Module.IModule {module.className}_module;");
+            }
+
+            foreach (var module in receiver.moduleCalls)
+            {
+                sb.Append(
+$@"
+        public {module.namespaceName}.{module.className} {module.className}Module => ({module.namespaceName}.{module.className}){module.className}_module;");
+            }
+
+            sb.Append(
+@"
         public void RegisterModules() {");
 
             foreach (var module in receiver.moduleCalls)
             {
                 sb.Append(
 $@"
-            Nofun.Module.IModule {module.className}_module = new {module.namespaceName + "." + module.className}(this);
+            {module.className}_module = new {module.namespaceName + "." + module.className}(this);
             {module.className}_module.Register(callMap);
 ");
+            }
+
+            sb.Append(
+@"
+        }
+
+        public void InvokeSystemLoadedCallback() {
+");
+
+            foreach (var module in receiver.moduleCalls)
+            {
+                if (module.containSystemLoadedCallback)
+                {
+                    sb.Append(
+$@"
+            {module.className}Module.OnSystemLoaded();");
+                }
             }
 
             sb.Append(

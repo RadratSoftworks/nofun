@@ -1,4 +1,5 @@
 using Nofun.Driver.Graphics;
+using Nofun.Util.Allocator;
 using Nofun.VM;
 
 namespace Nofun.Module.VMGP
@@ -6,15 +7,18 @@ namespace Nofun.Module.VMGP
     [Module]
     public partial class VMGP
     {
-        VM.VMSystem system;
+        private VM.VMSystem system;
 
         public VMGP(VM.VMSystem system)
         {
-            InitializePalette();
-
             this.system = system;
             this.fontCache = new();
             this.spriteCache = new();
+            this.heapAllocator = new BlockAllocator(system.HeapSize);
+        }
+
+        public void OnSystemLoaded()
+        {
         }
     }
 }

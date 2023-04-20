@@ -13,5 +13,8 @@ namespace Nofun.PIP2
         public Action<UInt32, byte> WriteByte;
         public Action<UInt32, UInt16> WriteWord;
         public Action<UInt32, UInt32> WriteDword;
+
+        public Action<UInt32, UInt32, UInt32> MemoryCopy;
+        public Action<UInt32, byte, UInt32> MemorySet;
     }
 }

@@ -9,6 +9,11 @@ namespace Nofun.Module.VMStream
         private VMSystem system;
         private SimpleObjectManager<IVMHostStream> streams;
 
+        public IVMHostStream GetStream(int handle)
+        {
+            return streams.Get(handle);
+        }
+
         public VMStream(VMSystem system)
         {
             this.system = system;
