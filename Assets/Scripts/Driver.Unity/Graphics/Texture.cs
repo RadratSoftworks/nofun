@@ -1,6 +1,7 @@
 using Nofun.Driver.Graphics;
 using UnityEngine;
 using System;
+using System.IO;
 
 namespace Nofun.Driver.Unity.Graphics
 {
@@ -44,6 +45,47 @@ namespace Nofun.Driver.Unity.Graphics
             }
         }
 
+        private void UploadSingleMip(byte[] data, int width, int height, int offset, int sizeInBits, int mipLevel)
+        {
+            bool needTransform = DoesFormatNeedTransform(format);
+            int bitsPerPixel = TextureUtil.GetPixelSizeInBits(format);
+
+            // Gurantee that this is in byte-unit.
+            if (!needTransform)
+            {
+                uTexture.SetPixelData(data, mipLevel, offset);
+            }
+            else
+            {
+                byte[] finalConverData = null;
+
+                // Transform data into separate buffer, then set pixel data
+                if ((bitsPerPixel % 8) == 0)
+                {
+                    Span<byte> dataSpan = new Span<byte>(data, offset, sizeInBits >> 3);
+
+                    switch (format)
+                    {
+                        case Driver.Graphics.TextureFormat.RGB332:
+                            finalConverData = DataConvertor.RGB332ToRGB888(dataSpan, width, height);
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+
+                if (finalConverData == null)
+                {
+                    throw new Exception("Format that need to be converted is unhandled!");
+                }
+                else
+                {
+                    uTexture.SetPixelData(finalConverData, mipLevel);
+                }
+            }
+        }
+
         private void UploadData(byte[] data, int width, int height, int mipCount)
         {
             bool needTransform = DoesFormatNeedTransform(format);
@@ -56,41 +98,7 @@ namespace Nofun.Driver.Unity.Graphics
             for (int i = 0; (i < mipCount) && (width !=0) && (height != 0); i++)
             {
                 int dataSizeInBits = width * height * bitsPerPixel;
-
-                // Gurantee that this is in byte-unit.
-                if (!needTransform)
-                {
-                    uTexture.SetPixelData(data, i, dataPointerInBits >> 3);
-                }
-                else
-                {
-                    byte[] finalConverData = null;
-
-                    // Transform data into separate buffer, then set pixel data
-                    if ((bitsPerPixel % 8) == 0)
-                    {
-                        Span<byte> dataSpan = new Span<byte>(data, dataPointerInBits >> 3, dataSizeInBits >> 3);
-
-                        switch (format)
-                        {
-                            case Driver.Graphics.TextureFormat.RGB332:
-                                finalConverData = DataConvertor.RGB332ToRGB888(dataSpan, width, height);
-                                break;
-
-                            default:
-                                break;
-                        }
-                    }
-
-                    if (finalConverData == null)
-                    {
-                        throw new Exception("Format that need to be converted is unhandled!");
-                    }
-                    else
-                    {
-                        uTexture.SetPixelData(finalConverData, i);
-                    }
-                }
+                UploadSingleMip(data, width, height, dataPointerInBits >> 3, dataSizeInBits, i);
 
                 dataPointerInBits += dataSizeInBits;
 
@@ -114,12 +122,21 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void SetData(byte[] data, int mipLevel)
         {
-            uTexture.SetPixelData(data, mipLevel);
+            UploadSingleMip(data, uTexture.width >> mipLevel, uTexture.height >> mipLevel, 0, data.Length * 8, mipLevel);
         }
 
         public void Apply()
         {
             uTexture.Apply();
+        }
+
+        public void SaveToPng(string path)
+        {
+            using (FileStream stream = File.OpenWrite(path))
+            {
+                byte[] pngData = uTexture.EncodeToPNG();
+                stream.Write(pngData, 0, pngData.Length);
+            }
         }
     }
 }

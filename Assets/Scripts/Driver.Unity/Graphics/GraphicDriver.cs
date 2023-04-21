@@ -11,6 +11,7 @@ namespace Nofun.Driver.Unity.Graphics
     public class GraphicDriver : MonoBehaviour, IGraphicDriver
     {
         private readonly int NGAGE_PPI = 130;
+        private const string BlackTransparentUniformName = "_Black_Transparent";
 
         private RenderTexture screenTexture;
         private RenderTexture screenTexture2;
@@ -20,12 +21,21 @@ namespace Nofun.Driver.Unity.Graphics
         private Rect scissorRect;
         private Texture2D whiteTexture;
         private Vector2 screenSize;
+        private float frameTimePassed = -1.0f;
 
         [SerializeField]
         private TMPro.TMP_Text textRender;
 
         [SerializeField]
         private UnityEngine.UI.RawImage displayImage;
+
+        [SerializeField]
+        private Material mophunDrawTextureMaterial;
+
+        [HideInInspector]
+        public float FpsLimit { get; set; }
+
+        private float SecondPerFrame => 1.0f / FpsLimit;
 
         public Action StopProcessorAction
         {
@@ -142,7 +152,8 @@ namespace Nofun.Driver.Unity.Graphics
             }
         }
 
-        public void DrawTexture(int posX, int posY, int centerX, int centerY, int rotation, ITexture texture)
+        public void DrawTexture(int posX, int posY, int centerX, int centerY, int rotation, ITexture texture,
+            int sourceX = -1, int sourceY = -1, int width = -1, int height = -1, bool blackIsTransparent = false)
         {
             BeginRender();
 
@@ -157,8 +168,22 @@ namespace Nofun.Driver.Unity.Graphics
             GL.PushMatrix();
             GL.MultMatrix(modelMatrix);
 
-            Rect destRect = GetUnityScreenRect(posX - centerX, posY + centerY, texture.Width, texture.Height);
-            UnityEngine.Graphics.DrawTexture(destRect, ((Texture)texture).NativeTexture);
+            int widthToUse = (width == -1) ? texture.Width : width;
+            int heightToUse = (height == -1) ? texture.Height : height;
+
+            Rect destRect = GetUnityScreenRect(posX - centerX, posY - centerY + heightToUse, widthToUse, heightToUse);
+            
+            mophunDrawTextureMaterial.SetFloat(BlackTransparentUniformName, blackIsTransparent ? 1.0f : 0.0f);
+
+            if ((sourceX != -1) && (sourceY != -1))
+            {
+                Rect sourceRect = new Rect((float)sourceX / texture.Width, (float)sourceY / texture.Height, (float)widthToUse / texture.Width, (float)heightToUse / texture.Height);
+                UnityEngine.Graphics.DrawTexture(destRect, ((Texture)texture).NativeTexture, sourceRect, 0, 0, 0, 0, mophunDrawTextureMaterial);
+            }
+            else
+            {
+                UnityEngine.Graphics.DrawTexture(destRect, ((Texture)texture).NativeTexture, mophunDrawTextureMaterial);
+            }
 
             GL.PopMatrix();
         }
@@ -184,13 +209,40 @@ namespace Nofun.Driver.Unity.Graphics
                 currentScreenTexture = screenTexture;
             }
 
+            frameTimePassed = 0.0f;
+
             // Exit the processing so that Update can begin
             stopProcessor();
+        }
+
+        public bool FrameFlipFinishedEmulating()
+        {
+            if (frameTimePassed < 0.0f)
+            {
+                return true;
+            }
+
+            frameTimePassed += Time.deltaTime;
+            if (frameTimePassed >= SecondPerFrame)
+            {
+                frameTimePassed = -1.0f;
+                return true;
+            }
+
+            return false;
         }
 
         public void SetClipRect(ushort x0, ushort y0, ushort x1, ushort y1)
         {
             scissorRect = new Rect(x0, y0, x1 - x0, y1 - y0);
+        }
+
+        public void GetClipRect(out ushort x0, out ushort y0, out ushort x1, out ushort y1)
+        {
+            x0 = (ushort)scissorRect.xMin;
+            x1 = (ushort)scissorRect.xMax;
+            y0 = (ushort)scissorRect.yMin;
+            y1 = (ushort)scissorRect.yMax;
         }
 
         private float EmulatedPointToPixels(float point)

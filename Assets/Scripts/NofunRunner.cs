@@ -20,6 +20,10 @@ namespace Nofun
         [SerializeField]
         private GraphicDriver graphicDriver;
 
+        [Range(1, 60)]
+        [SerializeField]
+        private int fpsLimit = 30;
+
         private VMGPExecutable executable;
         private VMSystem system;
 
@@ -43,6 +47,13 @@ namespace Nofun
 
         private void Update()
         {
+            if (!graphicDriver.FrameFlipFinishedEmulating())
+            {
+                return;
+            }
+
+            // Only set FPS when it's not emulating frame flip
+            graphicDriver.FpsLimit = fpsLimit;
             system.Run();
         }
     }

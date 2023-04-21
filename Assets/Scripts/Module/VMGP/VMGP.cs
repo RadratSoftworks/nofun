@@ -14,6 +14,7 @@ namespace Nofun.Module.VMGP
             this.system = system;
             this.fontCache = new();
             this.spriteCache = new();
+            this.tilemapCache = new();
             this.heapAllocator = new BlockAllocator(system.HeapSize);
         }
 

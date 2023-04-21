@@ -88,7 +88,7 @@ namespace Nofun.PIP2
 		STHd	     = 0x53,
 		STWd	     = 0x54,
 		LDBd	     = 0x55,
-		LDBHd	     = 0x56,
+		LDHd	     = 0x56,
 		LDWd	     = 0x57,
 		LDBUd	     = 0x58,
 		LDHUd	     = 0x59,

@@ -78,7 +78,7 @@ namespace Nofun.VM
             return AsSpan(memory, 1)[0];
         }
 
-        public Span<T> AsSpan(VMMemory memory, int count, int startOffset = 0)
+        public Span<T> AsSpan(VMMemory memory, int count = 1, int startOffset = 0)
         {
             return MemoryMarshal.Cast<byte, T>(memory.GetMemorySpan((int)address + startOffset, Marshal.SizeOf<T>() * count));
         }

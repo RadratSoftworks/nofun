@@ -624,6 +624,7 @@ MonoBehaviour:
   inputDriver: {fileID: 36796497}
   audioDriver: {fileID: 1316056871}
   graphicDriver: {fileID: 1719026072}
+  fpsLimit: 30
 --- !u!4 &1698624928
 Transform:
   m_ObjectHideFlags: 0
@@ -689,6 +690,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   textRender: {fileID: 1724386825}
   displayImage: {fileID: 1748530797}
+  mophunDrawTextureMaterial: {fileID: 2100000, guid: d8bcbd9e353f34543911d57f9d2b4bfb, type: 2}
 --- !u!1 &1724386823
 GameObject:
   m_ObjectHideFlags: 0

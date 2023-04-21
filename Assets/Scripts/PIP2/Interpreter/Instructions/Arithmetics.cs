@@ -52,6 +52,16 @@ namespace Nofun.PIP2.Interpreter
         {
             Reg[encoding.d] = Reg[encoding.s] - (uint)FetchImmediate();
         }
+
+        private void SUBH(TwoSourcesEncoding encoding)
+        {
+            Reg16[encoding.d] = (ushort)(Reg16[encoding.s] - Reg16[encoding.t]);
+        }
+
+        private void SUBB(TwoSourcesEncoding encoding)
+        {
+            Reg8[encoding.d] = (byte)(Reg8[encoding.s] - Reg8[encoding.t]);
+        }
         #endregion
 
         #region Multiply instructions family
@@ -60,9 +70,14 @@ namespace Nofun.PIP2.Interpreter
             Reg[encoding.d] = Reg[encoding.s] * Reg[encoding.t];
         }
 
+        private void MULi(TwoSourcesEncoding encoding)
+        {
+            Reg[encoding.d] = Reg[encoding.s] * (uint)FetchImmediate();
+        }
+
         private void MULQ(TwoSourcesEncoding encoding)
         {
-            Reg[encoding.d] = Reg[encoding.s] * BitUtil.SignExtend(encoding.t);
+            Reg[encoding.d] = Reg[encoding.s] * encoding.t;
         }
         #endregion
 
@@ -121,6 +136,13 @@ namespace Nofun.PIP2.Interpreter
             // First, cast to short to perform an arthimetic shift to keep sign bit
             // Then, we can cast back to ushort
             Reg16[encoding.d] = (ushort)((short)Reg16[encoding.s] >> encoding.t);
+        }
+
+        private void SRAB(TwoSourcesEncoding encoding)
+        {
+            // First, cast to sbyte to perform an arthimetic shift to keep sign bit
+            // Then, we can cast back to sbyte
+            Reg8[encoding.d] = (byte)((sbyte)Reg8[encoding.s] >> encoding.t);
         }
         #endregion
 

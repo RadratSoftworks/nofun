@@ -14,5 +14,10 @@ namespace Nofun.PIP2.Interpreter
         {
             Reg[encoding.d] = BitUtil.SignExtend(Reg8[encoding.s]);
         }
+
+        private void NEG(TwoSourcesEncoding encoding)
+        {
+            Reg[encoding.d] = (uint)(-(int)Reg[encoding.s]);
+        }
     }
 }

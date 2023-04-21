@@ -16,8 +16,10 @@ namespace Nofun.Driver.Graphics
         void FlipScreen();
 
         void SetClipRect(ushort x0, ushort y0, ushort x1, ushort y1);
+        void GetClipRect(out ushort x0, out ushort y0, out ushort x1, out ushort y1);
 
-        void DrawTexture(int posX, int posY, int centerX, int centerY, int rotation, ITexture texture);
+        void DrawTexture(int posX, int posY, int centerX, int centerY, int rotation, ITexture texture,
+            int sourceX = -1, int sourceY = -1, int width = -1, int height = -1, bool blackAsTransparent = false);
         
         void FillRect(int x0, int y0, int x1, int y1, SColor color);
 

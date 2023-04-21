@@ -4,8 +4,8 @@ namespace Nofun.Module.VMGP
     {
         public byte paletteOffset;
         public byte format;
-        public ushort centerX;
-        public ushort centerY;
+        public short centerX;
+        public short centerY;
         public ushort width;
         public ushort height;
     }

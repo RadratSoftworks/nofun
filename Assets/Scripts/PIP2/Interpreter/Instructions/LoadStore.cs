@@ -69,13 +69,19 @@ namespace Nofun.PIP2.Interpreter
             Reg[encoding.d] = config.ReadDword((uint)(Reg[encoding.s] + FetchImmediate()));
         }
 
-        private void LDHu(TwoSourcesEncoding encoding)
+        private void LDHUd(TwoSourcesEncoding encoding)
         {
             // All operate on 32-bit registers
             Reg[encoding.d] = config.ReadWord((uint)(Reg[encoding.s] + FetchImmediate()));
         }
 
-        private void LDBud(TwoSourcesEncoding encoding)
+        private void LDHd(TwoSourcesEncoding encoding)
+        {
+            // All operate on 32-bit registers
+            Reg[encoding.d] = BitUtil.SignExtend(config.ReadWord((uint)(Reg[encoding.s] + FetchImmediate())));
+        }
+
+        private void LDBUd(TwoSourcesEncoding encoding)
         {
             // All operate on 32-bit registers
             Reg[encoding.d] = config.ReadByte((uint)(Reg[encoding.s] + FetchImmediate()));

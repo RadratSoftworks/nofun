@@ -1,6 +1,6 @@
 namespace Nofun.Module.VMGP
 {
-    public enum TransferMode
+    public enum TransferMode : uint
     {
         Block = 0,
         Transparent = 1,

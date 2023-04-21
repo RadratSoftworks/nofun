@@ -18,17 +18,17 @@ namespace Nofun.PIP2.Interpreter
             OpcodeTables = new Action<UInt32>[116]
             {
                 null, null, I(ADD), I(AND), I(MUL), I(DIV), I(DIVU), null,    // 0x00
-                null, I(SUB), null, null, null, null, null, I(EXSB),    // 0x08
-                I(EXSH), I(MOV), I(ADDB), null, I(ANDB), null, I(MOVB), I(ADDH),    // 0x10
-                null, null, null, I(MOVH), I(SLLi), I(SRAi), I(SRLi), I(ADDQ),    // 0x18
-                I(MULQ), I(ADDBi), I(ANDBi), I(ORBi), null, I(SRLB), null, I(ADDHi),    // 0x20
+                null, I(SUB), null, null, null, null, I(NEG), I(EXSB),    // 0x08
+                I(EXSH), I(MOV), I(ADDB), I(SUBB), I(ANDB), null, I(MOVB), I(ADDH),    // 0x10
+                I(SUBH), null, null, I(MOVH), I(SLLi), I(SRAi), I(SRLi), I(ADDQ),    // 0x18
+                I(MULQ), I(ADDBi), I(ANDBi), I(ORBi), null, I(SRLB), I(SRAB), I(ADDHi),    // 0x20
                 null, I(SLLH), I(SRAH), null, I(BEQI), I(BNEI), I(BGEI), null,    // 0x28
                 I(BGTI), I(BGTUI), I(BLEI), I(BLEUI), I(BLTI), I(BLTUI), I(BEQIB), I(BNEIB),    // 0x30
                 I(BGEIB), null, I(BGTIB), I(BGTUIB), I(BLEIB), I(BLEUIB), I(BLTIB), I(BLTUIB),    // 0x38
                 I(LDQ), I(JPr), null, I(STORE), I(RESTORE), I(RET), null, null,    // 0x40
-                I(SYSCPY), I(SYSSET), I(ADDi), I(ANDi), null, I(DIVi), I(DIVUi), null,    // 0x48
-                null, I(SUBi), I(STBd), I(STHd), I(STWd), I(LDBd), null, I(LDWd),    // 0x50
-                I(LDBud), I(LDHu), I(LDI), I(JPl), I(CALLl), I(BEQ), I(BNE), I(BGE),    // 0x58
+                I(SYSCPY), I(SYSSET), I(ADDi), I(ANDi), I(MULi), I(DIVi), I(DIVUi), null,    // 0x48
+                null, I(SUBi), I(STBd), I(STHd), I(STWd), I(LDBd), I(LDHd), I(LDWd),    // 0x50
+                I(LDBUd), I(LDHUd), I(LDI), I(JPl), I(CALLl), I(BEQ), I(BNE), I(BGE),    // 0x58
                 I(BGEU), I(BGT), I(BGTU), I(BLE), I(BLEU), I(BLT), I(BLTU), null,    // 0x60
                 null, null, null, null, null, null, null, null,    // 0x68
                 null, null, null, null                             // 0x70

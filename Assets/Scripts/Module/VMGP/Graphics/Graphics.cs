@@ -1,8 +1,6 @@
 using Nofun.Driver.Graphics;
-using Nofun.Driver.Unity.Graphics;
-using Nofun.VM;
+using Nofun.Util;
 using System;
-using System.Linq;
 
 namespace Nofun.Module.VMGP
 {
@@ -11,23 +9,31 @@ namespace Nofun.Module.VMGP
     {
         private SColor foregroundColor;
         private SColor backgroundColor;
-        private TransferMode currentTransferMode = TransferMode.Transparent;
+        private uint currentTransferMode = (uint)TransferMode.Transparent;
 
         private SpriteCache spriteCache;
 
         private int GetSimpleSpriteRotation()
         {
-            switch (currentTransferMode)
+            bool flipXSet = BitUtil.FlagSet(currentTransferMode, TransferMode.FlipX);
+            bool flipYSet = BitUtil.FlagSet(currentTransferMode, TransferMode.FlipX);
+        
+            if (flipXSet && flipYSet)
             {
-                case TransferMode.FlipX:
-                    return 90;
-
-                case TransferMode.FlipY:
-                    return 180;
-
-                default:
-                    return 0;
+                return 270;
             }
+
+            if (flipXSet)
+            {
+                return 180;
+            }
+
+            if (flipYSet)
+            {
+                return 90;
+            }
+
+            return 0;
         }
 
         [ModuleCall]
@@ -88,7 +94,7 @@ namespace Nofun.Module.VMGP
         }
 
         [ModuleCall]
-        private void vSetTransferMode(TransferMode transferMode)
+        private void vSetTransferMode(uint transferMode)
         {
             currentTransferMode = transferMode;
         }
@@ -102,26 +108,6 @@ namespace Nofun.Module.VMGP
             }
 
             system.GraphicDriver.FillRect(x0, y0, x1, y1, foregroundColor);
-        }
-
-        [ModuleCall]
-        private void vDrawObject(short x, short y, VMPtr<NativeSprite> sprite)
-        {
-            NativeSprite spriteInfo = sprite.Read(system.Memory);
-            long spriteSizeInBits = TextureUtil.GetTextureSizeInBits(spriteInfo.width, spriteInfo.height,
-                (TextureFormat)spriteInfo.format);
-
-            int spriteSizeInBytes = (int)((spriteSizeInBits + 7) / 8);
-
-            Span<byte> spriteData = sprite[1].Cast<byte>().AsSpan(system.Memory, spriteSizeInBytes);
-            Span<byte> paletteData = new Span<byte>();
-
-            ITexture drawTexture = spriteCache.Retrieve(system.GraphicDriver, spriteInfo, spriteData,
-                paletteData);
-
-            // Draw it to the screen
-            system.GraphicDriver.DrawTexture(x, y, spriteInfo.centerX, spriteInfo.centerY,
-                GetSimpleSpriteRotation(), drawTexture);
         }
     }
 }
