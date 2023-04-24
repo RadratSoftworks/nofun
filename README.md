@@ -6,7 +6,7 @@ Nofun contains a Mophun emulator, written in C# and currently run under Unity en
 
 ![Jeff](Screenshots/jeff.png)
 
-![HoneyCave 2](Screenshots/jeff.png)
+![HoneyCave 2](Screenshots/honey_cave_2.png)
 
 ![Burp City](Screenshots/bcd.png)
 
