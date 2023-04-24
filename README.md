@@ -4,11 +4,11 @@ Nofun contains a Mophun emulator, written in C# and currently run under Unity en
 
 ## Screenshots
 
-[!Jeff](Screenshots/jeff.png)
+![Jeff](Screenshots/jeff.png)
 
-[!HoneyCave 2](Screenshots/jeff.png)
+![HoneyCave 2](Screenshots/jeff.png)
 
-[!Burp City](Screenshots/bcd.png)
+![Burp City](Screenshots/bcd.png)
 
 ## Portablity
 
@@ -24,4 +24,4 @@ Thanks for the effort of Kahvibreak server for preserving needed resources.
 
 Copyright 2023 Radrat Softworks.
 
-The code is licensed under Apache License 2.0. Visit the LICENSE file for more information.
+The code is licensed under Apache License 2.0. Visit the [LICENSE](LICENSE) file for more information.
