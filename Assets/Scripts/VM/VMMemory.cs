@@ -16,11 +16,21 @@ namespace Nofun.VM
 
         public Span<byte> GetMemorySpan(int offset, int size)
         {
+            if ((offset >= 0) && (offset < DataAlignment))
+            {
+                throw new InvalidOperationException("Trying to access null page!");
+            }
+
             return new Span<byte>(memory, offset, size);
         }
 
         public Memory<byte> GetMemoryMemory(int offset, int size)
         {
+            if ((offset >= 0) && (offset < DataAlignment))
+            {
+                throw new InvalidOperationException("Trying to access null page!");
+            }
+
             return new Memory<byte>(memory, offset, size);
         }
 

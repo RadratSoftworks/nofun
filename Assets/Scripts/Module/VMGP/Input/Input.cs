@@ -8,5 +8,11 @@ namespace Nofun.Module.VMGP
         {
             return system.InputDriver.GetButtonData();
         }
+
+        [ModuleCall]
+        private int vTestKey(uint key)
+        {
+            return system.InputDriver.KeyPressed(key) ? 1 : 0;
+        }
     }
 }

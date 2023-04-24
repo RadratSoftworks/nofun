@@ -9,6 +9,8 @@ namespace Nofun.Driver.Graphics
         public float b;
         public float a;
 
+        public bool FullBlack => (r == 0) && (g == 0) && (b == 0);
+
         public SColor(float r, float g, float b, float a = 1.0f)
         {
             this.r = r;

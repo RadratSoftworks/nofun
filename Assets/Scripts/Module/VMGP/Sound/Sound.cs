@@ -16,7 +16,7 @@ namespace Nofun.Module.VMGP
             if ((flags & (uint)SoundFlag.Stop) != 0)
             {
                 currentSound?.Stop();
-                return 0;
+                return 1;
             }
 
             SoundType soundType = (SoundType)(flags & 0xF);
@@ -32,14 +32,14 @@ namespace Nofun.Module.VMGP
                 if (stream == null)
                 {
                     Logger.Error(LogClass.VMGPSound, $"No stream with handle {streamHandle} found, resource play failed!");
-                    return -1;
+                    return 0;
                 }
 
                 dataRead = new byte[length];
                 if (stream.Read(dataRead, null) != length)
                 {
                     Logger.Error(LogClass.VMGPSound, $"Failed to to read {length} bytes resource data from stream, resource play failed!");
-                    return -1;
+                    return 0;
                 }
             }
             else
@@ -48,7 +48,7 @@ namespace Nofun.Module.VMGP
             }
 
             currentSound = system.AudioDriver.PlaySound(soundType, dataRead, loop);
-            return 0;
+            return 1;
         }
     }
 }

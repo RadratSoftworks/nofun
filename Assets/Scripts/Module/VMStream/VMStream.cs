@@ -1,3 +1,5 @@
+using Nofun.Module.VMGP;
+using Nofun.Util.Logging;
 using Nofun.VM;
 using System;
 
@@ -32,17 +34,24 @@ namespace Nofun.Module.VMStream
                 {
                     case StreamType.Resource:
                         {
-                            targetedStream = InMemoryResourceStream.Create(system.Executable, mode);
+                            targetedStream = VMResourceStream.Create(system.Executable, mode);
+                            break;
+                        }
+                    case StreamType.File:
+                        {
+                            targetedStream = VMWrapperIStream.Create(system.PersistentDataPath, fileName.Get(system.Memory), mode);
                             break;
                         }
                     default:
                         {
+                            string filePath = fileName.Get(system.Memory);
                             throw new UnimplementedFeatureException($"Unimplemented stream type: {wantedType}!");
                         }
                 }
             }
             catch (System.Exception e)
             {
+                Logger.Error(LogClass.VMStream, $"Stream open failed: {e}");
                 return -1;
             }
 
@@ -60,6 +69,32 @@ namespace Nofun.Module.VMStream
 
             Span<byte> bufferSpan = buffer.AsSpan(system.Memory, count);
             return stream.Read(bufferSpan, null);
+        }
+
+        [ModuleCall]
+        private int vStreamWrite(int handle, VMPtr<byte> buffer, int count)
+        {
+            IVMHostStream stream = streams.Get(handle);
+            if (stream == null)
+            {
+                return -1;
+            }
+
+            Span<byte> bufferSpan = buffer.AsSpan(system.Memory, count);
+            return stream.Write(bufferSpan, null);
+        }
+
+
+        [ModuleCall]
+        private int vStreamSeek(int handle, int where, StreamSeekMode whence)
+        {
+            IVMHostStream stream = streams.Get(handle);
+            if (stream == null)
+            {
+                return -1;
+            }
+
+            return stream.Seek(where, whence);
         }
 
         [ModuleCall]

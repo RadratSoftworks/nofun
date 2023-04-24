@@ -14,14 +14,22 @@ namespace Nofun.VM
 
         public uint Address => address;
 
-        public string Get(VMMemory memory)
+        public string Get(VMMemory memory, bool isUtf16 = false)
         {
             string value = "";
             uint curAddr = address;
 
             do
             {
-                char val = (char)memory.ReadMemory8(curAddr++);
+                char val = '\0';
+                if (isUtf16)
+                {
+                    val = (char)memory.ReadMemory16(curAddr);
+                    curAddr += 2;
+                } else
+                {
+                    val = (char)memory.ReadMemory8(curAddr++);
+                }
                 if (val == '\0')
                 {
                     break;

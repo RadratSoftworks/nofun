@@ -1,3 +1,4 @@
+using Nofun.Driver.Graphics;
 using System.Collections.Generic;
 
 namespace Nofun.Module.VMGP
@@ -6,7 +7,7 @@ namespace Nofun.Module.VMGP
     {
         private Dictionary<uint, Font> fonts = new();
 
-        public Font Retrieve(VMGPFont nativeFont)
+        public Font Retrieve(VMGPFont nativeFont, SColor[] palette)
         {
             uint dataAddr = nativeFont.fontData.Value;
 
@@ -26,7 +27,7 @@ namespace Nofun.Module.VMGP
                 }
             }
 
-            Font newFont = new Font(nativeFont);
+            Font newFont = new Font(nativeFont, palette);
             fonts.Add(dataAddr, newFont);
 
             return newFont;

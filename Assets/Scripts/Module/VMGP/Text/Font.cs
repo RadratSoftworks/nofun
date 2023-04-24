@@ -20,23 +20,51 @@ namespace Nofun.Module.VMGP
 
         private Dictionary<char, int> charIndexInAtlas;
         private byte[] textureData;
+        private SColor[] palette;
 
         private int AtlasWidth => nativeFont.width * CharPerAtlasRow;
         private int AtlasHeight => nativeFont.height * CharPerAtlasColumn;
         private int AtlasByteWidth => AtlasWidth * 4;
         public VMGPFont NativeFont => nativeFont;
 
-        public Font(VMGPFont nativeFont)
+        public Font(VMGPFont nativeFont, SColor[] palette)
         {
-            if ((nativeFont.bpp != 1) && (nativeFont.bpp != 4))
+            if ((nativeFont.bpp != 1) && (nativeFont.bpp != 2))
             {
                 throw new InvalidOperationException($"Font with bpp={nativeFont.bpp} is not supported!");
             }
 
             this.nativeFont = nativeFont;
+            this.palette = palette;
             this.charIndexInAtlas = new();
 
             textureData = new byte[AtlasByteWidth * AtlasHeight];
+        }
+
+        private void UpdateAtlasData2BitPalette(Span<byte> charData, int destCharIndex)
+        {
+            int destLine = (destCharIndex / CharPerAtlasRow) * nativeFont.height;
+            int destColumn = (destCharIndex % CharPerAtlasColumn) * nativeFont.width;
+
+            int pixelIterated = 0;
+
+            for (int y = 0; y < nativeFont.height; y++, destLine++)
+            {
+                int destColumnTemp = destColumn;
+
+                for (int x = 0; x < nativeFont.width; x++, destColumnTemp++)
+                {
+                    int paletteIndex = (charData[(pixelIterated * 2) >> 3] >> ((pixelIterated & 3) * 2)) & 0b11;
+                    SColor color = palette[paletteIndex + nativeFont.paletteOffset];
+
+                    textureData[destLine * AtlasByteWidth + destColumnTemp * 4] = (byte)(color.FullBlack ? 0 : 255);
+                    textureData[destLine * AtlasByteWidth + destColumnTemp * 4 + 1] = (byte)(color.r * 255);
+                    textureData[destLine * AtlasByteWidth + destColumnTemp * 4 + 2] = (byte)(color.g * 255);
+                    textureData[destLine * AtlasByteWidth + destColumnTemp * 4 + 3] = (byte)(color.b * 255);
+
+                    pixelIterated++;
+                }
+            }
         }
 
         private void UpdateAtlasDataMonochrome(Span<byte> charData, int destCharIndex)
@@ -63,6 +91,14 @@ namespace Nofun.Module.VMGP
             }
         }
 
+        private void UpdateAtlasData2BitPalette(VMMemory memory, byte sourceCharIndex, int destCharIndex)
+        {
+            int charSize = MemoryUtil.AlignUp(nativeFont.width * nativeFont.height * 2, 8) / 8;
+
+            UpdateAtlasData2BitPalette(nativeFont.fontData[charSize * sourceCharIndex].AsSpan(memory, charSize),
+                destCharIndex);
+        }
+
         private void UpdateAtlasDataMonochrome(VMMemory memory, byte sourceCharIndex, int destCharIndex)
         {
             int charSize = MemoryUtil.AlignUp(nativeFont.width * nativeFont.height, 8) / 8;
@@ -87,7 +123,10 @@ namespace Nofun.Module.VMGP
                     {
                         UpdateAtlasDataMonochrome(memory, charIndex, charIndexInAtlas.Count);
                     }
-                    else
+                    else if (nativeFont.bpp == 2)
+                    {
+                        UpdateAtlasData2BitPalette(memory, charIndex, charIndexInAtlas.Count);
+                    } else
                     {
                         // Palette font
                         throw new Exception("Unhandled 4-bit palette font!");

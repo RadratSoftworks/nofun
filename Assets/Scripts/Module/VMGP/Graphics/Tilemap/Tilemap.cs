@@ -53,7 +53,7 @@ namespace Nofun.Module.VMGP
             }
 
             // Each tile index is 1 byte, attribute (if have is 1 byte)
-            bool hasAttribute = BitUtil.FlagSet(headerData.flag, TilemapFlags.UserAttribute);
+            bool hasAttribute = headerData.flag != 0;
             Span<byte> mapData = headerData.mapData.AsSpan(system.Memory, headerData.mapWidth * headerData.mapHeight * (hasAttribute ? 2 : 1));
 
             // Find highest-index to create atlas
@@ -99,6 +99,11 @@ namespace Nofun.Module.VMGP
         [ModuleCall]
         private byte vMapGetAttribute(byte x, byte y)
         {
+            if (mapHeaderPtr.IsNull)
+            {
+                return 0;
+            }
+
             NativeMapHeader mapHeader = mapHeaderPtr.Read(system.Memory);
 
             if ((x >= mapHeader.mapWidth) || (y >= mapHeader.mapHeight))
@@ -106,7 +111,7 @@ namespace Nofun.Module.VMGP
                 return 0;
             }
 
-            if (!BitUtil.FlagSet(mapHeader.flag, TilemapFlags.UserAttribute))
+            if (mapHeader.flag == 0)
             {
                 return 0;
             }
@@ -115,8 +120,13 @@ namespace Nofun.Module.VMGP
         }
 
         [ModuleCall]
-        private void vMapSetXY(ushort x, ushort y)
+        private void vMapSetXY(short x, short y)
         {
+            if (mapHeaderPtr.IsNull)
+            {
+                return;
+            }
+
             Span<NativeMapHeader> mapHeader = mapHeaderPtr.AsSpan(system.Memory);
 
             mapHeader[0].xPos = x;
@@ -129,13 +139,21 @@ namespace Nofun.Module.VMGP
             NativeMapHeader mapHeader = mapHeaderPtr.Read(system.Memory);
             bool blackAsTransparentGlobal = BitUtil.FlagSet(mapHeader.flag, TilemapFlags.Transparent);
 
-            system.GraphicDriver.GetClipRect(out ushort x0, out ushort y0, out ushort x1, out ushort y1);
+            system.GraphicDriver.GetClipRect(out int x0, out int y0, out int x1, out int y1);
 
             int screenPosX = mapHeader.xPan;
             int screenPosY = mapHeader.yPan;
 
-            int startDrawX = screenPosX - mapHeader.xPos % TileMapTileWidth;
-            int startDrawY = screenPosY - mapHeader.yPos % TileMapTileHeight;
+            int xPosNormed = mapHeader.xPos;
+            int yPosNormed = mapHeader.yPos;
+
+            if (mapHeader.yPan != 0)
+            {
+                Logger.Trace(LogClass.VMGPGraphic, "Damn");
+            }
+
+            int startDrawX = screenPosX - xPosNormed % TileMapTileWidth;
+            int startDrawY = screenPosY - yPosNormed % TileMapTileHeight;
 
             int mapDrawWidth = (int)x1 - startDrawX;
             int mapDrawHeight = (int)y1 - startDrawY;
@@ -145,23 +163,28 @@ namespace Nofun.Module.VMGP
                 return;
             }
 
-            int tileStartDrawX = mapHeader.xPos / TileMapTileWidth;
-            int tileStartDrawY = mapHeader.yPos / TileMapTileHeight;
+            int tileStartDrawX = xPosNormed / TileMapTileWidth;
+            int tileStartDrawY = yPosNormed / TileMapTileHeight;
 
-            int tileXCount = (mapDrawWidth + TileMapTileWidth - 1) / TileMapTileWidth;
-            int tileYCount = ((mapDrawHeight + TileMapTileHeight - 1) / TileMapTileHeight) + 1;
+            int tileXCount = Math.Min((mapDrawWidth + TileMapTileWidth - 1) / TileMapTileWidth,
+                mapHeader.mapWidth - Math.Max(0, tileStartDrawX));
 
-            bool hasAttribute = BitUtil.FlagSet(mapHeader.flag, TilemapFlags.UserAttribute);
+            int tileYCount = Math.Min((mapDrawHeight + TileMapTileHeight - 1) / TileMapTileHeight,
+                mapHeader.mapHeight - Math.Max(0, tileStartDrawY));
+
+            bool hasAttribute = mapHeader.flag != 0;
             int indexingMul = hasAttribute ? 2 : 1;
             Span<byte> mapData = mapHeader.mapData.AsSpan(system.Memory, mapHeader.mapWidth * mapHeader.mapHeight * indexingMul);
 
             // Try to clip rect and later restore back
-            system.GraphicDriver.SetClipRect((ushort)screenPosX, (ushort)screenPosY, (ushort)(screenPosX + mapDrawWidth),
-                (ushort)(screenPosY + mapDrawHeight));
+            system.GraphicDriver.SetClipRect(Math.Max(screenPosX, x0), Math.Max(screenPosY, y0),
+                Math.Min(screenPosX + mapDrawWidth, x1),
+                Math.Min(screenPosY + mapDrawHeight, y1));
 
-            for (int y = 0; y < tileYCount; y++)
+            // Handle negative tile (they want to draw the screen up a bit)
+            for (int y = Math.Abs(Math.Min(tileStartDrawY, 0)); y < tileYCount; y++)
             {
-                for (int x = 0; x < tileXCount; x++)
+                for (int x = Math.Abs(Math.Min(tileStartDrawX, 0)); x < tileXCount; x++)
                 {
                     int screenTilePosX = startDrawX + x * TileMapTileWidth;
                     int screenTilePosY = startDrawY + y * TileMapTileHeight;

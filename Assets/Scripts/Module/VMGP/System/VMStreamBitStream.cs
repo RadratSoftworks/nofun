@@ -17,11 +17,13 @@ namespace Nofun.Module.VMGP
         {
             originOffset = stream.Tell();
 
-            streamSize = stream.Seek(0, StreamSeekMode.End);
+            streamSize = stream.Seek(0, StreamSeekMode.End) - originOffset;
             stream.Seek(originOffset, StreamSeekMode.Set);
 
-            currentBytePos = -1;
+            currentBytePos = -100;
             currentByte = 0;
+
+            this.stream = stream;
         }
 
         public override bool Valid => Pointer < streamSize * 8;

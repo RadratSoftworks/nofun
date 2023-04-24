@@ -67,7 +67,7 @@ namespace Nofun.Module.VMGP
 
             if (entry != null)
             {
-                if (!entry.invalidated && (entry.tileCount > tileMaxCount))
+                if (!entry.invalidated && (entry.tileCount >= tileMaxCount))
                 {
                     return entry.texture;
                 }

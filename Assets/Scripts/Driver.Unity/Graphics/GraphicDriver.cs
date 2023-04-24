@@ -4,7 +4,9 @@ using UnityEngine;
 
 using System.Collections.Generic;
 using System;
+
 using UnityEngine.UI;
+using UnityEngine.Rendering;
 
 namespace Nofun.Driver.Unity.Graphics
 {
@@ -12,25 +14,41 @@ namespace Nofun.Driver.Unity.Graphics
     {
         private readonly int NGAGE_PPI = 130;
         private const string BlackTransparentUniformName = "_Black_Transparent";
+        private const string MainTextUniformName = "_MainTex";
+        private const string TexcoordTransformMatrixUniformName = "_TexToLocal";
+        private const string ColorUniformName = "_Color";
 
-        private RenderTexture screenTexture;
-        private RenderTexture screenTexture2;
-        private RenderTexture currentScreenTexture;
+        private RenderTexture screenTextureBackBuffer;
+        private RenderTexture screenTextureBackup;
+
         private bool began = false;
         private Action stopProcessor;
         private Rect scissorRect;
+        private Rect viewportRect;
         private Texture2D whiteTexture;
         private Vector2 screenSize;
         private float frameTimePassed = -1.0f;
 
+        private TMPro.FontStyles selectedFontStyles;
+        private float selectedFontSize = 11.5f;
+        private float selectedOutlineWidth = 0.0f;
+        private int fontMeshUsed = 0;
+        private bool useStagingScreen = false;
+
         [SerializeField]
-        private TMPro.TMP_Text textRender;
+        private TMPro.TMP_Text[] textRenders;
+
+        [SerializeField]
+        private TMPro.TMP_Text textMeasure;
 
         [SerializeField]
         private UnityEngine.UI.RawImage displayImage;
 
         [SerializeField]
         private Material mophunDrawTextureMaterial;
+
+        private CommandBuffer commandBuffer;
+        private Mesh quadMesh;
 
         [HideInInspector]
         public float FpsLimit { get; set; }
@@ -49,15 +67,71 @@ namespace Nofun.Driver.Unity.Graphics
             whiteTexture.Apply();
         }
 
+        private void SetupQuadMesh()
+        {
+            quadMesh = new Mesh();
+
+            Vector3[] vertices = new Vector3[4]
+            {
+                new Vector3(0, 0, 0),
+                new Vector3(0, 1, 0),
+                new Vector3(1, 1, 0),
+                new Vector3(1, 0, 0)
+            };
+
+            quadMesh.vertices = vertices;
+
+            int[] indicies =
+            {
+                0, 1, 2,
+                0, 2, 3
+            };
+
+            quadMesh.triangles = indicies;
+
+            Vector2[] uv = new Vector2[4]
+            {
+                new Vector2(0, 1),
+                new Vector2(0, 0),
+                new Vector2(1, 0),
+                new Vector2(1, 1)
+            };
+
+            quadMesh.uv = uv;
+        }
+
+        private void ForceFlush()
+        {
+            if (!useStagingScreen)
+            {
+                useStagingScreen = true;
+
+                if (screenTextureBackup == null)
+                {
+                    screenTextureBackup = new RenderTexture((int)screenSize.x, (int)screenSize.y, 32);
+                }
+
+                UnityEngine.Graphics.Blit(screenTextureBackBuffer, screenTextureBackup);
+                displayImage.texture = screenTextureBackup;
+            }
+
+            UnityEngine.Graphics.ExecuteCommandBuffer(commandBuffer);
+            commandBuffer.Clear();
+
+            fontMeshUsed = 0;
+            began = false;
+        }
+
         public void Initialize(Vector2 size)
         {
-            screenTexture = new RenderTexture((int)size.x, (int)size.y, 32);
-            screenTexture2 = new RenderTexture((int)size.x, (int)size.y, 32);
-            currentScreenTexture = screenTexture;
+            screenTextureBackBuffer = new RenderTexture((int)size.x, (int)size.y, 32);
+            scissorRect = new Rect(0, 0, size.x, size.y);
+            scissorRect = new Rect(0, 0, viewportRect.x, viewportRect.y);
 
             SetupWhiteTexture();
+            SetupQuadMesh();
 
-            displayImage.texture = screenTexture;
+            displayImage.texture = screenTextureBackBuffer;
             this.screenSize = size;
         }
 
@@ -66,22 +140,46 @@ namespace Nofun.Driver.Unity.Graphics
             Initialize(new Vector2(176, 208));
         }
 
-        /// <summary>
-        /// Get draw rectangle in unity coordinates.
-        /// </summary>
-        /// <param name="x">The bottom-left screen coordinates X.</param>
-        /// <param name="y">The bottom-left screen coordinates Y.</param>
-        /// <param name="width">The width of the rectangle.</param>
-        /// <param name="height">The height of the rectangle.</param>
-        /// <returns></returns>
-        private Rect GetUnityScreenRect(int x, int y, int width, int height)
+        private Rect GetUnityScreenRect(Rect curRect)
         {
-            return new Rect(x, screenSize.y - y, width, height);
+            return new Rect(curRect.x, screenSize.y - (curRect.y + curRect.height), curRect.width, curRect.height);
         }
 
         private Vector2 GetUnityCoords(float x, float y)
         {
             return new Vector2(x, screenSize.y - y);
+        }
+
+        private void DrawTexture(ITexture tex, Rect destRect, Rect sourceRect, float centerX, float centerY, float rotation, SColor color, bool blackIsTransparent)
+        {
+            DrawTexture(((Texture)tex).NativeTexture, destRect, sourceRect, centerX, centerY, rotation, color, blackIsTransparent);
+        }
+
+        private void DrawTexture(Texture2D tex, Rect destRect, Rect sourceRect, float centerX, float centerY, float rotation, SColor color, bool blackIsTransparent)
+        {
+            var coordMatrix = Matrix4x4.TRS(new Vector3(sourceRect.x, sourceRect.y, 0.0f), Quaternion.identity, new Vector3(sourceRect.width, sourceRect.height));
+
+            Matrix4x4 drawMatrix;
+
+            if (rotation == 0.0f)
+            {
+                drawMatrix = Matrix4x4.TRS(new Vector3(destRect.x - centerX, ScreenHeight - (destRect.y - centerY + destRect.height), 0),
+                    Quaternion.identity, new Vector3(destRect.width, destRect.height, 0));
+            }
+            else
+            {
+                drawMatrix = Matrix4x4.Translate(new Vector3(destRect.x - centerX, ScreenHeight - (destRect.y - centerY + destRect.height), 0));
+                drawMatrix *= Matrix4x4.TRS(new Vector3(centerX, -centerY), Quaternion.AngleAxis(rotation, Vector3.forward), new Vector3(destRect.width, destRect.height, 0));
+                drawMatrix = Matrix4x4.Translate(new Vector3(-centerX, centerY));
+            }
+
+            MaterialPropertyBlock block = new MaterialPropertyBlock();
+            block.SetTexture(MainTextUniformName, tex);
+            block.SetFloat(BlackTransparentUniformName, blackIsTransparent ? 1.0f : 0.0f);
+            block.SetMatrix(TexcoordTransformMatrixUniformName, coordMatrix);
+            block.SetColor(ColorUniformName, color.ToUnityColor());
+
+            commandBuffer.DrawMesh(quadMesh, drawMatrix, mophunDrawTextureMaterial, 0, 0, block);
         }
 
         private void BeginRender()
@@ -91,20 +189,30 @@ namespace Nofun.Driver.Unity.Graphics
                 return;
             }
 
-            began = true;
-            UnityEngine.Graphics.SetRenderTarget(currentScreenTexture);
+            if (commandBuffer == null)
+            {
+                commandBuffer = new CommandBuffer();
+                commandBuffer.name = "Mophun render buffer";
+            }
 
-            GL.PushMatrix();
-            GL.LoadPixelMatrix(0, currentScreenTexture.width, 0, currentScreenTexture.height);
+            commandBuffer.SetRenderTarget(screenTextureBackBuffer);
+            commandBuffer.SetViewport(GetUnityScreenRect(viewportRect));
+            
+            if (scissorRect.size != Vector2.zero)
+            {
+                commandBuffer.EnableScissorRect(GetUnityScreenRect(scissorRect));
+            }
+
+            commandBuffer.SetViewMatrix(Matrix4x4.identity);
+            commandBuffer.SetProjectionMatrix(Matrix4x4.Ortho(0, ScreenWidth, 0, ScreenHeight, 1, -100));
+
+            began = true;
         }
 
         public void EndFrame()
         {
             if (began)
             {
-                GL.PopMatrix();
-                UnityEngine.Graphics.SetRenderTarget(null);
-
                 began = false;
             }
         }
@@ -112,12 +220,13 @@ namespace Nofun.Driver.Unity.Graphics
         public void ClearScreen(SColor color)
         {
             BeginRender();
-            GL.Clear(false, true, color.ToUnityColor());
+
+            commandBuffer.ClearRenderTarget(false, true, color.ToUnityColor());
         }
 
-        public ITexture CreateTexture(byte[] data, int width, int height, int mipCount, Driver.Graphics.TextureFormat format)
+        public ITexture CreateTexture(byte[] data, int width, int height, int mipCount, Driver.Graphics.TextureFormat format, Span<SColor> palettes = new Span<SColor>())
         {
-            return new Texture(data, width, height, mipCount, format);
+            return new Texture(data, width, height, mipCount, format, palettes);
         }
 
         public void DrawText(int posX, int posY, int sizeX, int sizeY, List<int> positions, ITexture atlas, TextDirection direction, SColor textColor)
@@ -135,17 +244,16 @@ namespace Nofun.Driver.Unity.Graphics
             int advY = (direction == TextDirection.VerticalUp) ? -sizeY : (direction == TextDirection.VerticalDown) ? sizeY : 0;
 
             Texture2D nativeTex = ((Texture)atlas).NativeTexture;
-            Color textColorUed = textColor.ToUnityColor();
 
             float sizeXNormed = (float)sizeX / nativeTex.width;
             float sizeYNormed = (float)sizeY / nativeTex.height;
 
             for (int i = 0; i < positions.Count; i += 2)
             {
-                Rect destRect = GetUnityScreenRect(posX, posY, sizeX, sizeY);
+                Rect destRect = new Rect(posX, posY, sizeX, sizeY);
                 Rect sourceRect = new Rect((float)positions[i] / nativeTex.width, (float)positions[i + 1] / nativeTex.height, sizeXNormed, sizeYNormed);
 
-                UnityEngine.Graphics.DrawTexture(destRect, nativeTex, sourceRect, 0, 0, 0, 0, textColorUed);
+                DrawTexture(nativeTex, destRect, sourceRect, 0, 0, 0, textColor, false);
 
                 posX += advX;
                 posY += advY;
@@ -157,59 +265,37 @@ namespace Nofun.Driver.Unity.Graphics
         {
             BeginRender();
 
-            // The position in its original form, non-rotation is (posX - centerX, posY - centerY),
-            // while the center (pivot) is actually (posX, posY)
-            // We translate the matrix to pivot and rotate, and later translate back, it's the standard
-            Vector3 relatePosition = GetUnityCoords(posX, posY);
-
-            Matrix4x4 modelMatrix = Matrix4x4.TRS(relatePosition, Quaternion.AngleAxis(rotation, Vector3.forward),
-                Vector3.one) * Matrix4x4.Translate(-relatePosition);
-
-            GL.PushMatrix();
-            GL.MultMatrix(modelMatrix);
-
             int widthToUse = (width == -1) ? texture.Width : width;
             int heightToUse = (height == -1) ? texture.Height : height;
 
-            Rect destRect = GetUnityScreenRect(posX - centerX, posY - centerY + heightToUse, widthToUse, heightToUse);
-            
-            mophunDrawTextureMaterial.SetFloat(BlackTransparentUniformName, blackIsTransparent ? 1.0f : 0.0f);
+            Rect destRect = new Rect(posX, posY, widthToUse, heightToUse);
+            Rect sourceRect = new Rect(0, 0, 1, 1);
 
             if ((sourceX != -1) && (sourceY != -1))
             {
-                Rect sourceRect = new Rect((float)sourceX / texture.Width, (float)sourceY / texture.Height, (float)widthToUse / texture.Width, (float)heightToUse / texture.Height);
-                UnityEngine.Graphics.DrawTexture(destRect, ((Texture)texture).NativeTexture, sourceRect, 0, 0, 0, 0, mophunDrawTextureMaterial);
-            }
-            else
-            {
-                UnityEngine.Graphics.DrawTexture(destRect, ((Texture)texture).NativeTexture, mophunDrawTextureMaterial);
+                sourceRect = new Rect((float)sourceX / texture.Width, (float)sourceY / texture.Height, (float)widthToUse / texture.Width, (float)heightToUse / texture.Height);
             }
 
-            GL.PopMatrix();
+            DrawTexture(texture, destRect, sourceRect, centerX, centerY, rotation, new SColor(1, 1, 1), blackIsTransparent);
         }
 
         public void FillRect(int x0, int y0, int x1, int y1, SColor color)
         {
-            Rect destRect = GetUnityScreenRect(x0, y1, x1 - x0, y1 - y0);
+            Rect destRect = new Rect(x0, y0, x1 - x0, y1 - y0);
             Rect sourceRect = new Rect(0, 0, 1, 1);
 
-            UnityEngine.Graphics.DrawTexture(destRect, whiteTexture, sourceRect, 0, 0, 0, 0, color.ToUnityColor());
+            DrawTexture(whiteTexture, destRect, sourceRect, 0, 0, 0, color, false);
         }
 
         public void FlipScreen()
         {
-            displayImage.texture = currentScreenTexture;
-
-            if (currentScreenTexture == screenTexture)
-            {
-                currentScreenTexture = screenTexture2;
-            }
-            else
-            {
-                currentScreenTexture = screenTexture;
-            }
+            UnityEngine.Graphics.ExecuteCommandBuffer(commandBuffer);
+            commandBuffer.Clear();
 
             frameTimePassed = 0.0f;
+            useStagingScreen = false;
+
+            displayImage.texture = screenTextureBackBuffer;
 
             // Exit the processing so that Update can begin
             stopProcessor();
@@ -222,7 +308,7 @@ namespace Nofun.Driver.Unity.Graphics
                 return true;
             }
 
-            frameTimePassed += Time.deltaTime;
+            frameTimePassed += UnityEngine.Time.deltaTime;
             if (frameTimePassed >= SecondPerFrame)
             {
                 frameTimePassed = -1.0f;
@@ -232,17 +318,40 @@ namespace Nofun.Driver.Unity.Graphics
             return false;
         }
 
-        public void SetClipRect(ushort x0, ushort y0, ushort x1, ushort y1)
+        public void SetClipRect(int x0, int y0, int x1, int y1)
         {
+            Rect previousRect = scissorRect;
             scissorRect = new Rect(x0, y0, x1 - x0, y1 - y0);
+        
+            if (previousRect != scissorRect)
+            {
+                if (began)
+                {
+                    commandBuffer.EnableScissorRect(GetUnityScreenRect(scissorRect));
+                }
+            }
         }
 
-        public void GetClipRect(out ushort x0, out ushort y0, out ushort x1, out ushort y1)
+        public void SetViewport(int left, int top, int width, int height)
         {
-            x0 = (ushort)scissorRect.xMin;
-            x1 = (ushort)scissorRect.xMax;
-            y0 = (ushort)scissorRect.yMin;
-            y1 = (ushort)scissorRect.yMax;
+            Rect previousRect = viewportRect;
+            viewportRect = new Rect(left, top, width, height);
+
+            if (previousRect != viewportRect)
+            {
+                if (began)
+                {
+                    commandBuffer.SetViewport(GetUnityScreenRect(viewportRect));
+                }
+            }
+        }
+
+        public void GetClipRect(out int x0, out int y0, out int x1, out int y1)
+        {
+            x0 = (int)scissorRect.xMin;
+            x1 = (int)scissorRect.xMax;
+            y0 = (int)scissorRect.yMin;
+            y1 = (int)scissorRect.yMax;
         }
 
         private float EmulatedPointToPixels(float point)
@@ -288,7 +397,7 @@ namespace Nofun.Driver.Unity.Graphics
                 }
             }
 
-            textRender.fontSize = fontSizeNew;
+            selectedFontSize = fontSizeNew;
 
             TMPro.FontStyles styles = TMPro.FontStyles.Normal;
 
@@ -309,46 +418,59 @@ namespace Nofun.Driver.Unity.Graphics
 
             if (BitUtil.FlagSet(fontFlags, SystemFontStyle.OutlineEffect))
             {
-                textRender.outlineWidth = 0.2f;
+                selectedOutlineWidth = 0.2f;
             }
             else
             {
-                textRender.outlineWidth = 0.0f;
+                selectedOutlineWidth = 0.0f;
             }
 
-            textRender.fontStyle = styles;
+            selectedFontStyles = styles;
+
+            textMeasure.fontSize = selectedFontSize;
+            textMeasure.fontStyle = selectedFontStyles;
+            textMeasure.outlineWidth = selectedOutlineWidth;
         }
 
         public void DrawSystemText(short x0, short y0, string text, SColor backColor, SColor foreColor)
         {
+            if (fontMeshUsed >= textRenders.Length)
+            {
+                ForceFlush();
+            }
+
             BeginRender();
+
+            TMPro.TMP_Text textRender = textRenders[fontMeshUsed];
 
             textRender.text = text;
             textRender.color = foreColor.ToUnityColor();
+            textRender.fontStyle = selectedFontStyles;
+            textRender.outlineWidth = selectedOutlineWidth;
+            textRender.fontSize = selectedFontSize;
             textRender.outlineColor = backColor.ToUnityColor();
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(textRender.rectTransform);
-
             textRender.ForceMeshUpdate();
 
             Matrix4x4 modelMatrix = Matrix4x4.TRS(GetUnityCoords(x0, y0), Quaternion.identity, Vector3.one);
 
-            Material textMaterial = textRender.fontSharedMaterial;
-            bool canRender = textMaterial.SetPass(0);
-
-            if (canRender)
-            {
-                UnityEngine.Graphics.DrawMeshNow(textRender.mesh, modelMatrix);
-            }
+            commandBuffer.DrawMesh(textRender.mesh, modelMatrix, textRender.fontSharedMaterial);
+            fontMeshUsed++;
         }
 
         public int GetStringExtentRelativeToSystemFont(string value)
         {
-            Vector2 size = textRender.GetPreferredValues(value);
+            textMeasure.fontStyle = selectedFontStyles;
+            textMeasure.outlineWidth = selectedOutlineWidth;
+            textMeasure.fontSize = selectedFontSize;
+
+            Vector2 size = textMeasure.GetPreferredValues(value);
             if (value == " ")
             {
-                size.x = textRender.fontSize / 4.0f;
+                size.x = textMeasure.fontSize / 4.0f;
             }
+
             return (ushort)Math.Round(size.x) | ((ushort)Math.Round(size.y) << 16);
         }
 

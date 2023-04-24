@@ -50,7 +50,7 @@ namespace Nofun.Driver.Unity.Audio
 
             unsafe
             {
-                fixed (byte *dataPtr = data)
+                fixed (byte* dataPtr = data)
                 {
                     IntPtr handle = TSFMidiRenderer.Load((IntPtr)dataPtr, (uint)data.Length, loop ? 1 : 0);
                     if (handle == null)
@@ -79,7 +79,7 @@ namespace Nofun.Driver.Unity.Audio
                 {
                     IntPtr compareTarget = (IntPtr)(freedHandles[0]);
                     TSFMidiSound foundRes = activeMidiSounds.Find(sound => sound.NativeHandle == compareTarget);
-                
+
                     if (foundRes != null)
                     {
                         foundRes.OnDonePlaying();
@@ -92,6 +92,27 @@ namespace Nofun.Driver.Unity.Audio
                     TSFMidiRenderer.GetBuffer((IntPtr)dataPtr, data.Length / channels);
                 }
             }
+        }
+
+        public uint Capabilities => (uint)SoundCapsFlags.All;
+
+        public SoundConfig SoundConfig
+        {
+            get
+            {
+                return new SoundConfig()
+                {
+                    sampleFrequency = (ushort)AudioSettings.outputSampleRate,
+                    numMixerChannels = 20,
+                    numChannels = 2,
+                    bitsPerSample = 16
+                };
+            }
+        }
+
+        public bool InitializePCMPlay()
+        {
+            return true;
         }
     }
 }

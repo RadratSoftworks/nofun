@@ -44,6 +44,8 @@ namespace Nofun.Module.VMGP
                         backOffset = (uint)source.ReadBits(extendedOffsetBits) + copyLength;
                     }
 
+                    copyLength = Math.Min(copyLength, (uint)(dest.Length - destPointer));
+
                     dest.Slice((int)(destPointer - backOffset), (int)copyLength).CopyTo(
                         dest.Slice((int)destPointer, (int)copyLength));
 
@@ -69,9 +71,9 @@ namespace Nofun.Module.VMGP
             return (int)destPointer;
         }
 
-        private int TryLZDecompressPtr(VMMemory memory, VMPtr<byte> source, VMPtr<byte> dest)
+        private void GetLZCompressInfo(ref VMPtr<byte> source, VMMemory memory, out byte extendedOffsetBits, out byte maxOffsetBits,
+            out uint uncompressedSize, out uint compressedSize)
         {
-            // Read header
             Span<byte> header = source.AsSpan(memory, 2);
             if ((header[0] != 'L') || (header[1] != 'Z'))
             {
@@ -84,17 +86,27 @@ namespace Nofun.Module.VMGP
 
             source += 2;
 
-            uint uncompressedLength = source.Cast<uint>().Read(memory);
+            uncompressedSize = source.Cast<uint>().Read(memory);
 
             source += 4;
 
-            uint compressedLength = source.Cast<uint>().Read(memory);
+            compressedSize = source.Cast<uint>().Read(memory);
 
             // Skip the rest, and get to the data decompress
             source += 14;
 
+            extendedOffsetBits = offsetBitsInfo[1];
+            maxOffsetBits = offsetBitsInfo[0];
+        }
+
+        private int TryLZDecompressPtr(VMMemory memory, VMPtr<byte> source, VMPtr<byte> dest)
+        {
+            // Read header
+            GetLZCompressInfo(ref source, memory, out byte extendedOffsetBits, out byte maxOffsetBits,
+                out uint uncompressedLength, out uint compressedLength);
+
             return TryLZDecompressContent(new MemoryBitStream(source.AsRawMemory(memory, (int)compressedLength)),
-                dest.AsSpan(memory, (int)uncompressedLength), offsetBitsInfo[1], offsetBitsInfo[0]);
+                dest.AsSpan(memory, (int)uncompressedLength), extendedOffsetBits, maxOffsetBits);
         }
 
         private int TryLZDecompressStream(VMMemory memory, IVMHostStream stream, VMPtr<byte> dest)
@@ -135,6 +147,37 @@ namespace Nofun.Module.VMGP
             stream.Seek(10, StreamSeekMode.Cur);
 
             return TryLZDecompressContent(new VMStreamBitStream(stream), dest.AsSpan(memory, (int)uncompressedLength), offsetBitsInfo[1], offsetBitsInfo[0]);
+        }
+
+        [ModuleCall]
+        private int vDecompHdr(VMPtr<NativeCompressedFileInfo> infoPtr, VMPtr<byte> source)
+        {
+            try
+            {
+                GetLZCompressInfo(ref source, system.Memory, out byte extendedOffsetBits, out byte maxOffsetBits,
+                    out uint uncompressedLength, out uint compressedLength);
+
+                if (!infoPtr.IsNull)
+                {
+                    Logger.Trace(LogClass.VMGPSystem, "Filling compressed file info partly implemented!");
+
+                    Span<NativeCompressedFileInfo> info = infoPtr.AsSpan(system.Memory);
+                    info[0].crc16 = 0x1234;
+                    info[0].cnt = 0;
+                    info[0].option = 0;
+                    info[0].offset = 0;
+                    info[0].literalSize = 0;
+                    info[0].srcSize = compressedLength;
+                    info[0].destSize = uncompressedLength;
+                }
+
+                return (int)uncompressedLength;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(LogClass.VMGPSystem, $"Get decompressed header failed: {ex}");
+                return -1;
+            }
         }
 
         [ModuleCall]

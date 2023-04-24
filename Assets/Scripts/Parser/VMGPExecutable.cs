@@ -11,7 +11,6 @@ namespace Nofun.Parser
         {
             public uint offset;
             public uint size;
-            public byte[] data;
 
             public VMGPResourceInfo(uint offset)
             {
@@ -22,6 +21,7 @@ namespace Nofun.Parser
 
         protected VMGPHeader header;
         protected BinaryReader reader;
+        protected BinaryWriter writer;
 
         private UInt32 codeSectionOffset;
         private UInt32 dataSectionOffset;
@@ -82,6 +82,8 @@ namespace Nofun.Parser
         {
             reader = new BinaryReader(fileStream);
             header = new VMGPHeader(reader);
+
+            writer = new BinaryWriter(fileStream);
         }
 
         public void GetCodeSection(Span<byte> codeSection)
@@ -102,25 +104,26 @@ namespace Nofun.Parser
             return StreamUtil.ReadNullTerminatedString(reader);
         }
 
-        public byte[] GetResourceData(UInt32 resourceIndex)
+        public int ResourceCount => resourceInfos.Count;
+
+        public uint GetResourceSize(UInt32 resourceIndex)
+        {
+            return resourceInfos[(int)resourceIndex].size;
+        }
+
+        public void ReadResourceData(UInt32 resourceIndex, Span<byte> data, long offset)
         {
             var resourceInfo = resourceInfos[(int)resourceIndex];
-            if (resourceInfo.data != null)
-            {
-                return resourceInfo.data;
-            }
 
-            reader.BaseStream.Seek(resourceInfo.offset, SeekOrigin.Begin);
+            reader.BaseStream.Seek(resourceInfo.offset + offset, SeekOrigin.Begin);
+            reader.Read(data);
+        }
 
-            byte[] resInfo = reader.ReadBytes((int)resourceInfo.size);
-
-            if ((resInfo.Length > 2) && (resInfo[0] == 'L') && (resInfo[1] == 'Z')) {
-                // LZ77 compressed resource
-                throw new InvalidDataException("Compressed resource data is not yet supported!");
-            }
-
-            resourceInfos[(int)resourceIndex].data = resInfo;
-            return resInfo;
+        public void WriteResourceData(UInt32 resourceIndex, Span<byte> data, long offset)
+        {
+            var resourceInfo = resourceInfos[(int)resourceIndex];
+            writer.BaseStream.Seek(resourceInfo.offset + offset, SeekOrigin.Begin);
+            writer.Write(data);
         }
 
         void IDisposable.Dispose()

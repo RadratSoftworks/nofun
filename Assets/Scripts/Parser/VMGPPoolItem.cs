@@ -15,6 +15,7 @@ namespace Nofun.Parser
         SectionRelativeReloc = 4,
         Swap16Reloc = 5,
         Swap32Reloc = 6,
+        Const32 = 7,
         SymbolAdd = 8
     };
 

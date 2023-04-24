@@ -7,8 +7,8 @@ namespace Nofun.Module.VMGP
     [Module]
     public partial class VMGP
     {
-        private SColor foregroundColor;
-        private SColor backgroundColor;
+        private int foregroundColor;
+        private int backgroundColor;
         private uint currentTransferMode = (uint)TransferMode.Transparent;
 
         private SpriteCache spriteCache;
@@ -45,19 +45,25 @@ namespace Nofun.Module.VMGP
         [ModuleCall]
         private void vSetBackColor(Int32 color)
         {
-            backgroundColor = GetColor(color);
+            backgroundColor = color;
         }
 
         [ModuleCall]
         private void vSetForeColor(Int32 color)
         {
-            foregroundColor = GetColor(color);
+            foregroundColor = color;
         }
 
         [ModuleCall]
         private uint vGetPaletteEntry(byte index)
         {
             return ScreenPalette[index].ToRgb555();
+        }
+
+        [ModuleCall]
+        private void vSetPaletteEntry(byte index, uint rgb555Color)
+        {
+            ScreenPalette[index] = SColor.FromRgb555(rgb555Color);
         }
 
         [ModuleCall]
@@ -94,9 +100,12 @@ namespace Nofun.Module.VMGP
         }
 
         [ModuleCall]
-        private void vSetTransferMode(uint transferMode)
+        private uint vSetTransferMode(uint transferMode)
         {
+            uint previousMode = currentTransferMode;
             currentTransferMode = transferMode;
+
+            return currentTransferMode;
         }
 
         [ModuleCall]
@@ -107,7 +116,14 @@ namespace Nofun.Module.VMGP
                 return;
             }
 
-            system.GraphicDriver.FillRect(x0, y0, x1, y1, foregroundColor);
+            system.GraphicDriver.FillRect(x0, y0, x1, y1, GetColor(foregroundColor));
+        }
+
+        [ModuleCall]
+        private void vUpdateSpriteMap()
+        {
+            vUpdateMap();
+            vUpdateSprite();
         }
     }
 }

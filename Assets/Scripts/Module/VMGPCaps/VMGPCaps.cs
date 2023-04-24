@@ -1,4 +1,6 @@
+using Nofun.Util.Logging;
 using Nofun.VM;
+using System;
 using System.Runtime.InteropServices;
 
 namespace Nofun.Module.VMGPCaps
@@ -24,7 +26,45 @@ namespace Nofun.Module.VMGPCaps
 
             caps.Write(system.Memory, capsAssign);
 
-            return 0;
+            return 1;
+        }
+
+        private uint GetDeviceId(SystemDeviceVendor vendor, SystemDeviceModel model)
+        {
+            return ((uint)model << 16) | (uint)vendor;
+        }
+
+        private int GetCapsSystem(VMPtr<SystemCaps> caps)
+        {
+            SystemCaps capsAssign = new SystemCaps();
+
+            capsAssign.size = (ushort)Marshal.SizeOf<SystemCaps>();
+            capsAssign.flags = (ushort)SystemCapsFlags.MordenDeviceCapsExceptEndian;
+
+            if (!BitConverter.IsLittleEndian)
+            {
+                capsAssign.flags |= (ushort)SystemCapsFlags.BigEndian;
+            }
+
+            Logger.Trace(LogClass.VMGPCaps, "System capabilities device ID stubbed with Nokia N-Gage");
+
+            capsAssign.deviceId = GetDeviceId(SystemDeviceVendor.Nokia, SystemDeviceModel.NokiaNgage);
+
+            caps.Write(system.Memory, capsAssign);
+            return 1;
+        }
+
+        private int GetCapsSound(VMPtr<SoundCaps> capsPtr)
+        {
+            SoundCaps caps = new SoundCaps()
+            {
+                size = (ushort)Marshal.SizeOf<SoundCaps>(),
+                flags = (ushort)system.AudioDriver.Capabilities,
+                config = system.AudioDriver.SoundConfig
+            };
+
+            capsPtr.Write(system.Memory, caps);
+            return 1;
         }
 
         [ModuleCall]
@@ -35,8 +75,14 @@ namespace Nofun.Module.VMGPCaps
                 case CapsQueryType.Video:
                     return GetCapsVideo(buffer.Cast<VideoCaps>());
 
+                case CapsQueryType.System:
+                    return GetCapsSystem(buffer.Cast<SystemCaps>());
+
+                case CapsQueryType.Sound:
+                    return GetCapsSound(buffer.Cast<SoundCaps>());
+
                 default:
-                    throw new UnimplementedFeatureException("Other capabilities than video has not been implemented!");
+                    throw new UnimplementedFeatureException($"Unimplemented capability {queryType}!");
             }
         }
     };

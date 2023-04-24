@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Nofun.Parser;
 using Nofun.Util;
 using Nofun.PIP2;
+using Nofun.Util.Logging;
 
 namespace Nofun.VM
 {
@@ -49,11 +50,23 @@ namespace Nofun.VM
                 throw new InvalidOperationException("Unknown segment relocate type!");
             }
 
-            Span<byte> targetValue = (item.itemTarget == 1) ? codeData.Slice((int)item.targetOffset, 4) : dataSpan.Slice((int)item.targetOffset, 4);
-            UInt32 value = BinaryPrimitives.ReadUInt32LittleEndian(targetValue);
+            int targetValueSize = (item.poolType == PoolItemType.Swap16Reloc) ? 2 : 4;
+            Span<byte> targetValue;
 
+            try
+            {
+                targetValue = (item.itemTarget == 1) ? codeData.Slice((int)item.targetOffset, targetValueSize) : dataSpan.Slice((int)item.targetOffset, targetValueSize);
+            }
+            catch (Exception e)
+            {
+                Logger.Warning(LogClass.Loader, $"Slicing relocation data failed with: {e}");
+                return;
+            }
+   
             if (item.poolType == PoolItemType.SectionRelativeReloc)
             {
+                UInt32 value = BinaryPrimitives.ReadUInt32LittleEndian(targetValue);
+
                 switch (item.metaOffset)
                 {
                     case 1:
@@ -82,31 +95,42 @@ namespace Nofun.VM
             }
             else
             {
-                // Swap relocation. Replace with base section address + meta
-                UInt32 additionValue = item.metaOffset;
-                if (item.poolType == PoolItemType.Swap16Reloc)
+                // Swap byte order. The byte order given in the executable is little-endian
+                // TODO: Not sure what meta offset does in this case
+                if (!BitConverter.IsLittleEndian)
                 {
-                    // NOTE: Maybe wrong
-                    additionValue &= 0xFFFF;
+                    if (item.poolType == PoolItemType.Swap16Reloc)
+                    {
+                        UInt16 value = BinaryPrimitives.ReadUInt16LittleEndian(targetValue);
+                        BinaryPrimitives.WriteUInt16BigEndian(targetValue, value);
+                    }
+                    else
+                    {
+                        UInt32 value = BinaryPrimitives.ReadUInt32LittleEndian(targetValue);
+                        BinaryPrimitives.WriteUInt32BigEndian(targetValue, value);
+                    }
                 }
-
-                uint baseAddr = (item.itemTarget == 1) ? codeAddress : dataAddress;
-                BinaryPrimitives.WriteUInt32LittleEndian(targetValue, baseAddr + additionValue);
             }
         }
 
         private PoolData ProcessGenerateSymbol(VMGPPoolItem poolItem, UInt32 codeAddress, UInt32 dataAddress, UInt32 bssAddress, ICallResolver resolver)
         {
+            string symbolName = "";
+            if (poolItem.poolType == PoolItemType.GlobalSymbol)
+            {
+                symbolName = executable.GetString(poolItem.metaOffset);
+            }
+
             switch (poolItem.itemTarget)
             {
                 case 1:
-                    return new PoolData(poolItem.targetOffset + codeAddress);
+                    return new PoolData(poolItem.targetOffset + codeAddress, symbolName);
 
                 case 2:
-                    return new PoolData(poolItem.targetOffset + dataAddress);
+                    return new PoolData(poolItem.targetOffset + dataAddress, symbolName);
 
                 case 4:
-                    return new PoolData(poolItem.targetOffset + bssAddress);
+                    return new PoolData(poolItem.targetOffset + bssAddress, symbolName);
 
                 default:
                     throw new InvalidProgramException("Unknown pool data produce action: " + poolItem.itemTarget);
@@ -124,7 +148,7 @@ namespace Nofun.VM
                     }
 
                 case PoolItemType.LocalSymbol:
-                case PoolItemType.GlobalSymbol:     // Does not really matter to us if it has name or not
+                case PoolItemType.GlobalSymbol:
                     {
                         return ProcessGenerateSymbol(poolItem, codeAddress, dataAddress, bssAddress, resolver);
                     }
@@ -150,6 +174,8 @@ namespace Nofun.VM
                         return null;
                     }
 
+                case PoolItemType.Const32:
+                    return new PoolData(poolItem.targetOffset);
 
                 case PoolItemType.End:
                     {

@@ -16,15 +16,17 @@ namespace Nofun.PIP2
         private Action function;
         private uint immInt;
         private float immFloat;
+        private string name;
 
         public PoolData()
         {
             this.dataType = PoolDataType.None;
         }
 
-        public PoolData(uint immInt)
+        public PoolData(uint immInt, string name = "")
         {
             this.immInt = immInt;
+            this.name = name;
             this.dataType = PoolDataType.ImmInteger;
         }
 
@@ -45,5 +47,6 @@ namespace Nofun.PIP2
         public uint? ImmediateInteger => (dataType == PoolDataType.ImmInteger) ? immInt : null;
         public float? ImmediateFloat => (dataType == PoolDataType.ImmFloat) ? immFloat : null;
         public Action Function => (dataType == PoolDataType.Import) ? function : null;
+        public string Name => name;
     }
 }

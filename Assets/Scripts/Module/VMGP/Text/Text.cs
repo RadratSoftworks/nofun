@@ -16,7 +16,7 @@ namespace Nofun.Module.VMGP
             VMPtr<VMGPFont> previousFont = activeFontPtr;
 
             activeFontPtr = newFont;
-            activeFont = fontCache.Retrieve(newFont.Read(system.Memory));
+            activeFont = fontCache.Retrieve(newFont.Read(system.Memory), ScreenPalette);
 
             return previousFont;
         }
@@ -30,7 +30,7 @@ namespace Nofun.Module.VMGP
             }
 
             activeFont.DrawText(system.GraphicDriver, system.Memory, x, y, value.Get(system.Memory),
-                foregroundColor);
+                GetColor(foregroundColor));
         }
 
         [ModuleCall]
@@ -45,14 +45,35 @@ namespace Nofun.Module.VMGP
         [ModuleCall]
         private void vTextOut(short x, short y, VMString text)
         {
-            string textDraw = text.Get(system.Memory);
-            system.GraphicDriver.DrawSystemText(x, y, textDraw, backgroundColor, foregroundColor);
+            string textDraw = text.Get(system.Memory, false);
+            system.GraphicDriver.DrawSystemText(x, y, textDraw, GetColor(backgroundColor),
+                GetColor(foregroundColor));
+        }
+
+        [ModuleCall]
+        private void vTextOutU(short x, short y, VMString text)
+        {
+            string textDraw = text.Get(system.Memory, true);
+            system.GraphicDriver.DrawSystemText(x, y, textDraw, GetColor(backgroundColor),
+                GetColor(foregroundColor));
         }
 
         [ModuleCall]
         private int vCharExtent(ushort charValue)
         {
             return system.GraphicDriver.GetStringExtentRelativeToSystemFont(char.ConvertFromUtf32(charValue));
+        }
+
+        [ModuleCall]
+        private int vTextExtent(VMString asciiString)
+        {
+            return system.GraphicDriver.GetStringExtentRelativeToSystemFont(asciiString.Get(system.Memory, false));
+        }
+
+        [ModuleCall]
+        private int vTextExtentU(VMString utf16String)
+        {
+            return system.GraphicDriver.GetStringExtentRelativeToSystemFont(utf16String.Get(system.Memory, true));
         }
     }
 }

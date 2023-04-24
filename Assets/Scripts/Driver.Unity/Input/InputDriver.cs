@@ -85,6 +85,11 @@ namespace Nofun.Driver.Unity.Input
             return buttonData;
         }
 
+        public bool KeyPressed(uint keyCodeAsciiOrImplDefined)
+        {
+            return false;
+        }
+
         public void EndFrame()
         {
         }

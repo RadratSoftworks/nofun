@@ -104,6 +104,12 @@ namespace Nofun.PIP2.Interpreter
         #endregion
 
         #region Shift instructions family
+        private void SLL(TwoSourcesEncoding encoding)
+        {
+            // NOTE: Must case to byte for C#. May revisit if bugged
+            Reg[encoding.d] = Reg[encoding.s] << (byte)Reg[encoding.t];
+        }
+
         private void SLLi(TwoSourcesEncoding encoding)
         {
             Reg[encoding.d] = Reg[encoding.s] << encoding.t;
@@ -114,9 +120,25 @@ namespace Nofun.PIP2.Interpreter
             Reg16[encoding.d] = (ushort)(Reg16[encoding.s] << encoding.t);
         }
 
+        private void SLLB(TwoSourcesEncoding encoding)
+        {
+            Reg8[encoding.d] = (byte)(Reg8[encoding.s] << encoding.t);
+        }
+
+        private void SRL(TwoSourcesEncoding encoding)
+        {
+            // NOTE: Must case to byte for C#. May revisit if bugged
+            Reg[encoding.d] = Reg[encoding.s] >> (byte)Reg[encoding.t];
+        }
+
         private void SRLi(TwoSourcesEncoding encoding)
         {
             Reg[encoding.d] = Reg[encoding.s] >> encoding.t;
+        }
+
+        private void SRLH(TwoSourcesEncoding encoding)
+        {
+            Reg16[encoding.d] = (ushort)(Reg16[encoding.s] >> encoding.t);
         }
 
         private void SRLB(TwoSourcesEncoding encoding)
@@ -157,6 +179,11 @@ namespace Nofun.PIP2.Interpreter
             Reg[encoding.d] = Reg[encoding.s] & (uint)FetchImmediate();
         }
 
+        private void ANDHi(TwoSourcesEncoding encoding)
+        {
+            Reg16[encoding.d] = (ushort)(Reg16[encoding.s] & encoding.t);
+        }
+
         private void ANDB(TwoSourcesEncoding encoding)
         {
             Reg8[encoding.d] = (byte)(Reg8[encoding.s] & Reg8[encoding.t]);
@@ -169,9 +196,33 @@ namespace Nofun.PIP2.Interpreter
         #endregion
 
         #region Or instructions family
+        private void OR(TwoSourcesEncoding encoding)
+        {
+            Reg[encoding.d] = Reg[encoding.s] | Reg[encoding.t];
+        }
+
+        private void ORi(TwoSourcesEncoding encoding)
+        {
+            Reg[encoding.d] = Reg[encoding.s] | (uint)FetchImmediate();
+        }
+
+        private void ORB(TwoSourcesEncoding encoding)
+        {
+            Reg8[encoding.d] = (byte)(Reg8[encoding.s] | Reg8[encoding.t]);
+        }
+
         private void ORBi(TwoSourcesEncoding encoding)
         {
             Reg8[encoding.d] = (byte)(Reg8[encoding.s] | encoding.t);
+        }
+        #endregion
+
+
+        #region XOR instructions family
+
+        private void XORi(TwoSourcesEncoding encoding)
+        {
+            Reg[encoding.d] = Reg[encoding.s] ^ (uint)FetchImmediate();
         }
         #endregion
 

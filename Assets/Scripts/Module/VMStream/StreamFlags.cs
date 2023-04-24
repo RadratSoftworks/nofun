@@ -1,6 +1,6 @@
 namespace Nofun.Module.VMStream
 {
-    public enum StreamFlags
+    public enum StreamFlags : uint
     {
         Read = 0x100,
         Write = 0x200,

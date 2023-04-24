@@ -1,3 +1,5 @@
+using System;
+
 namespace Nofun.Driver.Graphics
 {
     public interface ITexture
@@ -7,7 +9,7 @@ namespace Nofun.Driver.Graphics
         int MipCount { get; }
         TextureFormat Format { get; }
 
-        void SetData(byte[] data, int mipLevel);
+        void SetData(byte[] data, int mipLevel, Span<SColor> palettes = new Span<SColor>());
         void Apply();
 
         /// <summary>

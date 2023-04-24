@@ -12,10 +12,10 @@ namespace Nofun.Module.VMGP
         public byte animationCount;
         public byte animationActive;
         public byte pad;
-        public ushort xPan;
-        public ushort yPan;
-        public ushort xPos;
-        public ushort yPos;
+        public short xPan;
+        public short yPan;
+        public short xPos;
+        public short yPos;
         public VMPtr<byte> mapData;
         public VMPtr<byte> tileSpriteData;
     };

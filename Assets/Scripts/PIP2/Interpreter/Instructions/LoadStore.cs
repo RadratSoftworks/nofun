@@ -6,35 +6,6 @@ namespace Nofun.PIP2.Interpreter
 {
     public partial class Interpreter : Processor
     {
-        private long FetchImmediate()
-        {
-            UInt32 infoWord = config.ReadDword(Reg[Register.PC]);
-            Reg[Register.PC] += 4;
-
-            // Bit 31 set marking that it's a constant
-            if ((infoWord & 0x80000000U) == 0)
-            {
-                PoolData data = GetPoolData(infoWord);
-
-                uint? loadNumber = data?.ImmediateInteger;
-                if (loadNumber == null)
-                {
-                    throw new InvalidOperationException("The data to load from pool is not integer (poolItemIndex=" + infoWord + ")");
-                }
-
-                return (uint)loadNumber;
-            }
-            else
-            {
-                return (int)((infoWord & 0x7FFFFFFF) | ((infoWord << 1) & 0x80000000));
-            }
-        }
-
-        private void SkipImmediate()
-        {
-            Reg[Register.PC] += 4;
-        }
-
         #region Store instructions family
         private void STWd(TwoSourcesEncoding encoding)
         {
@@ -100,10 +71,18 @@ namespace Nofun.PIP2.Interpreter
             uint currentSp = Reg[Register.SP];
             int end = encoding.start + encoding.count;
 
-            for (byte i = encoding.start; i < end; i += 4)
+            if (encoding.start == 0)
             {
                 currentSp -= RegSize;
-                config.WriteDword(currentSp, Reg[i]);
+                config.WriteDword(currentSp, Reg[Register.RA]);
+            }
+            else
+            {
+                for (byte i = encoding.start; i < end; i += 4)
+                {
+                    currentSp -= RegSize;
+                    config.WriteDword(currentSp, Reg[i]);
+                }
             }
 
             Reg[Register.SP] = currentSp;
@@ -114,10 +93,19 @@ namespace Nofun.PIP2.Interpreter
             uint currentSp = Reg[Register.SP];
             int end = encoding.start - encoding.count;
 
-            for (uint i = encoding.start; i > end; i -= 4)
+            if (encoding.start == 0)
             {
-                Reg[i] = config.ReadDword(currentSp);
+                // Only save the RA
+                Reg[Register.RA] = config.ReadDword(currentSp);
                 currentSp += RegSize;
+            }
+            else
+            {
+                for (uint i = encoding.start; i > end; i -= 4)
+                {
+                    Reg[i] = config.ReadDword(currentSp);
+                    currentSp += RegSize;
+                }
             }
 
             Reg[Register.SP] = currentSp;

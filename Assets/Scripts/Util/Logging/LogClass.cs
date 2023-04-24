@@ -6,6 +6,9 @@ namespace Nofun.Util.Logging
         VMGPText,
         VMGPGraphic,
         VMGPSystem,
-        VMStream
+        VMStream,
+        VMGPCaps,
+        Loader,
+        GameTTY
     }
 }

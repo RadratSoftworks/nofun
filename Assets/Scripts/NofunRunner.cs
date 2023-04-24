@@ -1,6 +1,7 @@
 using Nofun.Driver.Unity.Audio;
 using Nofun.Driver.Unity.Graphics;
 using Nofun.Driver.Unity.Input;
+using Nofun.Driver.Unity.Time;
 using Nofun.Parser;
 using Nofun.Util.Unity;
 using Nofun.VM;
@@ -20,6 +21,8 @@ namespace Nofun
         [SerializeField]
         private GraphicDriver graphicDriver;
 
+        private TimeDriver timeDriver;
+
         [Range(1, 60)]
         [SerializeField]
         private int fpsLimit = 30;
@@ -27,7 +30,8 @@ namespace Nofun
         private VMGPExecutable executable;
         private VMSystem system;
 
-        private const string testFile = "E:\\Jeff.mpn";
+        [SerializeField]
+        private const string executableFilePath = "E:\\spacebox.mpn";
 
         private void SetupLogger()
         {
@@ -38,8 +42,13 @@ namespace Nofun
         {
             SetupLogger();
 
-            executable = new VMGPExecutable(File.OpenRead(testFile));
-            system = new VMSystem(executable, graphicDriver, inputDriver, audioDriver);
+            timeDriver = new TimeDriver();
+
+            executable = new VMGPExecutable(new FileStream(executableFilePath, FileMode.Open, FileAccess.ReadWrite,
+                FileShare.Read));
+
+            system = new VMSystem(executable, new VMSystemCreateParameters(graphicDriver, inputDriver, audioDriver, timeDriver,
+                Application.persistentDataPath, executableFilePath));
 
             // Setup graphics driver
             graphicDriver.StopProcessorAction = () => system.Processor.Stop();
@@ -54,7 +63,9 @@ namespace Nofun
 
             // Only set FPS when it's not emulating frame flip
             graphicDriver.FpsLimit = fpsLimit;
+
             system.Run();
+            timeDriver.Update();
         }
     }
 }

@@ -6,27 +6,41 @@ namespace Nofun.PIP2.Interpreter
 {
     public partial class Interpreter : Processor
     {
+        private void CALLr(DestOnlyEncoding encoding)
+        {
+            Reg[Register.RA] = Reg[Register.PC];
+            Reg[Register.PC] = Reg[encoding.d];
+        }
+
         private void CALLl(UndefinedEncoding encoding)
         {
-            UInt32 poolItemNumber = config.ReadDword(Reg[Register.PC]);
-            PoolData poolItem = GetPoolData(poolItemNumber);
-
-            if (poolItem.Function != null)
+            UInt32 infoWord = config.ReadDword(Reg[Register.PC]);
+            if (IsDwordRawImmediate(ref infoWord))
             {
-                // Add to skip the pool item number
-                Reg[Register.PC] += 4;
-
-                poolItem.Function();
-            }
-            else if (poolItem.DataType == PoolDataType.ImmInteger)
-            {
-                // NOTE: Skip the pool item number
                 Reg[Register.RA] = Reg[Register.PC] + 4;
-                Reg[Register.PC] = (uint)poolItem.ImmediateInteger;
+                Reg[Register.PC] = (uint)(Reg[Register.PC] + (int)infoWord - 4);
             }
             else
             {
-                throw new InvalidOperationException("Trying to call a non-import/non-integer pool data!");
+                PoolData poolItem = GetPoolData(infoWord);
+
+                if (poolItem.Function != null)
+                {
+                    // Add to skip the pool item number
+                    Reg[Register.PC] += 4;
+
+                    poolItem.Function();
+                }
+                else if (poolItem.DataType == PoolDataType.ImmInteger)
+                {
+                    // NOTE: Skip the pool item number
+                    Reg[Register.RA] = Reg[Register.PC] + 4;
+                    Reg[Register.PC] = (uint)poolItem.ImmediateInteger;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Trying to call a non-import/non-integer pool data!");
+                }
             }
         }
 
