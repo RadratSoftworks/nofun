@@ -1373,6 +1373,7 @@ MonoBehaviour:
   audioDriver: {fileID: 1316056871}
   graphicDriver: {fileID: 1719026072}
   fpsLimit: 30
+  executableFilePath: E:\bcd.mpn
 --- !u!4 &1698624928
 Transform:
   m_ObjectHideFlags: 0
