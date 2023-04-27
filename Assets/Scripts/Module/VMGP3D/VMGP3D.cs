@@ -44,21 +44,6 @@ namespace Nofun.Module.VMGP3D
         private bool textureEnabled = true;
         private MpCompareFunc previousCompareFunc = MpCompareFunc.LessEqual;
 
-        private float FixedToFloat(int fixedValue)
-        {
-            return fixedValue / 16384.0f;
-        }
-
-        private int FloatToFixed(float value)
-        {
-            return (int)(value * 16384);
-        }
-
-        private float Fixed9PointToFloat(int fixedValue)
-        {
-            return fixedValue / 1024.0f;
-        }
-
         public VMGP3D(VMSystem system)
         {
             this.system = system;

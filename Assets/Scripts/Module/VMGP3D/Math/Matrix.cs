@@ -15,7 +15,6 @@
  */
 
 using Nofun.Util;
-using Nofun.Util.Logging;
 using Nofun.VM;
 using System;
 
@@ -30,12 +29,13 @@ namespace Nofun.Module.VMGP3D
     {
         private const int MatrixOrientationRowMajor = 0;
         private const int MatrixOrientationColumnMajor = 0x2000;
+        private const int FullCircleDegrees = 360;
 
         private int currentMatrixOrientation = MatrixOrientationColumnMajor;
 
         private Matrix4x4 currentMatrix = Matrix4x4.identity;
         private Matrix4x4 projectionMatrix = Matrix4x4.identity;
-        
+
         private Matrix4x4 ReadMatrix(VMPtr<V3DMatrix> matrix)
         {
             if (matrix.IsNull)
@@ -48,19 +48,19 @@ namespace Nofun.Module.VMGP3D
             if (currentMatrixOrientation == MatrixOrientationColumnMajor)
             {
                 return new Matrix4x4(
-                    new Vector4(FixedToFloat(matrixValue[0].m00), FixedToFloat(matrixValue[0].m10), FixedToFloat(matrixValue[0].m20), FixedToFloat(matrixValue[0].m30)),
-                    new Vector4(FixedToFloat(matrixValue[0].m01), FixedToFloat(matrixValue[0].m11), FixedToFloat(matrixValue[0].m21), FixedToFloat(matrixValue[0].m31)),
-                    new Vector4(FixedToFloat(matrixValue[0].m02), FixedToFloat(matrixValue[0].m12), FixedToFloat(matrixValue[0].m22), FixedToFloat(matrixValue[0].m32)),
-                    new Vector4(FixedToFloat(matrixValue[0].m03), FixedToFloat(matrixValue[0].m13), FixedToFloat(matrixValue[0].m23), FixedToFloat(matrixValue[0].m33))
+                    new Vector4(FixedUtil.FixedToFloat(matrixValue[0].m00), FixedUtil.FixedToFloat(matrixValue[0].m10), FixedUtil.FixedToFloat(matrixValue[0].m20), FixedUtil.FixedToFloat(matrixValue[0].m30)),
+                    new Vector4(FixedUtil.FixedToFloat(matrixValue[0].m01), FixedUtil.FixedToFloat(matrixValue[0].m11), FixedUtil.FixedToFloat(matrixValue[0].m21), FixedUtil.FixedToFloat(matrixValue[0].m31)),
+                    new Vector4(FixedUtil.FixedToFloat(matrixValue[0].m02), FixedUtil.FixedToFloat(matrixValue[0].m12), FixedUtil.FixedToFloat(matrixValue[0].m22), FixedUtil.FixedToFloat(matrixValue[0].m32)),
+                    new Vector4(FixedUtil.FixedToFloat(matrixValue[0].m03), FixedUtil.FixedToFloat(matrixValue[0].m13), FixedUtil.FixedToFloat(matrixValue[0].m23), FixedUtil.FixedToFloat(matrixValue[0].m33))
                 );
             }
             else
             {
                 return new Matrix4x4(
-                    new Vector4(FixedToFloat(matrixValue[0].m00), FixedToFloat(matrixValue[0].m01), FixedToFloat(matrixValue[0].m02), FixedToFloat(matrixValue[0].m03)),
-                    new Vector4(FixedToFloat(matrixValue[0].m10), FixedToFloat(matrixValue[0].m11), FixedToFloat(matrixValue[0].m12), FixedToFloat(matrixValue[0].m13)),
-                    new Vector4(FixedToFloat(matrixValue[0].m20), FixedToFloat(matrixValue[0].m21), FixedToFloat(matrixValue[0].m22), FixedToFloat(matrixValue[0].m23)),
-                    new Vector4(FixedToFloat(matrixValue[0].m30), FixedToFloat(matrixValue[0].m31), FixedToFloat(matrixValue[0].m32), FixedToFloat(matrixValue[0].m33))
+                    new Vector4(FixedUtil.FixedToFloat(matrixValue[0].m00), FixedUtil.FixedToFloat(matrixValue[0].m01), FixedUtil.FixedToFloat(matrixValue[0].m02), FixedUtil.FixedToFloat(matrixValue[0].m03)),
+                    new Vector4(FixedUtil.FixedToFloat(matrixValue[0].m10), FixedUtil.FixedToFloat(matrixValue[0].m11), FixedUtil.FixedToFloat(matrixValue[0].m12), FixedUtil.FixedToFloat(matrixValue[0].m13)),
+                    new Vector4(FixedUtil.FixedToFloat(matrixValue[0].m20), FixedUtil.FixedToFloat(matrixValue[0].m21), FixedUtil.FixedToFloat(matrixValue[0].m22), FixedUtil.FixedToFloat(matrixValue[0].m23)),
+                    new Vector4(FixedUtil.FixedToFloat(matrixValue[0].m30), FixedUtil.FixedToFloat(matrixValue[0].m31), FixedUtil.FixedToFloat(matrixValue[0].m32), FixedUtil.FixedToFloat(matrixValue[0].m33))
                 );
             }
         }
@@ -78,53 +78,53 @@ namespace Nofun.Module.VMGP3D
 
             if (currentMatrixOrientation == MatrixOrientationColumnMajor)
             {
-                matrix[0].m00 = FloatToFixed(currentMatrix.m00);
-                matrix[0].m01 = FloatToFixed(currentMatrix.m01);
-                matrix[0].m02 = FloatToFixed(currentMatrix.m02);
-                matrix[0].m03 = FloatToFixed(currentMatrix.m03);
+                matrix[0].m00 = FixedUtil.FloatToFixed(currentMatrix.m00);
+                matrix[0].m01 = FixedUtil.FloatToFixed(currentMatrix.m01);
+                matrix[0].m02 = FixedUtil.FloatToFixed(currentMatrix.m02);
+                matrix[0].m03 = FixedUtil.FloatToFixed(currentMatrix.m03);
 
 
-                matrix[0].m10 = FloatToFixed(currentMatrix.m10);
-                matrix[0].m11 = FloatToFixed(currentMatrix.m11);
-                matrix[0].m12 = FloatToFixed(currentMatrix.m12);
-                matrix[0].m13 = FloatToFixed(currentMatrix.m13);
+                matrix[0].m10 = FixedUtil.FloatToFixed(currentMatrix.m10);
+                matrix[0].m11 = FixedUtil.FloatToFixed(currentMatrix.m11);
+                matrix[0].m12 = FixedUtil.FloatToFixed(currentMatrix.m12);
+                matrix[0].m13 = FixedUtil.FloatToFixed(currentMatrix.m13);
 
 
-                matrix[0].m21 = FloatToFixed(currentMatrix.m20);
-                matrix[0].m21 = FloatToFixed(currentMatrix.m21);
-                matrix[0].m22 = FloatToFixed(currentMatrix.m22);
-                matrix[0].m23 = FloatToFixed(currentMatrix.m23);
+                matrix[0].m21 = FixedUtil.FloatToFixed(currentMatrix.m20);
+                matrix[0].m21 = FixedUtil.FloatToFixed(currentMatrix.m21);
+                matrix[0].m22 = FixedUtil.FloatToFixed(currentMatrix.m22);
+                matrix[0].m23 = FixedUtil.FloatToFixed(currentMatrix.m23);
 
 
-                matrix[0].m30 = FloatToFixed(currentMatrix.m30);
-                matrix[0].m31 = FloatToFixed(currentMatrix.m31);
-                matrix[0].m32 = FloatToFixed(currentMatrix.m32);
-                matrix[0].m33 = FloatToFixed(currentMatrix.m33);
+                matrix[0].m30 = FixedUtil.FloatToFixed(currentMatrix.m30);
+                matrix[0].m31 = FixedUtil.FloatToFixed(currentMatrix.m31);
+                matrix[0].m32 = FixedUtil.FloatToFixed(currentMatrix.m32);
+                matrix[0].m33 = FixedUtil.FloatToFixed(currentMatrix.m33);
             }
             else
             {
-                matrix[0].m00 = FloatToFixed(currentMatrix.m00);
-                matrix[0].m10 = FloatToFixed(currentMatrix.m01);
-                matrix[0].m20 = FloatToFixed(currentMatrix.m02);
-                matrix[0].m30 = FloatToFixed(currentMatrix.m03);
+                matrix[0].m00 = FixedUtil.FloatToFixed(currentMatrix.m00);
+                matrix[0].m10 = FixedUtil.FloatToFixed(currentMatrix.m01);
+                matrix[0].m20 = FixedUtil.FloatToFixed(currentMatrix.m02);
+                matrix[0].m30 = FixedUtil.FloatToFixed(currentMatrix.m03);
 
 
-                matrix[0].m01 = FloatToFixed(currentMatrix.m10);
-                matrix[0].m11 = FloatToFixed(currentMatrix.m11);
-                matrix[0].m21 = FloatToFixed(currentMatrix.m12);
-                matrix[0].m31 = FloatToFixed(currentMatrix.m13);
+                matrix[0].m01 = FixedUtil.FloatToFixed(currentMatrix.m10);
+                matrix[0].m11 = FixedUtil.FloatToFixed(currentMatrix.m11);
+                matrix[0].m21 = FixedUtil.FloatToFixed(currentMatrix.m12);
+                matrix[0].m31 = FixedUtil.FloatToFixed(currentMatrix.m13);
 
 
-                matrix[0].m02 = FloatToFixed(currentMatrix.m20);
-                matrix[0].m12 = FloatToFixed(currentMatrix.m21);
-                matrix[0].m22 = FloatToFixed(currentMatrix.m22);
-                matrix[0].m32 = FloatToFixed(currentMatrix.m23);
+                matrix[0].m02 = FixedUtil.FloatToFixed(currentMatrix.m20);
+                matrix[0].m12 = FixedUtil.FloatToFixed(currentMatrix.m21);
+                matrix[0].m22 = FixedUtil.FloatToFixed(currentMatrix.m22);
+                matrix[0].m32 = FixedUtil.FloatToFixed(currentMatrix.m23);
 
 
-                matrix[0].m03 = FloatToFixed(currentMatrix.m30);
-                matrix[0].m13 = FloatToFixed(currentMatrix.m31);
-                matrix[0].m23 = FloatToFixed(currentMatrix.m32);
-                matrix[0].m33 = FloatToFixed(currentMatrix.m33);
+                matrix[0].m03 = FixedUtil.FloatToFixed(currentMatrix.m30);
+                matrix[0].m13 = FixedUtil.FloatToFixed(currentMatrix.m31);
+                matrix[0].m23 = FixedUtil.FloatToFixed(currentMatrix.m32);
+                matrix[0].m33 = FixedUtil.FloatToFixed(currentMatrix.m33);
             }
         }
 
@@ -146,38 +146,38 @@ namespace Nofun.Module.VMGP3D
         [ModuleCall]
         private void vMatrixTranslate(int xFixed, int yFixed, int zFixed)
         {
-            currentMatrix *= Matrix4x4.Translate(new Vector3(FixedToFloat(xFixed), FixedToFloat(yFixed), FixedToFloat(zFixed)));
+            currentMatrix *= Matrix4x4.Translate(new Vector3(FixedUtil.FixedToFloat(xFixed), FixedUtil.FixedToFloat(yFixed), FixedUtil.FixedToFloat(zFixed)));
         }
 
         [ModuleCall]
         private void vMatrixRotateX(short d)
         {
-            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(d, Vector3.right));
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * FullCircleDegrees, Vector3.right));
         }
 
         [ModuleCall]
         private void vMatrixRotateY(short d)
         {
-            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(d, Vector3.up));
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * FullCircleDegrees, Vector3.up));
         }
 
         [ModuleCall]
         private void vMatrixRotateZ(short d)
         {
-            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(d, Vector3.forward));
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * FullCircleDegrees, Vector3.forward));
         }
 
         [ModuleCall]
         private void vMatrixPerspective(int widthFixed, int heightFixed, int zNearFixed, int zFarFixed)
         {
-            float heightNearPlane = FixedToFloat(heightFixed);
-            float distNear = FixedToFloat(zNearFixed);
+            float heightNearPlane = FixedUtil.FixedToFloat(heightFixed);
+            float distNear = FixedUtil.FixedToFloat(zNearFixed);
 
             float fov = MathUtil.RadToDegs(Mathf.Atan(heightNearPlane / distNear / 2) * 2.0f);
 
             // Matrix column 2 in Unity already flipping Z, because of reversing view matrix flip
             // But we don't need that, so reverse it
-            currentMatrix = Matrix4x4.Perspective(fov, FixedToFloat(widthFixed) / heightNearPlane, distNear, FixedToFloat(zFarFixed));
+            currentMatrix = Matrix4x4.Perspective(fov, FixedUtil.FixedToFloat(widthFixed) / heightNearPlane, distNear, FixedUtil.FixedToFloat(zFarFixed));
             currentMatrix.SetColumn(2, -currentMatrix.GetColumn(2));
         }
 
