@@ -34,7 +34,7 @@ namespace Nofun.VM
         {
             if ((offset >= 0) && (offset < DataAlignment))
             {
-                throw new InvalidOperationException("Trying to access null page!");
+                return new Span<byte>();
             }
 
             return new Span<byte>(memory, offset, size);
@@ -44,7 +44,7 @@ namespace Nofun.VM
         {
             if ((offset >= 0) && (offset < DataAlignment))
             {
-                throw new InvalidOperationException("Trying to access null page!");
+                return new Memory<byte>();
             }
 
             return new Memory<byte>(memory, offset, size);

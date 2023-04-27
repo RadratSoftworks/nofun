@@ -41,6 +41,9 @@ namespace Nofun.Module.VMGP3D
         /// </summary>
         private uint activeTextureHandle;
 
+        private bool textureEnabled = true;
+        private MpCompareFunc previousCompareFunc = MpCompareFunc.LessEqual;
+
         private float FixedToFloat(int fixedValue)
         {
             return fixedValue / 16384.0f;
@@ -74,9 +77,42 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
-        private void vSetRenderState(uint key, uint value)
+        private void vSetRenderState(RenderState state, uint value)
         {
+            switch (state)
+            {
+                case RenderState.CullMode:
+                    system.GraphicDriver.Cull = (MpCullMode)value;
+                    break;
 
+                case RenderState.ZFunction:
+                    system.GraphicDriver.DepthFunction = (MpCompareFunc)value;
+                    previousCompareFunc = (MpCompareFunc)value;
+
+                    break;
+
+                case RenderState.TextureEnable:
+                    textureEnabled = true;
+                    break;
+
+                case RenderState.ZEnable:
+                    {
+                        if (value == 0)
+                        {
+                            system.GraphicDriver.DepthFunction = MpCompareFunc.Always;
+                        }
+                        else
+                        {
+                            system.GraphicDriver.DepthFunction = previousCompareFunc;
+                        }
+
+                        break;
+                    }
+
+                default:
+                    Logger.Trace(LogClass.VMGP3D, $"Unhandled render state {state}");
+                    break;
+            }
         }
 
         [ModuleCall]
@@ -95,6 +131,7 @@ namespace Nofun.Module.VMGP3D
 
                 activeTextureHandle = 0;
 
+                system.GraphicDriver.SetActiveTexture(activeTexture);
                 return 1;
             }
             catch (System.Exception ex)
@@ -110,7 +147,28 @@ namespace Nofun.Module.VMGP3D
             NativeBillboard billboard = billboardPtr.Read(system.Memory);
 
             system.GraphicDriver.Set3DViewMatrix(currentMatrix);
-            system.GraphicDriver.DrawBillboard(billboard, activeTexture);
+            system.GraphicDriver.DrawBillboard(billboard);
+        }
+
+        [ModuleCall]
+        private short vRenderPrimitiveIndexed(VMPtr<short> indexList, short indexCount, VMPtr<NativeMesh> mesh, uint topology)
+        {
+            NativeMesh meshCopy = mesh.Read(system.Memory);
+
+            MpMesh meshMp = new MpMesh()
+            {
+                vertices = meshCopy.vertices.AsSpan(system.Memory, meshCopy.count),
+                uvs = meshCopy.uvs.AsSpan(system.Memory, meshCopy.count),
+                diffuses = meshCopy.diffuses.AsSpan(system.Memory, meshCopy.count),
+                speculars = meshCopy.speculars.AsSpan(system.Memory, meshCopy.count),
+                normals = meshCopy.normal.AsSpan(system.Memory, meshCopy.count),
+                indices = indexList.AsSpan(system.Memory, indexCount),
+                topology = (PrimitiveTopology)topology
+            };
+
+            system.GraphicDriver.Set3DViewMatrix(currentMatrix);
+            system.GraphicDriver.DrawPrimitives(meshMp);
+            return 1;
         }
     }
 }

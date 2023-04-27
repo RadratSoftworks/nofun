@@ -55,9 +55,17 @@ namespace Nofun.Driver.Graphics
 
         int ScreenHeight { get; }
 
-        void DrawBillboard(NativeBillboard billboard, ITexture billboardTexture);
+        void SetActiveTexture(ITexture texture);
+
+        void DrawBillboard(NativeBillboard billboard);
+
+        void DrawPrimitives(MpMesh meshToDraw);
 
         void Set3DProjectionMatrix(Matrix4x4 matrix);
         void Set3DViewMatrix(Matrix4x4 matrix);
+
+        /// State manipulation
+        MpCullMode Cull { set; }
+        MpCompareFunc DepthFunction { set; }
     };
 }

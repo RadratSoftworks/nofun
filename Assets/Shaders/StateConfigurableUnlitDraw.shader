@@ -1,4 +1,4 @@
-Shader "Unlit/StateConfigurableBillboard"
+Shader "Unlit/StateConfigurableDraw"
 {
     Properties
     {

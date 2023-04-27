@@ -15,6 +15,7 @@
  */
 
 using Nofun.Util;
+using Nofun.Util.Logging;
 using Nofun.VM;
 using System;
 
@@ -62,6 +63,12 @@ namespace Nofun.Module.VMGP3D
                     new Vector4(FixedToFloat(matrixValue[0].m30), FixedToFloat(matrixValue[0].m31), FixedToFloat(matrixValue[0].m32), FixedToFloat(matrixValue[0].m33))
                 );
             }
+        }
+
+        [ModuleCall]
+        private void vMatrixSetCurrent(VMPtr<V3DMatrix> matrixPtr)
+        {
+            currentMatrix = ReadMatrix(matrixPtr);
         }
 
         [ModuleCall]
@@ -143,21 +150,21 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
-        private void vMatrixRotateX(int d)
+        private void vMatrixRotateX(short d)
         {
-            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(d % 4096, Vector3.right));
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(d, Vector3.right));
         }
 
         [ModuleCall]
-        private void vMatrixRotateY(int d)
+        private void vMatrixRotateY(short d)
         {
-            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(d % 4096, Vector3.up));
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(d, Vector3.up));
         }
 
         [ModuleCall]
-        private void vMatrixRotateZ(int d)
+        private void vMatrixRotateZ(short d)
         {
-            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(d % 4096, Vector3.forward));
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(d, Vector3.forward));
         }
 
         [ModuleCall]

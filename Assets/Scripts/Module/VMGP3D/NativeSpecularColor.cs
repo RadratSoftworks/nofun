@@ -1,4 +1,4 @@
-/*
+﻿/*
  * (C) 2023 Radrat Softworks
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,11 @@
 
 namespace Nofun.Module.VMGP3D
 {
-    public struct NativeUV
+    public struct NativeSpecularColor
     {
-        public short fixedU;        // 9 points fraction
-        public short fixedV;        // 9 points fraction
+        public byte b;
+        public byte g;
+        public byte r;
+        public byte f;
     }
 }

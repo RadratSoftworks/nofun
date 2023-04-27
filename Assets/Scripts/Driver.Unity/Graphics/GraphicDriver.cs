@@ -35,9 +35,8 @@ namespace Nofun.Driver.Unity.Graphics
         private const string TexcoordTransformMatrixUniformName = "_TexToLocal";
         private const string ColorUniformName = "_Color";
 
-        // Billboard
-        private const string BillboardZTestUniformName = "_ZTest";
-        private const string BillboardCullUniformName = "_Cull";
+        private const string UnlitZTestUniformName = "_ZTest";
+        private const string UnlitCullUniformName = "_Cull";
 
         private const int TMPSpawnPerAlloc = 5;
 
@@ -58,14 +57,17 @@ namespace Nofun.Driver.Unity.Graphics
 
         private CompareFunction depthCompareFunction = CompareFunction.LessEqual;
         private CullMode cullMode = CullMode.Back;
+        private bool fixedStateChanged = true;
 
         private Matrix4x4 projectionMatrix3D = Matrix4x4.identity;
         private Matrix4x4 viewMatrix3D = Matrix4x4.identity;
         private Matrix4x4 orthoMatrix = Matrix4x4.identity;
 
         private bool in3DMode = false;
+        private Texture activeTexture = null;
 
         private BillboardCache billboardCache;
+        private MeshCache meshCache;
 
         [SerializeField]
         private TMPro.TMP_Text[] textRenders;
@@ -80,7 +82,7 @@ namespace Nofun.Driver.Unity.Graphics
         private Material mophunDrawTextureMaterial;
 
         [SerializeField]
-        private Material mophunDrawBillboardMaterial;
+        private Material mophunUnlitMaterial;
 
         [SerializeField]
         private Camera mophunCamera;
@@ -89,16 +91,35 @@ namespace Nofun.Driver.Unity.Graphics
         private Mesh quadMesh;
 
         private List<TMPro.TMP_Text> textRenderInternals;
-        private List<Mesh> billboardMeshes;
+        private Dictionary<ulong, Material> unlitMaterialCache;
+
+        private Material currentUnlitMaterial;
 
         [HideInInspector]
         public float FpsLimit { get; set; }
 
         private float SecondPerFrame => 1.0f / FpsLimit;
 
-        private static Vector2 FixedUVToUnityUV(NativeUV uv)
+        private ulong BuildStateIdentifier()
         {
-            return new Vector2(FixedUtil.Fixed9PointToFloat(uv.fixedU), FixedUtil.Fixed9PointToFloat(uv.fixedV));
+            return ((ulong)cullMode & 0b11) | ((ulong)depthCompareFunction & 0b1111) << 2;
+        }
+
+        private void PrepareUnlitMaterial()
+        {
+            if (fixedStateChanged)
+            {
+                ulong stateIdentifier = BuildStateIdentifier();
+                if (!unlitMaterialCache.ContainsKey(stateIdentifier))
+                {
+                    Material mat = new Material(mophunUnlitMaterial);
+                    mat.SetFloat(UnlitCullUniformName, (float)cullMode);
+                    mat.SetFloat(UnlitZTestUniformName, (float)depthCompareFunction);
+
+                    unlitMaterialCache.Add(stateIdentifier, mat);
+                }
+                currentUnlitMaterial = unlitMaterialCache[stateIdentifier];
+            }
         }
 
         public Action StopProcessorAction
@@ -151,7 +172,11 @@ namespace Nofun.Driver.Unity.Graphics
             screenTextureBackBuffer = new RenderTexture((int)size.x, (int)size.y, 32);
             scissorRect = new Rect(0, 0, size.x, size.y);
             viewportRect = new Rect(0, 0, size.x, size.y);
+
             billboardCache = new();
+            meshCache = new();
+            unlitMaterialCache = new();
+
             SetupWhiteTexture();
             SetupQuadMesh();
 
@@ -234,6 +259,7 @@ namespace Nofun.Driver.Unity.Graphics
                     UpdateRenderMode();
                 }
 
+                PrepareUnlitMaterial();
                 return;
             }
 
@@ -263,7 +289,9 @@ namespace Nofun.Driver.Unity.Graphics
             }
 
             began = true;
+
             UpdateRenderMode();
+            PrepareUnlitMaterial();
         }
 
         public void EndFrame()
@@ -574,17 +602,30 @@ namespace Nofun.Driver.Unity.Graphics
             }
         }
 
-        public void DrawBillboard(NativeBillboard billboard, ITexture billboardTexture)
+        private MaterialPropertyBlock UnlitPropertyBlock
         {
+            get
+            {
+                MaterialPropertyBlock block = new MaterialPropertyBlock();
+                block.SetTexture(MainTexUniformName, activeTexture.NativeTexture);
+
+                return block;
+            }
+        }
+
+        public void SetActiveTexture(ITexture tex)
+        {
+            activeTexture = tex as Texture;
+        }
+
+        public void DrawBillboard(NativeBillboard billboard)
+        {
+            CullMode previous = cullMode;
+            CullModeUnity = CullMode.Back;
+
             BeginRender(mode2D: false);
 
             Mesh billboardMesh = billboardCache.GetBillboardMesh(billboard);
-            Texture2D billboardTextureNative = (billboardTexture as Texture).NativeTexture;
-
-            MaterialPropertyBlock block = new MaterialPropertyBlock();
-            block.SetFloat(BillboardZTestUniformName, (float)depthCompareFunction);
-            block.SetFloat(BillboardCullUniformName, (float)cullMode);
-            block.SetTexture(MainTexUniformName, billboardTextureNative);
 
             Matrix4x4 modelMatrix = Matrix4x4.Translate(Struct3DToUnity.MophunVector3ToUnity(billboard.position));
 
@@ -595,7 +636,16 @@ namespace Nofun.Driver.Unity.Graphics
                 size) * Matrix4x4.Translate(-pivotV * size);
 
             // Billboard is unlit? It seems so. So not much pass
-            commandBuffer.DrawMesh(billboardMesh, modelMatrix, mophunDrawBillboardMaterial, 0, 0, block);
+            commandBuffer.DrawMesh(billboardMesh, modelMatrix, currentUnlitMaterial, 0, 0, UnlitPropertyBlock);
+            CullModeUnity = previous;
+        }
+
+        public void DrawPrimitives(MpMesh meshToDraw)
+        {
+            BeginRender(mode2D: false);
+
+            Mesh mesh = meshCache.GetMesh(meshToDraw);
+            commandBuffer.DrawMesh(mesh, Matrix4x4.identity, currentUnlitMaterial, 0, 0, UnlitPropertyBlock);
         }
 
         public void Set3DProjectionMatrix(Matrix4x4 matrix)
@@ -617,6 +667,98 @@ namespace Nofun.Driver.Unity.Graphics
                 if (in3DMode)
                 {
                     commandBuffer.SetViewMatrix(viewMatrix3D);
+                }
+            }
+        }
+
+        private CullMode CullModeUnity
+        {
+            get => this.cullMode;
+            set
+            {
+                if (cullMode != value)
+                {
+                    cullMode = value;
+                    fixedStateChanged = true;
+                }
+            }
+        }
+
+        public MpCullMode Cull
+        {
+            set
+            {
+                CullMode newCullMode = CullMode.Back;
+                switch (value)
+                {
+                    case MpCullMode.None:
+                        newCullMode = CullMode.Off;
+                        break;
+
+                    case MpCullMode.Clockwise:
+                        newCullMode = CullMode.Front;
+                        break;
+
+                    case MpCullMode.CounterClockwise:
+                        newCullMode = CullMode.Back;
+                        break;
+
+                    default:
+                        throw new ArgumentException($"Invalid cull mode: {value}");
+                }
+
+                CullModeUnity = newCullMode;
+            }
+        }
+
+        public MpCompareFunc DepthFunction
+        {
+            set
+            {
+                CompareFunction compareFuncNew = CompareFunction.LessEqual;
+                switch (value)
+                {
+                    case MpCompareFunc.Never:
+                        compareFuncNew = CompareFunction.Never;
+                        break;
+
+                    case MpCompareFunc.Less:
+                        compareFuncNew = CompareFunction.Less;
+                        break;
+
+                    case MpCompareFunc.LessEqual:
+                        compareFuncNew = CompareFunction.LessEqual;
+                        break;
+
+                    case MpCompareFunc.Equal:
+                        compareFuncNew = CompareFunction.Equal;
+                        break;
+
+                    case MpCompareFunc.Greater:
+                        compareFuncNew = CompareFunction.Greater;
+                        break;
+
+                    case MpCompareFunc.GreaterEqual:
+                        compareFuncNew = CompareFunction.GreaterEqual;
+                        break;
+
+                    case MpCompareFunc.NotEqual:
+                        compareFuncNew = CompareFunction.NotEqual;
+                        break;
+
+                    case MpCompareFunc.Always:
+                        compareFuncNew = CompareFunction.Always;
+                        break;
+
+                    default:
+                        throw new ArgumentException($"Unknown depth function {value}");
+                        break;
+                }
+
+                if (compareFuncNew != this.depthCompareFunction)
+                {
+                    this.depthCompareFunction = compareFuncNew;
+                    fixedStateChanged = true;
                 }
             }
         }

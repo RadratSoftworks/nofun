@@ -1,4 +1,4 @@
-/*
+﻿/*
  * (C) 2023 Radrat Softworks
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
+using Nofun.VM;
+
 namespace Nofun.Module.VMGP3D
 {
-    public struct NativeUV
+    public struct NativeMesh
     {
-        public short fixedU;        // 9 points fraction
-        public short fixedV;        // 9 points fraction
+        public VMPtr<NativeVector3D> vertices;
+        public VMPtr<NativeUV> uvs;
+        public VMPtr<NativeDiffuseColor> diffuses;
+        public VMPtr<NativeSpecularColor> speculars;
+        public VMPtr<NativeVector3D> normal;
+        public ushort count;
     }
 }
