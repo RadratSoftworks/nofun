@@ -30,12 +30,6 @@ namespace Nofun.Driver.Unity.Audio
                     frequency, false);
 
                 short[] dataPCMed = ADPCMToPcm.Convert(audioData);
-                using (FileStream test = File.OpenWrite("E:\\testsample2.raw"))
-                {
-                    var span = MemoryMarshal.Cast<short, byte>(dataPCMed.AsSpan(0));
-                    test.Write(span);
-                }
-
                 clip.SetData(dataPCMed.Select(sample => (sample < 0) ? (float)-sample / short.MinValue : (float)sample / short.MaxValue).ToArray(), 0);
             }
             else
