@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-namespace Nofun.Util.Logging
+namespace Nofun.Util
 {
-    public enum LogClass
+    public abstract class Cache<T> where T : ICacheEntry
     {
-        VMGPSound,
-        VMGPText,
-        VMGPGraphic,
-        VMGPSystem,
-        VMStream,
-        VMGPCaps,
-        Loader,
-        GameTTY,
-        VMGP3D,
-        VSound
+        protected abstract T GetFromCache(uint key);
+
+        protected abstract void AddToCache(uint key, T entry);
+
+        public abstract void Purge();
     }
 }

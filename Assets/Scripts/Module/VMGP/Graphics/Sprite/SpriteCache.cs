@@ -15,6 +15,7 @@
  */
 
 using Nofun.Driver.Graphics;
+using Nofun.Util;
 using System;
 using System.IO.Hashing;
 using System.Runtime.InteropServices;
@@ -28,7 +29,7 @@ namespace Nofun.Module.VMGP
         public DateTime LastAccessed { get; set; }
     }
 
-    internal class SpriteCache : Cache<SpriteCacheEntry>
+    internal class SpriteCache : LTUFixedCapCache<SpriteCacheEntry>
     {
         public SpriteCache(int cacheLimit = 4096)
             : base(cacheLimit)

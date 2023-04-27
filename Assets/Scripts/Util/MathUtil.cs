@@ -30,5 +30,10 @@ namespace Nofun.Util
 
             return value;
         }
+
+        public static float RadToDegs(float radians)
+        {
+            return radians * 180.0f / (float) System.Math.PI;
+        }
     }
 }

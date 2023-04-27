@@ -33,6 +33,7 @@ namespace Nofun.Module.VMGP
         }
 
         private SpriteSlot[] spriteSlots;
+        private SpriteCache spriteCache;
 
         [ModuleCall]
         private uint vSpriteInit(byte count)

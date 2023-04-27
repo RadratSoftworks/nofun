@@ -16,6 +16,8 @@
 
 using System.Collections.Generic;
 using System;
+using Nofun.Module.VMGP3D;
+using UnityEngine;
 
 namespace Nofun.Driver.Graphics
 {
@@ -27,6 +29,7 @@ namespace Nofun.Driver.Graphics
             TextDirection direction, SColor textColor);
 
         void ClearScreen(SColor color);
+        void ClearDepth(float depth);
 
         void EndFrame();
 
@@ -51,5 +54,10 @@ namespace Nofun.Driver.Graphics
         int ScreenWidth { get; }
 
         int ScreenHeight { get; }
+
+        void DrawBillboard(NativeBillboard billboard, ITexture billboardTexture);
+
+        void Set3DProjectionMatrix(Matrix4x4 matrix);
+        void Set3DViewMatrix(Matrix4x4 matrix);
     };
 }

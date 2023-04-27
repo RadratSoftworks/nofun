@@ -15,6 +15,7 @@
  */
 
 using Nofun.Util;
+using Nofun.Util.Logging;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -39,17 +40,26 @@ namespace Nofun.Parser
                 throw new InvalidDataException("Stream does not contain metadata info!");
             }
 
-            // Skip 261 bytes, most likely contain certificate data
-            reader.BaseStream.Seek(261, SeekOrigin.Current);
+            reader.BaseStream.Seek(262, SeekOrigin.Current);
 
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                int keyLength = BinaryPrimitives.ReverseEndianness(reader.ReadInt16());
-                int valueLength = BinaryPrimitives.ReverseEndianness(reader.ReadInt16());
+                int keyLength = reader.ReadUInt16();
+                int valueLength = reader.ReadUInt16();
+
+                if (reader.BaseStream.Position == reader.BaseStream.Length)
+                {
+                    break;
+                }
 
                 // Two strings
                 string key = reader.ReadUTF16String(keyLength);
                 string value = reader.ReadUTF16String(valueLength);
+
+                if (reader.BaseStream.Position == reader.BaseStream.Length)
+                {
+                    break;
+                }
 
                 // Pad byte
                 reader.ReadByte();

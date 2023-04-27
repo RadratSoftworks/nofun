@@ -14,19 +14,12 @@
  * limitations under the License.
  */
 
-namespace Nofun.Util.Logging
+using System;
+
+namespace Nofun.Util
 {
-    public enum LogClass
+    public interface ICacheEntry
     {
-        VMGPSound,
-        VMGPText,
-        VMGPGraphic,
-        VMGPSystem,
-        VMStream,
-        VMGPCaps,
-        Loader,
-        GameTTY,
-        VMGP3D,
-        VSound
+        public DateTime LastAccessed { get; set; }
     }
 }

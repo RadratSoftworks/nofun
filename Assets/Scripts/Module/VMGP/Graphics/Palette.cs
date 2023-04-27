@@ -21,7 +21,7 @@ namespace Nofun.Module.VMGP
     public partial class VMGP
     {
         // RGB332 color palette
-        private SColor[] ScreenPalette = new SColor[256]
+        public SColor[] ScreenPalette = new SColor[256]
         {
             new SColor(0.00000f, 0.00000f, 0.00000f),
             new SColor(0.00000f, 0.00000f, 0.33333f),

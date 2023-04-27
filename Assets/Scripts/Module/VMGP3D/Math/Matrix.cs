@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using Nofun.Util;
 using Nofun.VM;
 using System;
 
@@ -34,11 +35,6 @@ namespace Nofun.Module.VMGP3D
         private Matrix4x4 currentMatrix = Matrix4x4.identity;
         private Matrix4x4 projectionMatrix = Matrix4x4.identity;
         
-        private float FixedToFloat(int fixedValue)
-        {
-            return fixedValue / 65536.0f;
-        }
-
         private Matrix4x4 ReadMatrix(VMPtr<V3DMatrix> matrix)
         {
             if (matrix.IsNull)
@@ -69,6 +65,63 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
+        private void vMatrixGetCurrent(VMPtr<V3DMatrix> matrixPtr)
+        {
+            Span<V3DMatrix> matrix = matrixPtr.AsSpan(system.Memory);
+
+            if (currentMatrixOrientation == MatrixOrientationColumnMajor)
+            {
+                matrix[0].m00 = FloatToFixed(currentMatrix.m00);
+                matrix[0].m01 = FloatToFixed(currentMatrix.m01);
+                matrix[0].m02 = FloatToFixed(currentMatrix.m02);
+                matrix[0].m03 = FloatToFixed(currentMatrix.m03);
+
+
+                matrix[0].m10 = FloatToFixed(currentMatrix.m10);
+                matrix[0].m11 = FloatToFixed(currentMatrix.m11);
+                matrix[0].m12 = FloatToFixed(currentMatrix.m12);
+                matrix[0].m13 = FloatToFixed(currentMatrix.m13);
+
+
+                matrix[0].m21 = FloatToFixed(currentMatrix.m20);
+                matrix[0].m21 = FloatToFixed(currentMatrix.m21);
+                matrix[0].m22 = FloatToFixed(currentMatrix.m22);
+                matrix[0].m23 = FloatToFixed(currentMatrix.m23);
+
+
+                matrix[0].m30 = FloatToFixed(currentMatrix.m30);
+                matrix[0].m31 = FloatToFixed(currentMatrix.m31);
+                matrix[0].m32 = FloatToFixed(currentMatrix.m32);
+                matrix[0].m33 = FloatToFixed(currentMatrix.m33);
+            }
+            else
+            {
+                matrix[0].m00 = FloatToFixed(currentMatrix.m00);
+                matrix[0].m10 = FloatToFixed(currentMatrix.m01);
+                matrix[0].m20 = FloatToFixed(currentMatrix.m02);
+                matrix[0].m30 = FloatToFixed(currentMatrix.m03);
+
+
+                matrix[0].m01 = FloatToFixed(currentMatrix.m10);
+                matrix[0].m11 = FloatToFixed(currentMatrix.m11);
+                matrix[0].m21 = FloatToFixed(currentMatrix.m12);
+                matrix[0].m31 = FloatToFixed(currentMatrix.m13);
+
+
+                matrix[0].m02 = FloatToFixed(currentMatrix.m20);
+                matrix[0].m12 = FloatToFixed(currentMatrix.m21);
+                matrix[0].m22 = FloatToFixed(currentMatrix.m22);
+                matrix[0].m32 = FloatToFixed(currentMatrix.m23);
+
+
+                matrix[0].m03 = FloatToFixed(currentMatrix.m30);
+                matrix[0].m13 = FloatToFixed(currentMatrix.m31);
+                matrix[0].m23 = FloatToFixed(currentMatrix.m32);
+                matrix[0].m33 = FloatToFixed(currentMatrix.m33);
+            }
+        }
+
+        [ModuleCall]
         private void vSetMatrixMode(int mode)
         {
             if ((mode == MatrixOrientationRowMajor) || (mode == MatrixOrientationColumnMajor))
@@ -78,16 +131,54 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
+        private void vMatrixIdentity()
+        {
+            currentMatrix = Matrix4x4.identity;
+        }
+
+        [ModuleCall]
+        private void vMatrixTranslate(int xFixed, int yFixed, int zFixed)
+        {
+            currentMatrix *= Matrix4x4.Translate(new Vector3(FixedToFloat(xFixed), FixedToFloat(yFixed), FixedToFloat(zFixed)));
+        }
+
+        [ModuleCall]
+        private void vMatrixRotateX(int d)
+        {
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(d % 4096, Vector3.right));
+        }
+
+        [ModuleCall]
+        private void vMatrixRotateY(int d)
+        {
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(d % 4096, Vector3.up));
+        }
+
+        [ModuleCall]
+        private void vMatrixRotateZ(int d)
+        {
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(d % 4096, Vector3.forward));
+        }
+
+        [ModuleCall]
         private void vMatrixPerspective(int widthFixed, int heightFixed, int zNearFixed, int zFarFixed)
         {
-            currentMatrix = Matrix4x4.Perspective(1.0f, FixedToFloat(widthFixed) / FixedToFloat(heightFixed),
-                FixedToFloat(zNearFixed), FixedToFloat(zFarFixed));
+            float heightNearPlane = FixedToFloat(heightFixed);
+            float distNear = FixedToFloat(zNearFixed);
+
+            float fov = MathUtil.RadToDegs(Mathf.Atan(heightNearPlane / distNear / 2) * 2.0f);
+
+            // Matrix column 2 in Unity already flipping Z, because of reversing view matrix flip
+            // But we don't need that, so reverse it
+            currentMatrix = Matrix4x4.Perspective(fov, FixedToFloat(widthFixed) / heightNearPlane, distNear, FixedToFloat(zFarFixed));
+            currentMatrix.SetColumn(2, -currentMatrix.GetColumn(2));
         }
 
         [ModuleCall]
         void vMatrixSetProjection(VMPtr<V3DMatrix> matrix)
         {
             projectionMatrix = ReadMatrix(matrix);
+            system.GraphicDriver.Set3DProjectionMatrix(projectionMatrix);
         }
     }
 }

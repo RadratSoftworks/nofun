@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
+using Nofun.Driver.Audio;
+using Nofun.Util.Logging;
 using Nofun.VM;
+using System;
+using System.Runtime.InteropServices;
 
 namespace Nofun.Module.VSound
 {
@@ -24,11 +28,16 @@ namespace Nofun.Module.VSound
         private const int SND_OK = 0;
         private const int SND_ERR = -1;
 
+        private const int SND_MAXVOLUME = 127;
+        private const int SND_MINVOLUME = 0;
+
         private VMSystem system;
+        private SimpleObjectManager<IPcmSound> soundManager;
 
         public VSound(VMSystem system)
         {
             this.system = system;
+            this.soundManager = new();
         }
 
         [ModuleCall]
@@ -40,6 +49,97 @@ namespace Nofun.Module.VSound
             }
 
             return SND_OK;
-        } 
+        }
+
+        [ModuleCall]
+        private int vSoundGetHandle(VMPtr<byte> soundData)
+        {
+            Span<NativeSoundHeader> soundHeader = soundData.Cast<NativeSoundHeader>().AsSpan(system.Memory, 1);
+            Span<byte> soundDataPtr = (soundData + Marshal.SizeOf<NativeSoundHeader>()).AsSpan(system.Memory, (int)soundHeader[0].bodySize);
+
+            try
+            {
+                IPcmSound soundFromDriver = system.AudioDriver.LoadPCMSound(soundDataPtr, soundHeader[0].priority,
+                    (int)soundHeader[0].frequency, soundHeader[0].channelCount,
+                    soundHeader[0].bitsPerSample, soundHeader[0].format == (uint)NativeVSndFormat.ADPCM);
+
+                return soundManager.Add(soundFromDriver);
+            } 
+            catch (Exception ex)
+            {
+                Logger.Error(LogClass.VMGPSound, $"Error while creating PCM sound object: {ex}");
+                return SND_ERR;
+            }
+        }
+
+        [ModuleCall]
+        private int vSoundDisposeHandle(int handle)
+        {
+            if (handle == 0)
+            {
+                return SND_OK;
+            }
+
+            soundManager.Remove(handle);
+            return SND_OK;
+        }
+
+        private bool DoesControlRequireInstance(NativeSoundControlCode control)
+        {
+            return (control != NativeSoundControlCode.MasterVolume) && (control != NativeSoundControlCode.ChannelCount);
+        }
+
+        [ModuleCall]
+        private int vSoundCtrlEx(int handle, NativeSoundControlCode control, int parameters)
+        {
+            IPcmSound soundPcm = soundManager.Get(handle);
+            if (soundPcm == null)
+            {
+                if (DoesControlRequireInstance(control))
+                {
+                    Logger.Error(LogClass.VSound, $"Sound handle={handle} is invalid! Control failed!");
+                    return SND_ERR;
+                }
+            }
+
+            switch (control)
+            {
+                case NativeSoundControlCode.Play:
+                    soundPcm.Play();
+                    break;
+
+                case NativeSoundControlCode.Stop:
+                    soundPcm.Stop();
+                    break;
+
+                case NativeSoundControlCode.Volume:
+                    if (parameters == -1)
+                    {
+                        return (int)(soundPcm.Volume * SND_MAXVOLUME);
+                    }
+                    else
+                    {
+                        soundPcm.Volume = parameters / SND_MAXVOLUME;
+                        break;
+                    }
+
+                case NativeSoundControlCode.Freq:
+                    if (parameters == -1)
+                    {
+                        return (int)(soundPcm.Frequency);
+                    }
+                    else
+                    {
+                        soundPcm.Frequency = parameters;
+                        break;
+                    }
+
+                default:
+                    Logger.Error(LogClass.VSound, $"Unimplemented sound control command: {control}");
+                    return SND_ERR;
+            }
+
+            return SND_OK;
+        }
     }
 }

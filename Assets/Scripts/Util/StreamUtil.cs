@@ -43,7 +43,7 @@ namespace Nofun.Util
 
             for (int i = 0; i < lengthInBytes >> 1; i++)
             {
-                ushort charValue = BinaryPrimitives.ReverseEndianness(reader.ReadUInt16());
+                ushort charValue = reader.ReadUInt16();
                 if (charValue == 0)
                 {
                     break;

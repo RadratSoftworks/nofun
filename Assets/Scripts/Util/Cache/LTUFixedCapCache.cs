@@ -14,29 +14,15 @@
  * limitations under the License.
  */
 
-using System.Collections.Generic;
 using System.Linq;
 
-namespace Nofun.Module.VMGP
+namespace Nofun.Util
 {
-    public class Cache<T> where T: ICacheEntry
+    public class LTUFixedCapCache<T>: DictBasedCache<T> where T : ICacheEntry
     {
-
-        private Dictionary<uint, T> cache;
         private int cacheLimit;
 
-        protected T GetFromCache(uint key)
-        {
-            if (cache.TryGetValue(key, out var value))
-            {
-                value.LastAccessed = System.DateTime.Now;
-                return value;
-            }
-
-            return default;
-        }
-
-        protected void AddToCache(uint key, T entry)
+        protected override void AddToCache(uint key, T entry)
         {
             if (cache.Count >= cacheLimit)
             {
@@ -49,16 +35,16 @@ namespace Nofun.Module.VMGP
             }
         }
 
-        public Cache(int cacheLimit = 4096)
+        public LTUFixedCapCache(int cacheLimit = 4096)
+            : base()
         {
             this.cacheLimit = cacheLimit;
-            this.cache = new();
         }
 
         /// <summary>
         /// Purge half of the cache, sorted by oldest time since used.
         /// </summary>
-        private void Purge()
+        public override void Purge()
         {
             var purgeList = cache.OrderBy(x => x.Value.LastAccessed).Select(x => x.Key).ToList();
             for (int i = 0; i < purgeList.Count / 2; i++)

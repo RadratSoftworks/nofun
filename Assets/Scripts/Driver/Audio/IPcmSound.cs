@@ -16,10 +16,16 @@
 
 using System;
 
-namespace Nofun.Module.VMGP
+namespace Nofun.Driver.Audio
 {
-    public interface ICacheEntry
+    public interface IPcmSound : IDisposable
     {
-        public DateTime LastAccessed { get; set; }
+        void Stop();
+        void Pause();
+        void Resume();
+        void Play();
+
+        float Volume { get; set; }
+        float Frequency { get; set; }
     }
 }

@@ -51,10 +51,18 @@ namespace Nofun.Module
             if (handle <= 0)
             {
                 throw new ArgumentException("Handle is smaller or equal to zero!");
-            } 
+            }
 
-            if (objects.Remove(handle))
+            if (objects.ContainsKey(handle))
             {
+                T obj = objects[handle];
+                
+                if (obj is IDisposable)
+                {
+                    (obj as IDisposable).Dispose();
+                }
+
+                objects.Remove(handle);
                 handleAlloc.Clear((uint)(handle - 1));
             }
         }

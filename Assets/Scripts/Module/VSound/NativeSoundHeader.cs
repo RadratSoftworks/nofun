@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-namespace Nofun.Util.Logging
+namespace Nofun.Module.VSound
 {
-    public enum LogClass
+    public unsafe struct NativeSoundHeader
     {
-        VMGPSound,
-        VMGPText,
-        VMGPGraphic,
-        VMGPSystem,
-        VMStream,
-        VMGPCaps,
-        Loader,
-        GameTTY,
-        VMGP3D,
-        VSound
-    }
+        public fixed byte magicShdr[4];
+        public uint headerSize;
+        public uint format;
+        public uint loopStartFrame;
+        public uint loopEndFrame;
+        public uint frequency;
+        public byte bitsPerSample;
+        public byte channelCount;
+        public byte priority;
+        public byte pad;
+        public fixed byte magicBody[4];
+        public uint bodySize;
+    };
 }

@@ -23,6 +23,7 @@ using System;
 
 using UnityEngine.UI;
 using UnityEngine.Rendering;
+using Nofun.Module.VMGP3D;
 
 namespace Nofun.Driver.Unity.Graphics
 {
@@ -30,12 +31,17 @@ namespace Nofun.Driver.Unity.Graphics
     {
         private readonly int NGAGE_PPI = 130;
         private const string BlackTransparentUniformName = "_Black_Transparent";
-        private const string MainTextUniformName = "_MainTex";
+        private const string MainTexUniformName = "_MainTex";
         private const string TexcoordTransformMatrixUniformName = "_TexToLocal";
         private const string ColorUniformName = "_Color";
 
+        // Billboard
+        private const string BillboardZTestUniformName = "_ZTest";
+        private const string BillboardCullUniformName = "_Cull";
+
+        private const int TMPSpawnPerAlloc = 5;
+
         private RenderTexture screenTextureBackBuffer;
-        private RenderTexture screenTextureBackup;
 
         private bool began = false;
         private Action stopProcessor;
@@ -49,7 +55,17 @@ namespace Nofun.Driver.Unity.Graphics
         private float selectedFontSize = 11.5f;
         private float selectedOutlineWidth = 0.0f;
         private int fontMeshUsed = 0;
-        private bool useStagingScreen = false;
+
+        private CompareFunction depthCompareFunction = CompareFunction.LessEqual;
+        private CullMode cullMode = CullMode.Back;
+
+        private Matrix4x4 projectionMatrix3D = Matrix4x4.identity;
+        private Matrix4x4 viewMatrix3D = Matrix4x4.identity;
+        private Matrix4x4 orthoMatrix = Matrix4x4.identity;
+
+        private bool in3DMode = false;
+
+        private BillboardCache billboardCache;
 
         [SerializeField]
         private TMPro.TMP_Text[] textRenders;
@@ -63,13 +79,27 @@ namespace Nofun.Driver.Unity.Graphics
         [SerializeField]
         private Material mophunDrawTextureMaterial;
 
+        [SerializeField]
+        private Material mophunDrawBillboardMaterial;
+
+        [SerializeField]
+        private Camera mophunCamera;
+
         private CommandBuffer commandBuffer;
         private Mesh quadMesh;
+
+        private List<TMPro.TMP_Text> textRenderInternals;
+        private List<Mesh> billboardMeshes;
 
         [HideInInspector]
         public float FpsLimit { get; set; }
 
         private float SecondPerFrame => 1.0f / FpsLimit;
+
+        private static Vector2 FixedUVToUnityUV(NativeUV uv)
+        {
+            return new Vector2(FixedUtil.Fixed9PointToFloat(uv.fixedU), FixedUtil.Fixed9PointToFloat(uv.fixedV));
+        }
 
         public Action StopProcessorAction
         {
@@ -116,39 +146,21 @@ namespace Nofun.Driver.Unity.Graphics
             quadMesh.uv = uv;
         }
 
-        private void ForceFlush()
-        {
-            if (!useStagingScreen)
-            {
-                useStagingScreen = true;
-
-                if (screenTextureBackup == null)
-                {
-                    screenTextureBackup = new RenderTexture((int)screenSize.x, (int)screenSize.y, 32);
-                }
-
-                UnityEngine.Graphics.Blit(screenTextureBackBuffer, screenTextureBackup);
-                displayImage.texture = screenTextureBackup;
-            }
-
-            UnityEngine.Graphics.ExecuteCommandBuffer(commandBuffer);
-            commandBuffer.Clear();
-
-            fontMeshUsed = 0;
-            began = false;
-        }
-
         public void Initialize(Vector2 size)
         {
             screenTextureBackBuffer = new RenderTexture((int)size.x, (int)size.y, 32);
             scissorRect = new Rect(0, 0, size.x, size.y);
             viewportRect = new Rect(0, 0, size.x, size.y);
-
+            billboardCache = new();
             SetupWhiteTexture();
             SetupQuadMesh();
 
             displayImage.texture = screenTextureBackBuffer;
+            textRenderInternals = new(textRenders);
+
             this.screenSize = size;
+
+            orthoMatrix = Matrix4x4.Ortho(0, ScreenWidth, 0, ScreenHeight, 1, -100);
         }
 
         private void Start()
@@ -190,7 +202,7 @@ namespace Nofun.Driver.Unity.Graphics
             }
 
             MaterialPropertyBlock block = new MaterialPropertyBlock();
-            block.SetTexture(MainTextUniformName, tex);
+            block.SetTexture(MainTexUniformName, tex);
             block.SetFloat(BlackTransparentUniformName, blackIsTransparent ? 1.0f : 0.0f);
             block.SetMatrix(TexcoordTransformMatrixUniformName, coordMatrix);
             block.SetColor(ColorUniformName, color.ToUnityColor());
@@ -198,10 +210,30 @@ namespace Nofun.Driver.Unity.Graphics
             commandBuffer.DrawMesh(quadMesh, drawMatrix, mophunDrawTextureMaterial, 0, 0, block);
         }
 
-        private void BeginRender()
+        private void UpdateRenderMode()
+        {
+            if (in3DMode)
+            {
+                commandBuffer.SetProjectionMatrix(projectionMatrix3D);
+                commandBuffer.SetViewMatrix(viewMatrix3D);
+            }
+            else
+            {
+                commandBuffer.SetViewMatrix(Matrix4x4.identity);
+                commandBuffer.SetProjectionMatrix(orthoMatrix);
+            }
+        }
+
+        private void BeginRender(bool mode2D = true)
         {
             if (began)
             {
+                if (mode2D != !in3DMode)
+                {
+                    in3DMode = !mode2D;
+                    UpdateRenderMode();
+                }
+
                 return;
             }
 
@@ -211,6 +243,17 @@ namespace Nofun.Driver.Unity.Graphics
                 commandBuffer.name = "Mophun render buffer";
             }
 
+            if (mophunCamera.renderingPath == RenderingPath.DeferredShading)
+            {
+                mophunCamera.RemoveCommandBuffer(CameraEvent.AfterGBuffer, commandBuffer);
+            }
+            else
+            {
+                mophunCamera.RemoveCommandBuffer(CameraEvent.AfterForwardOpaque, commandBuffer);
+            }
+
+            commandBuffer.Clear();
+
             commandBuffer.SetRenderTarget(screenTextureBackBuffer);
             commandBuffer.SetViewport(GetUnityScreenRect(viewportRect));
             
@@ -219,18 +262,12 @@ namespace Nofun.Driver.Unity.Graphics
                 commandBuffer.EnableScissorRect(GetUnityScreenRect(scissorRect));
             }
 
-            commandBuffer.SetViewMatrix(Matrix4x4.identity);
-            commandBuffer.SetProjectionMatrix(Matrix4x4.Ortho(0, ScreenWidth, 0, ScreenHeight, 1, -100));
-
             began = true;
+            UpdateRenderMode();
         }
 
         public void EndFrame()
         {
-            if (began)
-            {
-                began = false;
-            }
         }
 
         public void ClearScreen(SColor color)
@@ -238,6 +275,13 @@ namespace Nofun.Driver.Unity.Graphics
             BeginRender();
 
             commandBuffer.ClearRenderTarget(false, true, color.ToUnityColor());
+        }
+
+        public void ClearDepth(float value)
+        {
+            BeginRender();
+
+            commandBuffer.ClearRenderTarget(true, false, new Color(), value);
         }
 
         public ITexture CreateTexture(byte[] data, int width, int height, int mipCount, Driver.Graphics.TextureFormat format, Span<SColor> palettes = new Span<SColor>())
@@ -305,13 +349,22 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void FlipScreen()
         {
-            UnityEngine.Graphics.ExecuteCommandBuffer(commandBuffer);
-            commandBuffer.Clear();
-
             frameTimePassed = 0.0f;
-            useStagingScreen = false;
 
-            displayImage.texture = screenTextureBackBuffer;
+            if (mophunCamera.renderingPath == RenderingPath.DeferredShading)
+            {
+                mophunCamera.AddCommandBuffer(CameraEvent.AfterGBuffer, commandBuffer);
+            }
+            else
+            {
+                mophunCamera.AddCommandBuffer(CameraEvent.AfterForwardOpaque, commandBuffer);
+            }
+
+            if (began)
+            {
+                began = false;
+                fontMeshUsed = 0;
+            }
 
             // Exit the processing so that Update can begin
             stopProcessor();
@@ -450,14 +503,21 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void DrawSystemText(short x0, short y0, string text, SColor backColor, SColor foreColor)
         {
-            if (fontMeshUsed >= textRenders.Length)
-            {
-                ForceFlush();
-            }
-
             BeginRender();
 
-            TMPro.TMP_Text textRender = textRenders[fontMeshUsed];
+            if (textRenderInternals.Count <= fontMeshUsed)
+            {
+                // Add 5 more
+                for (int i = 0; i < TMPSpawnPerAlloc; i++)
+                {
+                    GameObject newObj = Instantiate(textRenders[0].gameObject, textRenders[0].transform.parent);
+                    newObj.name = $"RenderText{i + fontMeshUsed}";
+                    
+                    textRenderInternals.Add(newObj.GetComponent<TMPro.TMP_Text>());
+                }
+            }
+
+            TMPro.TMP_Text textRender = textRenderInternals[fontMeshUsed];
 
             textRender.text = text;
             textRender.color = foreColor.ToUnityColor();
@@ -488,6 +548,77 @@ namespace Nofun.Driver.Unity.Graphics
             }
 
             return (ushort)Math.Round(size.x) | ((ushort)Math.Round(size.y) << 16);
+        }
+
+        private static Vector2 GetPivotMultiplier(BillboardPivot pivot)
+        {
+            switch (pivot)
+            {
+                case BillboardPivot.Center:
+                    return new Vector2(0.5f, 0.5f);
+
+                case BillboardPivot.TopLeft:
+                    return new Vector2(0.0f, 1.0f);
+
+                case BillboardPivot.TopRight:
+                    return new Vector2(1.0f, 1.0f);
+
+                case BillboardPivot.BottomLeft:
+                    return new Vector2(0.0f, 0.0f);
+
+                case BillboardPivot.BottomRight:
+                    return new Vector2(0.0f, 1.0f);
+
+                default:
+                    throw new ArgumentException($"Unhandled pivot value: {pivot}");
+            }
+        }
+
+        public void DrawBillboard(NativeBillboard billboard, ITexture billboardTexture)
+        {
+            BeginRender(mode2D: false);
+
+            Mesh billboardMesh = billboardCache.GetBillboardMesh(billboard);
+            Texture2D billboardTextureNative = (billboardTexture as Texture).NativeTexture;
+
+            MaterialPropertyBlock block = new MaterialPropertyBlock();
+            block.SetFloat(BillboardZTestUniformName, (float)depthCompareFunction);
+            block.SetFloat(BillboardCullUniformName, (float)cullMode);
+            block.SetTexture(MainTexUniformName, billboardTextureNative);
+
+            Matrix4x4 modelMatrix = Matrix4x4.Translate(Struct3DToUnity.MophunVector3ToUnity(billboard.position));
+
+            Vector2 pivotV = GetPivotMultiplier((BillboardPivot)billboard.rotationPointFlag);
+            Vector2 size = new Vector2(FixedUtil.FixedToFloat(billboard.fixedWidth), FixedUtil.FixedToFloat(billboard.fixedHeight));
+
+            modelMatrix *= Matrix4x4.TRS(pivotV * size, Quaternion.AngleAxis(FixedUtil.FixedToFloat(billboard.rotation), Vector3.forward),
+                size) * Matrix4x4.Translate(-pivotV * size);
+
+            // Billboard is unlit? It seems so. So not much pass
+            commandBuffer.DrawMesh(billboardMesh, modelMatrix, mophunDrawBillboardMaterial, 0, 0, block);
+        }
+
+        public void Set3DProjectionMatrix(Matrix4x4 matrix)
+        {
+            projectionMatrix3D = matrix;
+
+            if (in3DMode)
+            {
+                commandBuffer.SetProjectionMatrix(projectionMatrix3D);
+            }
+        }
+
+        public void Set3DViewMatrix(Matrix4x4 matrix)
+        {
+            if (viewMatrix3D != matrix)
+            {
+                viewMatrix3D = matrix;
+
+                if (in3DMode)
+                {
+                    commandBuffer.SetViewMatrix(viewMatrix3D);
+                }
+            }
         }
 
         public int ScreenWidth => (int)screenSize.x;

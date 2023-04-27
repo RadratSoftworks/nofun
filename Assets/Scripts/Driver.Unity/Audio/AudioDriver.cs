@@ -26,6 +26,13 @@ namespace Nofun.Driver.Unity.Audio
     {
         private const string DefaultSoundFontResourceName = "DefaultSfBank";
         private List<TSFMidiSound> activeMidiSounds = new();
+        private Queue<AudioSource> freeAudioSources;
+
+        [SerializeField]
+        private GameObject audioPlayerPrefab;
+
+        [SerializeField]
+        private GameObject audioContainer;
 
         private void LoadBank(byte[] bankData)
         {
@@ -50,6 +57,7 @@ namespace Nofun.Driver.Unity.Audio
                 throw new MissingComponentException("Default SoundFont bank is missing!");
             }
             LoadBank(asset.bytes);
+            freeAudioSources = new();
         }
 
         private void OnDestroy()
@@ -129,6 +137,28 @@ namespace Nofun.Driver.Unity.Audio
         public bool InitializePCMPlay()
         {
             return true;
+        }
+
+        public IPcmSound LoadPCMSound(Span<byte> data, int priority, int frequency, int channelCount,
+            int bitsPerSample, bool isAdpcm)
+        {
+            AudioSource freeSource = null;
+            if (freeAudioSources.Count == 0)
+            {
+                GameObject source = Instantiate(audioPlayerPrefab, audioContainer.transform);
+                freeSource = source.GetComponent<AudioSource>();
+            }
+            else
+            {
+                freeSource = freeAudioSources.Dequeue();
+            }
+
+            return new PCMSound(this, freeSource, data, frequency, channelCount, bitsPerSample, priority, isAdpcm);
+        }
+
+        public void ReturnAudioSourceToFreePool(AudioSource source)
+        {
+            freeAudioSources.Enqueue(source);
         }
     }
 }

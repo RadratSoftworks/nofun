@@ -27,5 +27,8 @@ namespace Nofun.Driver.Audio
         public SoundConfig SoundConfig { get; }
 
         public bool InitializePCMPlay();
+
+        public IPcmSound LoadPCMSound(Span<byte> data, int priority, int frequency, int channelCount,
+            int bitsPerSample, bool isAdpcm);
     }
 }

@@ -15,6 +15,7 @@
  */
 
 using Nofun.Driver.Graphics;
+using Nofun.Util;
 using System;
 
 namespace Nofun.Module.VMGP
@@ -33,7 +34,7 @@ namespace Nofun.Module.VMGP
     /// 
     /// The cache works on the assumption that the tilemap data is immutable.
     /// </summary>
-    internal class TilemapCache : Cache<TilemapCacheEntry>
+    internal class TilemapCache : LTUFixedCapCache<TilemapCacheEntry>
     {
         private const int TileMaxCount = 256;
 

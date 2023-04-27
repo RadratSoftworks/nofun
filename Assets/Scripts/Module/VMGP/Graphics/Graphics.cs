@@ -27,8 +27,6 @@ namespace Nofun.Module.VMGP
         private int backgroundColor;
         private uint currentTransferMode = (uint)TransferMode.Transparent;
 
-        private SpriteCache spriteCache;
-
         private int GetSimpleSpriteRotation()
         {
             bool flipXSet = BitUtil.FlagSet(currentTransferMode, TransferMode.FlipX);
