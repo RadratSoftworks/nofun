@@ -57,7 +57,7 @@ namespace Nofun.Driver.Unity.Graphics
         private float selectedOutlineWidth = 0.0f;
         private int fontMeshUsed = 0;
 
-        private CompareFunction depthCompareFunction = CompareFunction.LessEqual;
+        private CompareFunction depthCompareFunction = CompareFunction.Less;
         private CullMode cullMode = CullMode.Back;
         private bool fixedStateChanged = true;
 
@@ -228,7 +228,7 @@ namespace Nofun.Driver.Unity.Graphics
                 {
                     drawMatrix = Matrix4x4.Translate(new Vector3(destRect.x - centerX, ScreenHeight - (destRect.y - centerY + destRect.height), 0));
                     drawMatrix *= Matrix4x4.TRS(new Vector3(centerX, -centerY), Quaternion.AngleAxis(rotation, Vector3.forward), new Vector3(destRect.width, destRect.height, 0));
-                    drawMatrix = Matrix4x4.Translate(new Vector3(-centerX, centerY));
+                    drawMatrix *= Matrix4x4.Translate(new Vector3(-centerX, centerY));
                 }
 
                 MaterialPropertyBlock block = new MaterialPropertyBlock();
@@ -335,6 +335,8 @@ namespace Nofun.Driver.Unity.Graphics
             return result;
         }
 
+        #region 2D draw library functions
+
         public void DrawText(int posX, int posY, int sizeX, int sizeY, List<int> positions, ITexture atlas, TextDirection direction, SColor textColor)
         {
             JobScheduler.Instance.RunOnUnityThread(() =>
@@ -391,6 +393,34 @@ namespace Nofun.Driver.Unity.Graphics
             });
         }
 
+        private void DrawLineDetail(int x0, int y0, int x1, int y1, SColor lineColor, float lineThick)
+        {
+            BeginRender(mode2D: true);
+
+            Vector2 start = new Vector2(x0, -y0);
+            Vector2 end = new Vector2(x1, -y1);
+
+            // Our line must be reversed because the coordinate system is Y down
+            Vector2 line = end - start;
+            float angle = Vector2.SignedAngle(Vector2.right, line.normalized);
+
+            Rect destRect = new Rect(x0, y0, line.magnitude, lineThick);
+            DrawTexture(whiteTexture, destRect, new Rect(0, 0, 1, 1), 0, 0, angle, lineColor, false);
+        }
+
+        private void DrawLineThickScaled(int x0, int y0, int x1, int y1, SColor lineColor)
+        {
+            DrawLineDetail(x0, y0, x1, y1, lineColor, 1);
+        }
+
+        public void DrawLine(int x0, int y0, int x1, int y1, SColor lineColor)
+        {
+            JobScheduler.Instance.RunOnUnityThread(() =>
+            {
+                DrawLineThickScaled(x0, y0, x1, y1, lineColor);
+            });
+        }
+
         public void FillRect(int x0, int y0, int x1, int y1, SColor color)
         {
             JobScheduler.Instance.RunOnUnityThread(() =>
@@ -401,6 +431,8 @@ namespace Nofun.Driver.Unity.Graphics
                 DrawTexture(whiteTexture, destRect, sourceRect, 0, 0, 0, color, false);
             });
         }
+
+        #endregion
 
         public void FlipScreen()
         {

@@ -60,6 +60,7 @@ namespace Nofun.Driver.Graphics
         void DrawBillboard(NativeBillboard billboard);
 
         void DrawPrimitives(MpMesh meshToDraw);
+        void DrawLine(int x0, int y0, int x1, int y1, SColor lineColor);
 
         void Set3DProjectionMatrix(Matrix4x4 matrix);
         void Set3DViewMatrix(Matrix4x4 matrix);

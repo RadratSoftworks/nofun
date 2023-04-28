@@ -134,6 +134,12 @@ namespace Nofun.Module.VMGP
         }
 
         [ModuleCall]
+        private void vDrawLine(short x0, short y0, short x1, short y1)
+        {
+            system.GraphicDriver.DrawLine(x0, y0, x1, y1, GetColor(foregroundColor));
+        }
+
+        [ModuleCall]
         private void vUpdateSpriteMap()
         {
             vUpdateMap();
