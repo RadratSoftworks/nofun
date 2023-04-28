@@ -23,7 +23,7 @@ namespace Nofun.Driver.Graphics
 {
     public interface IGraphicDriver
     {
-        ITexture CreateTexture(byte[] data, int width, int height, int mipCount, TextureFormat format, Span<SColor> palettes = new Span<SColor>());
+        ITexture CreateTexture(byte[] data, int width, int height, int mipCount, TextureFormat format, Memory<SColor> palettes = new Memory<SColor>());
 
         void DrawText(int posX, int posY, int sizeX, int sizeY, List<int> positions, ITexture atlas,
             TextDirection direction, SColor textColor);

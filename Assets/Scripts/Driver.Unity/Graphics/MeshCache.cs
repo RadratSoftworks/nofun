@@ -1,4 +1,20 @@
-﻿using Nofun.Module.VMGP3D;
+﻿/*
+ * (C) 2023 Radrat Softworks
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+using Nofun.Module.VMGP3D;
 using System;
 using System.IO.Hashing;
 using System.Runtime.InteropServices;
@@ -20,48 +36,63 @@ namespace Nofun.Driver.Unity.Graphics
 
     public class MeshCache : LTUHardPruneCache<MeshCacheEntry>
     {
+        private class DeferredCreationInfo
+        {
+            public Vector3[] vertices;
+            public Vector2[] uvs;
+            public Vector3[] normals;
+            public Color[] colors;
+            public int[] triangles;
+            public uint hash;
+        };
+
+        private List<DeferredCreationInfo> creationInfos;
+
         public MeshCache(int limit = 100, int cacheTimeout = 240)
             : base(limit, cacheTimeout)
         {
+            creationInfos = new();
         }
 
-        public Mesh GetMesh(MpMesh mesh)
+        private void PostMeshes()
         {
-            XxHash32 hash = new();
-
-            // Hash texture coordinates
-            hash.Append(MemoryMarshal.Cast<NativeVector3D, byte>(mesh.vertices));
-            hash.Append(MemoryMarshal.Cast<NativeUV, byte>(mesh.uvs));
-            hash.Append(MemoryMarshal.Cast<NativeDiffuseColor, byte>(mesh.diffuses));
-            hash.Append(MemoryMarshal.Cast<NativeVector3D, byte>(mesh.normals));
-            hash.Append(MemoryMarshal.Cast<PrimitiveTopology, byte>(MemoryMarshal.CreateReadOnlySpan(ref mesh.topology, 1)));
-
-            if (!mesh.indices.IsEmpty)
+            lock (creationInfos)
             {
-                hash.Append(MemoryMarshal.Cast<short, byte>(mesh.indices));
+                foreach (var info in creationInfos)
+                {
+                    Mesh newMesh = new Mesh();
+                    newMesh.vertices = info.vertices;
+                    newMesh.uv = info.uvs;
+                    newMesh.normals = info.normals;
+                    newMesh.colors = info.colors;
+                    newMesh.triangles = info.triangles;
+
+                    AddToCache(info.hash, new MeshCacheEntry()
+                    {
+                        mesh = newMesh,
+                        LastAccessed = DateTime.Now
+                    });
+                }
+
+                creationInfos.Clear();
             }
+        }
 
-            uint hashValue = BitConverter.ToUInt32(hash.GetCurrentHash());
+        private void DeferMeshCreation(MpMesh mesh, uint targetHash)
+        {
+            var verticesTransformed = mesh.vertices.Select(vec => Struct3DToUnity.MophunVector3ToUnity(vec)).ToArray();
+            var uvTransformed = mesh.uvs.Select(uv => Struct3DToUnity.MophunUVToUnity(uv)).ToArray();
+            var normalTransformed = mesh.normals.Select(normal => Struct3DToUnity.MophunVector3ToUnity(normal)).ToArray();
+            var colorTransformed = mesh.diffuses.Select(diffuseCol => Struct3DToUnity.MophunDColorToUnity(diffuseCol)).ToArray();
 
-            MeshCacheEntry entry = GetFromCache(hashValue);
-            if (entry != null)
-            {
-                return entry.mesh;
-            }
-
-            // Create new mesh. Translate as normal, but if we encountered topology other than list, we would take action
-            Mesh newBillboardMesh = new Mesh();
-            newBillboardMesh.vertices = mesh.vertices.Select(vec => Struct3DToUnity.MophunVector3ToUnity(vec)).ToArray();
-            newBillboardMesh.uv = mesh.uvs.Select(uv => Struct3DToUnity.MophunUVToUnity(uv)).ToArray();
-            newBillboardMesh.normals = mesh.normals.Select(normal => Struct3DToUnity.MophunVector3ToUnity(normal)).ToArray();
-            newBillboardMesh.colors = mesh.diffuses.Select(diffuseCol => Struct3DToUnity.MophunDColorToUnity(diffuseCol)).ToArray();
+            int[] triangles = null;
 
             if (!mesh.indices.IsEmpty)
             {
                 switch (mesh.topology)
                 {
                     case PrimitiveTopology.TriangleList:
-                        newBillboardMesh.triangles = mesh.indices.Select(indexShort => (int)indexShort).ToArray();
+                        triangles = mesh.indices.Select(indexShort => (int)indexShort).ToArray();
                         break;
 
                     case PrimitiveTopology.TriangleStrip:
@@ -87,7 +118,7 @@ namespace Nofun.Driver.Unity.Graphics
                                 winding = !winding;
                             }
 
-                            newBillboardMesh.triangles = indicies.ToArray();
+                            triangles = indicies.ToArray();
                             break;
                         }
 
@@ -115,14 +146,15 @@ namespace Nofun.Driver.Unity.Graphics
                                 indicies.Add(mesh.indices[i + 1]);
                             }
 
-                            newBillboardMesh.triangles = indicies.ToArray();
+                            triangles = indicies.ToArray();
                             break;
                         }
 
                     default:
                         throw new ArgumentException($"Unknown topology: {mesh.topology}");
                 }
-            } else
+            }
+            else
             {
                 switch (mesh.topology)
                 {
@@ -141,7 +173,7 @@ namespace Nofun.Driver.Unity.Graphics
                                 newIndicies[i * 3 + 2] = i + 2;
                             }
 
-                            newBillboardMesh.triangles = newIndicies;
+                            triangles = newIndicies;
                             break;
                         }
 
@@ -156,7 +188,7 @@ namespace Nofun.Driver.Unity.Graphics
                                 newIndicies[i * 3 + 2] = i + 1;
                             }
 
-                            newBillboardMesh.triangles = newIndicies;
+                            triangles = newIndicies;
                             break;
                         }
 
@@ -165,13 +197,66 @@ namespace Nofun.Driver.Unity.Graphics
                 }
             }
 
-            AddToCache(hashValue, new MeshCacheEntry()
+            lock (creationInfos)
             {
-                LastAccessed = DateTime.Now,
-                mesh = newBillboardMesh
-            });
+                creationInfos.Add(new DeferredCreationInfo()
+                {
+                    hash = targetHash,
+                    triangles = triangles,
+                    vertices = verticesTransformed,
+                    uvs = uvTransformed,
+                    normals = normalTransformed,
+                    colors = colorTransformed
+                });
+            }
+        }
 
-            return newBillboardMesh;
+        public uint GetMeshIdentifier(MpMesh mesh, out Mesh existingMesh)
+        {
+            existingMesh = null;
+            XxHash32 hash = new();
+
+            // Hash texture coordinates
+            hash.Append(MemoryMarshal.Cast<NativeVector3D, byte>(mesh.vertices));
+            hash.Append(MemoryMarshal.Cast<NativeUV, byte>(mesh.uvs));
+            hash.Append(MemoryMarshal.Cast<NativeDiffuseColor, byte>(mesh.diffuses));
+            hash.Append(MemoryMarshal.Cast<NativeVector3D, byte>(mesh.normals));
+            hash.Append(MemoryMarshal.Cast<PrimitiveTopology, byte>(MemoryMarshal.CreateReadOnlySpan(ref mesh.topology, 1)));
+
+            if (!mesh.indices.IsEmpty)
+            {
+                hash.Append(MemoryMarshal.Cast<short, byte>(mesh.indices));
+            }
+
+            uint hashValue = BitConverter.ToUInt32(hash.GetCurrentHash());
+
+            MeshCacheEntry entry = GetFromCache(hashValue);
+            if (entry != null)
+            {
+                existingMesh = entry.mesh;
+            }
+            else
+            {
+                DeferMeshCreation(mesh, hashValue);
+            }
+
+            return hashValue;
+        }
+
+        public Mesh GetMesh(uint indentifier)
+        {
+            lock (cache)
+            {
+                PostMeshes();
+
+                MeshCacheEntry cache = GetFromCache(indentifier);
+                if (cache == null)
+                {
+                    throw new ArgumentNullException($"Mesh entry is not supposed to be null!");
+                }
+
+                return cache.mesh;
+            }
         }
     };
 }

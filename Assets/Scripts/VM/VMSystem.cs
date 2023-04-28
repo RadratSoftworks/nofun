@@ -214,5 +214,7 @@ namespace Nofun.VM
             inputDriver.EndFrame();
             graphicDriver.EndFrame();
         }
+
+        public bool ShouldStop => shouldStop;
     }
 }

@@ -61,7 +61,7 @@ namespace Nofun.Driver.Unity.Graphics
             }
         }
 
-        private void UploadSingleMip(byte[] data, int width, int height, int offset, int sizeInBits, int mipLevel, Span<SColor> palettes)
+        private void UploadSingleMip(byte[] data, int width, int height, int offset, int sizeInBits, int mipLevel, Memory<SColor> palettes)
         {
             bool needTransform = DoesFormatNeedTransform(format);
             int bitsPerPixel = TextureUtil.GetPixelSizeInBits(format);
@@ -117,7 +117,7 @@ namespace Nofun.Driver.Unity.Graphics
             }
         }
 
-        private void UploadData(byte[] data, int width, int height, int mipCount, Span<SColor> palettes)
+        private void UploadData(byte[] data, int width, int height, int mipCount, Memory<SColor> palettes)
         {
             bool needTransform = DoesFormatNeedTransform(format);
             int bitsPerPixel = TextureUtil.GetPixelSizeInBits(format);
@@ -140,7 +140,7 @@ namespace Nofun.Driver.Unity.Graphics
             uTexture.Apply();
         }
 
-        public Texture(byte[] data, int width, int height, int mipCount, Driver.Graphics.TextureFormat format, Span<SColor> palettes)
+        public Texture(byte[] data, int width, int height, int mipCount, Driver.Graphics.TextureFormat format, Memory<SColor> palettes)
         {
             bool needTransform = DoesFormatNeedTransform(format);
 
@@ -151,23 +151,32 @@ namespace Nofun.Driver.Unity.Graphics
             UploadData(data, width, height, mipCount, palettes);
         }
 
-        public void SetData(byte[] data, int mipLevel, Span<SColor> palettes)
+        public void SetData(byte[] data, int mipLevel, Memory<SColor> palettes)
         {
-            UploadSingleMip(data, uTexture.width >> mipLevel, uTexture.height >> mipLevel, 0, data.Length * 8, mipLevel, palettes);
+            JobScheduler.Instance.RunOnUnityThread(() =>
+            {
+                UploadSingleMip(data, uTexture.width >> mipLevel, uTexture.height >> mipLevel, 0, data.Length * 8, mipLevel, palettes);
+            });
         }
 
         public void Apply()
         {
-            uTexture.Apply();
+            JobScheduler.Instance.RunOnUnityThread(() =>
+            {
+                uTexture.Apply();
+            });
         }
 
         public void SaveToPng(string path)
         {
-            using (FileStream stream = File.OpenWrite(path))
+            JobScheduler.Instance.RunOnUnityThread(() =>
             {
-                byte[] pngData = uTexture.EncodeToPNG();
-                stream.Write(pngData, 0, pngData.Length);
-            }
+                using (FileStream stream = File.OpenWrite(path))
+                {
+                    byte[] pngData = uTexture.EncodeToPNG();
+                    stream.Write(pngData, 0, pngData.Length);
+                }
+            });
         }
     }
 }

@@ -27,6 +27,7 @@ namespace Nofun.Driver.Unity.Audio
         private const string DefaultSoundFontResourceName = "DefaultSfBank";
         private List<TSFMidiSound> activeMidiSounds = new();
         private Queue<AudioSource> freeAudioSources;
+        private int systemFrequencyRate;
 
         [SerializeField]
         private GameObject audioPlayerPrefab;
@@ -58,6 +59,7 @@ namespace Nofun.Driver.Unity.Audio
             }
             LoadBank(asset.bytes);
             freeAudioSources = new();
+            systemFrequencyRate = AudioSettings.outputSampleRate;
         }
 
         private void OnDestroy()
@@ -83,7 +85,11 @@ namespace Nofun.Driver.Unity.Audio
                     }
 
                     TSFMidiSound sound = new TSFMidiSound(handle);
-                    activeMidiSounds.Add(sound);
+
+                    lock (activeMidiSounds)
+                    {
+                        activeMidiSounds.Add(sound);
+                    }
 
                     return sound;
                 }
@@ -99,15 +105,18 @@ namespace Nofun.Driver.Unity.Audio
                 int count = 0;
                 void** freedHandles = (void**)TSFMidiRenderer.GetDonePlayingHandles(new IntPtr(&count));
 
-                for (int i = 0; i < count; i++)
+                lock (activeMidiSounds)
                 {
-                    IntPtr compareTarget = (IntPtr)(freedHandles[0]);
-                    TSFMidiSound foundRes = activeMidiSounds.Find(sound => sound.NativeHandle == compareTarget);
-
-                    if (foundRes != null)
+                    for (int i = 0; i < count; i++)
                     {
-                        foundRes.OnDonePlaying();
-                        activeMidiSounds.Remove(foundRes);
+                        IntPtr compareTarget = (IntPtr)(freedHandles[0]);
+                        TSFMidiSound foundRes = activeMidiSounds.Find(sound => sound.NativeHandle == compareTarget);
+
+                        if (foundRes != null)
+                        {
+                            foundRes.OnDonePlaying();
+                            activeMidiSounds.Remove(foundRes);
+                        }
                     }
                 }
 
@@ -126,7 +135,7 @@ namespace Nofun.Driver.Unity.Audio
             {
                 return new SoundConfig()
                 {
-                    sampleFrequency = (ushort)AudioSettings.outputSampleRate,
+                    sampleFrequency = (ushort)systemFrequencyRate,
                     numMixerChannels = 20,
                     numChannels = 2,
                     bitsPerSample = 16
@@ -142,23 +151,37 @@ namespace Nofun.Driver.Unity.Audio
         public IPcmSound LoadPCMSound(Span<byte> data, int priority, int frequency, int channelCount,
             int bitsPerSample, bool isAdpcm)
         {
-            AudioSource freeSource = null;
-            if (freeAudioSources.Count == 0)
-            {
-                GameObject source = Instantiate(audioPlayerPrefab, audioContainer.transform);
-                freeSource = source.GetComponent<AudioSource>();
-            }
-            else
-            {
-                freeSource = freeAudioSources.Dequeue();
-            }
+            IPcmSound result = null;
+            byte[] dataArr = data.ToArray();
 
-            return new PCMSound(this, freeSource, data, frequency, channelCount, bitsPerSample, priority, isAdpcm);
+            JobScheduler.Instance.RunOnUnityThreadSync(() =>
+            {
+                AudioSource freeSource = null;
+                if (freeAudioSources.Count == 0)
+                {
+                    GameObject source = Instantiate(audioPlayerPrefab, audioContainer.transform);
+                    freeSource = source.GetComponent<AudioSource>();
+                }
+                else
+                {
+                    lock (freeAudioSources)
+                    {
+                        freeSource = freeAudioSources.Dequeue();
+                    }
+                }
+
+                result = new PCMSound(this, freeSource, dataArr, frequency, channelCount, bitsPerSample, priority, isAdpcm);
+            });
+
+            return result;
         }
 
         public void ReturnAudioSourceToFreePool(AudioSource source)
         {
-            freeAudioSources.Enqueue(source);
+            lock (freeAudioSources)
+            {
+                freeAudioSources.Enqueue(source);
+            }
         }
     }
 }

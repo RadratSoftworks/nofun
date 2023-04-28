@@ -15,7 +15,6 @@
  */
 
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Nofun.Util
 {
@@ -23,6 +22,14 @@ namespace Nofun.Util
     {
 
         protected Dictionary<uint, T> cache;
+
+        protected T GetFromCacheSafe(uint key)
+        {
+            lock (cache)
+            {
+                return GetFromCache(key);
+            }
+        }
 
         protected override T GetFromCache(uint key)
         {

@@ -24,6 +24,8 @@ using Nofun.VM;
 using System.IO;
 using UnityEngine;
 
+using System.Threading;
+
 namespace Nofun
 {
     public class NofunRunner: MonoBehaviour
@@ -45,6 +47,8 @@ namespace Nofun
 
         private VMGPExecutable executable;
         private VMSystem system;
+        private Thread systemThread;
+        private bool started = false;
 
         [SerializeField]
         private string executableFilePath = "E:\\spacebox.mpn";
@@ -68,19 +72,26 @@ namespace Nofun
 
             // Setup graphics driver
             graphicDriver.StopProcessorAction = () => system.Processor.Stop();
+
+            systemThread = new Thread(new ThreadStart(() =>
+            {
+                while (!system.ShouldStop)
+                {
+                    system.Run();
+                }
+            }));
         }
 
         private void Update()
         {
-            if (!graphicDriver.FrameFlipFinishedEmulating())
+            graphicDriver.FpsLimit = fpsLimit;
+            
+            if (!started)
             {
-                return;
+                systemThread.Start();
+                started = true;
             }
 
-            // Only set FPS when it's not emulating frame flip
-            graphicDriver.FpsLimit = fpsLimit;
-
-            system.Run();
             timeDriver.Update();
         }
     }

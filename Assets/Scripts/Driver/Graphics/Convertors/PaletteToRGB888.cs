@@ -20,7 +20,7 @@ namespace Nofun.Driver.Graphics
 {
     public static partial class DataConvertor
     {
-        public static byte[] PaletteToRGBA8888(Span<byte> data, int width, int height, byte bits, Span<SColor> palettes)
+        public static byte[] PaletteToRGBA8888(Span<byte> data, int width, int height, byte bits, Memory<SColor> palettes)
         {
             if ((bits != 1) && (bits != 2) && (bits != 4) && (bits != 8))
             {
@@ -38,7 +38,7 @@ namespace Nofun.Driver.Graphics
                 for (int x = 0; x < width; x++)
                 {
                     int paletteIndex = (data[(pixelIterated * bits) >> 3] >> ((pixelIterated & iteratedMode) * bits)) & mask;
-                    SColor color = palettes[paletteIndex];
+                    SColor color = palettes.Span[paletteIndex];
 
                     result[(y * width + x) * 4] = 255;
                     result[(y * width + x) * 4 + 1] = (byte)(color.r * 255);

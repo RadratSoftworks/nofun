@@ -25,7 +25,7 @@ namespace Nofun.Driver.Graphics
         int MipCount { get; }
         TextureFormat Format { get; }
 
-        void SetData(byte[] data, int mipLevel, Span<SColor> palettes = new Span<SColor>());
+        void SetData(byte[] data, int mipLevel, Memory<SColor> palettes = new Memory<SColor>());
         void Apply();
 
         /// <summary>

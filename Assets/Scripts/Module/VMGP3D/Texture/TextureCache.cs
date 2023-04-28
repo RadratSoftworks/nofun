@@ -19,12 +19,12 @@ namespace Nofun.Module.VMGP3D
     /// </summary>
     public class TextureCache : LTUFixedCapCache<TextureCacheEntry>
     {
-        private static ITexture Upload(IGraphicDriver driver, Span<byte> textureData, TextureFormat format, uint lods, uint mipCount, Span<SColor> palettes)
+        private static ITexture Upload(IGraphicDriver driver, Span<byte> textureData, TextureFormat format, uint lods, uint mipCount, Memory<SColor> palettes)
         {
             return driver.CreateTexture(textureData.ToArray(), 1 << (int)(lods & 0xFF), 1 << (int)((lods >> 8) & 0xFF), (int)mipCount, format, palettes);
         }
 
-        public static ITexture Upload(IGraphicDriver driver, VMPtr<byte> dataPtr, VMMemory memory, TextureFormat format, uint lods, uint mipCount, Span<SColor> palettes)
+        public static ITexture Upload(IGraphicDriver driver, VMPtr<byte> dataPtr, VMMemory memory, TextureFormat format, uint lods, uint mipCount, Memory<SColor> palettes)
         {
             long totalSize = 0;
             int actualMipCount = 0;
@@ -45,7 +45,7 @@ namespace Nofun.Module.VMGP3D
             return Upload(driver, dataPtr.AsSpan(memory, (int)totalSize), format, lods, (uint)actualMipCount, palettes);
         }
 
-        public ITexture Get(IGraphicDriver driver, VMPtr<byte> dataPtr, VMMemory memory, TextureFormat format, uint lods, uint mipCount, Span<SColor> palettes)
+        public ITexture Get(IGraphicDriver driver, VMPtr<byte> dataPtr, VMMemory memory, TextureFormat format, uint lods, uint mipCount, Memory<SColor> palettes)
         {
             XxHash32 hasher = new();
 

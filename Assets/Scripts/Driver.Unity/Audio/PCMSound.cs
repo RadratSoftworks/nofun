@@ -1,10 +1,10 @@
 using Nofun.Driver.Audio;
 using Nofun.Driver.Audio.Converter;
 using System;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using NoAlloq;
 
 namespace Nofun.Driver.Unity.Audio
 {
@@ -14,7 +14,7 @@ namespace Nofun.Driver.Unity.Audio
         private AudioSource source;
         private AudioDriver driver;
 
-        public PCMSound(AudioDriver driver, AudioSource assignedAudioSource, Span<byte> audioData,
+        public PCMSound(AudioDriver driver, AudioSource assignedAudioSource, byte[] audioData,
             int frequency, int channels, int bitsPerSample, int priority, bool isAdpcm)
         {
             this.driver = driver;
@@ -39,7 +39,7 @@ namespace Nofun.Driver.Unity.Audio
                     clip = AudioClip.Create("PCM 8bit sound", audioData.Length / channels, channels,
                         frequency, false);
 
-                    clip.SetData(audioData.ToArray().Select(sample => (float)sample / byte.MaxValue).ToArray(), 0);
+                    clip.SetData(audioData.Select(sample => (float)sample / byte.MaxValue).ToArray(), 0);
                 }
                 else if (bitsPerSample == 16)
                 {
@@ -48,7 +48,7 @@ namespace Nofun.Driver.Unity.Audio
 
                     Span<ushort> sampleShort = MemoryMarshal.Cast<byte, ushort>(audioData);
 
-                    clip.SetData(sampleShort.ToArray().Select(sample => (float)sample / ushort.MaxValue).ToArray(), 0);
+                    clip.SetData(sampleShort.Select(sample => (float)sample / ushort.MaxValue).ToArray(), 0);
                 }
                 else
                 {
@@ -66,39 +66,66 @@ namespace Nofun.Driver.Unity.Audio
 
         public void Dispose()
         {
-            driver.ReturnAudioSourceToFreePool(source);
+            JobScheduler.Instance.RunOnUnityThread(() =>
+            {
+                driver.ReturnAudioSourceToFreePool(source);
+            });
         }
 
         public void Pause()
         {
-            source.Pause();
+            JobScheduler.Instance.RunOnUnityThread(() =>
+            {
+                source.Pause();
+            });
         }
 
         public void Play()
         {
-            source.Play();
+            JobScheduler.Instance.RunOnUnityThread(() =>
+            {
+                source.Play();
+            });
         }
 
         public void Resume()
         {
-            source.Play();
+            JobScheduler.Instance.RunOnUnityThread(() =>
+            {
+                source.Play();
+            });
         }
 
         public void Stop()
         {
-            source.Stop();
+            JobScheduler.Instance.RunOnUnityThread(() =>
+            {
+                source.Stop();
+            });
         }
 
         public float Volume
         {
             get => source.volume;
-            set => source.volume = Math.Clamp(value, 0.0f, 1.0f);
+            set
+            {
+                JobScheduler.Instance.RunOnUnityThread(() =>
+                {
+                    source.volume = Math.Clamp(value, 0.0f, 1.0f);
+                });
+            }
         }
 
         public float Frequency
         {
             get => source.clip.frequency;
-            set => source.pitch = value / source.clip.frequency;
+            set
+            {
+                JobScheduler.Instance.RunOnUnityThread(() =>
+                {
+                    source.pitch = value / source.clip.frequency;
+                });
+            }
         }
     }
 }

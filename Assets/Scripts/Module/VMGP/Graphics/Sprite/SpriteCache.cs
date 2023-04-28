@@ -77,7 +77,7 @@ namespace Nofun.Module.VMGP
 
             // Should create a new one
             ITexture finalTex = driver.CreateTexture(spriteData.ToArray(), spriteInfo.width, spriteInfo.height, 1, (TextureFormat)spriteInfo.format,
-                isPalette ? palettes.AsSpan(spriteInfo.paletteOffset) : new Span<SColor>());
+                isPalette ? palettes.AsMemory(spriteInfo.paletteOffset) : new Memory<SColor>());
 
             AddToCache(hash, new SpriteCacheEntry()
             {
