@@ -35,5 +35,10 @@ namespace Nofun.PIP2.Interpreter
         {
             Reg[encoding.d] = (uint)(-(int)Reg[encoding.s]);
         }
+
+        private void NOT(TwoSourcesEncoding encoding)
+        {
+            Reg[encoding.d] = ~Reg[encoding.s];
+        }
     }
 }

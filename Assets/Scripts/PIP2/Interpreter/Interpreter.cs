@@ -34,7 +34,7 @@ namespace Nofun.PIP2.Interpreter
             OpcodeTables = new Action<UInt32>[116]
             {
                 null, null, I(ADD), I(AND), I(MUL), I(DIV), I(DIVU), I(OR),    // 0x00
-                null, I(SUB), I(SLL), null, I(SRL), null, I(NEG), I(EXSB),    // 0x08
+                null, I(SUB), I(SLL), null, I(SRL), I(NOT), I(NEG), I(EXSB),    // 0x08
                 I(EXSH), I(MOV), I(ADDB), I(SUBB), I(ANDB), I(ORB), I(MOVB), I(ADDH),    // 0x10
                 I(SUBH), null, null, I(MOVH), I(SLLi), I(SRAi), I(SRLi), I(ADDQ),    // 0x18
                 I(MULQ), I(ADDBi), I(ANDBi), I(ORBi), I(SLLB), I(SRLB), I(SRAB), I(ADDHi),    // 0x20
