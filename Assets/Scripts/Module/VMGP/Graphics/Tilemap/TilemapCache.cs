@@ -70,7 +70,8 @@ namespace Nofun.Module.VMGP
             }
         }
 
-        public ITexture Retrive(IGraphicDriver driver, NativeMapHeader header, uint tileSpriteDataAddr, Span<byte> tileSpriteData, int tileMaxCount)
+        public ITexture Retrive(IGraphicDriver driver, NativeMapHeader header, uint tileSpriteDataAddr, Span<byte> tileSpriteData, int tileMaxCount,
+            SColor[] palettes, bool zeroAsTransparent)
         {
             TextureFormat tileMapFormat = (TextureFormat)header.format;
 
@@ -116,7 +117,7 @@ namespace Nofun.Module.VMGP
                 }
                 else
                 {
-                    resultTexture = driver.CreateTexture(dataUpload, 256, 64, 1, TextureFormat.RGB332);
+                    resultTexture = driver.CreateTexture(dataUpload, 256, 64, 1, TextureFormat.RGB332, palettes, zeroAsTransparent);
                 }
             }
 

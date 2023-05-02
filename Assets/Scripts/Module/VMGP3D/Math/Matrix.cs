@@ -144,6 +144,12 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
+        private void vMatrixMultiply(VMPtr<V3DMatrix> matrixPtr)
+        {
+            currentMatrix *= ReadMatrix(matrixPtr);
+        }
+
+        [ModuleCall]
         private void vMatrixTranslate(int xFixed, int yFixed, int zFixed)
         {
             currentMatrix *= Matrix4x4.Translate(new Vector3(FixedUtil.FixedToFloat(xFixed), FixedUtil.FixedToFloat(yFixed), FixedUtil.FixedToFloat(zFixed)));
@@ -177,7 +183,7 @@ namespace Nofun.Module.VMGP3D
 
             // Matrix column 2 in Unity already flipping Z, because of reversing view matrix flip
             // But we don't need that, so reverse it
-            currentMatrix = Matrix4x4.Perspective(fov, FixedUtil.FixedToFloat(widthFixed) / heightNearPlane, distNear, FixedUtil.FixedToFloat(zFarFixed));
+            currentMatrix = Matrix4x4.Perspective(fov, FixedUtil.FixedToFloat(widthFixed) / heightNearPlane, FixedUtil.FixedToFloat(zFarFixed), distNear);
             currentMatrix.SetColumn(2, -currentMatrix.GetColumn(2));
         }
 
@@ -185,7 +191,7 @@ namespace Nofun.Module.VMGP3D
         void vMatrixSetProjection(VMPtr<V3DMatrix> matrix)
         {
             projectionMatrix = ReadMatrix(matrix);
-            system.GraphicDriver.Set3DProjectionMatrix(projectionMatrix);
+            system.GraphicDriver.ProjectionMatrix3D = projectionMatrix;
         }
     }
 }

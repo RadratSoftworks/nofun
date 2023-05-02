@@ -18,55 +18,61 @@ using System.Collections.Generic;
 using System;
 using Nofun.Module.VMGP3D;
 using UnityEngine;
+using Nofun.Util;
 
 namespace Nofun.Driver.Graphics
 {
     public interface IGraphicDriver
     {
-        ITexture CreateTexture(byte[] data, int width, int height, int mipCount, TextureFormat format, Memory<SColor> palettes = new Memory<SColor>());
+        #region Resource manipulation
+        ITexture CreateTexture(byte[] data, int width, int height, int mipCount, TextureFormat format, Memory<SColor> palettes = new Memory<SColor>(),
+            bool zeroAsTransparent = false);
+        #endregion
 
-        void DrawText(int posX, int posY, int sizeX, int sizeY, List<int> positions, ITexture atlas,
-            TextDirection direction, SColor textColor);
-
+        #region General draw functions
         void ClearScreen(SColor color);
         void ClearDepth(float depth);
-
         void EndFrame();
-
         void FlipScreen();
+        #endregion
 
-        void SetClipRect(int x0, int y0, int x1, int y1);
-        void GetClipRect(out int x0, out int y0, out int x1, out int y1);
-
-        void DrawTexture(int posX, int posY, int centerX, int centerY, int rotation, ITexture texture,
-            int sourceX = -1, int sourceY = -1, int width = -1, int height = -1, bool blackAsTransparent = false);
-        
-        void FillRect(int x0, int y0, int x1, int y1, SColor color);
-
+        #region Text functions
+        void DrawText(int posX, int posY, int sizeX, int sizeY, List<int> positions, ITexture atlas,
+            TextDirection direction, SColor textColor);
         void DrawSystemText(short x0, short y0, string text, SColor backColor, SColor foreColor);
-
         void SelectSystemFont(uint fontSize, uint fontFlags, int charCodeShouldBeInFont);
-
         int GetStringExtentRelativeToSystemFont(string str);
+        #endregion
 
-        void SetViewport(int left, int top, int width, int height);
-
-        int ScreenWidth { get; }
-
-        int ScreenHeight { get; }
-
-        void SetActiveTexture(ITexture texture);
-
-        void DrawBillboard(NativeBillboard billboard);
-
-        void DrawPrimitives(MpMesh meshToDraw);
+        #region 2D general draw
         void DrawLine(int x0, int y0, int x1, int y1, SColor lineColor);
+        void DrawTexture(int posX, int posY, int centerX, int centerY, int rotation, ITexture texture,
+            int sourceX = -1, int sourceY = -1, int width = -1, int height = -1, bool blackAsTransparent = false,
+            bool flipX = false, bool flipY = false);
+        void FillRect(int x0, int y0, int x1, int y1, SColor color);
+        #endregion
 
-        void Set3DProjectionMatrix(Matrix4x4 matrix);
-        void Set3DViewMatrix(Matrix4x4 matrix);
+        #region 3D draw
+        void DrawBillboard(NativeBillboard billboard);
+        void DrawPrimitives(MpMesh meshToDraw);
+        #endregion
 
-        /// State manipulation
-        MpCullMode Cull { set; }
-        MpCompareFunc DepthFunction { set; }
+        #region State manipulation
+        MpCullMode Cull { get; set; }
+        MpCompareFunc DepthFunction { get; set; }
+        MpBlendMode ColorBufferBlend { get; set; }
+        bool TextureMode { get; set; }
+        NRectangle ClipRect { get; set; }
+        NRectangle Viewport { get; set; }
+
+        Matrix4x4 ProjectionMatrix3D { get; set;}
+        Matrix4x4 ViewMatrix3D { get; set; }
+
+        ITexture MainTexture { get; set; }
+        #endregion
+
+        /// Other properties
+        int ScreenWidth { get; }
+        int ScreenHeight { get; }
     };
 }

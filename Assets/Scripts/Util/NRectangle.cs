@@ -23,6 +23,9 @@ namespace Nofun.Util
         public int width;
         public int height;
 
+        public int x1 => x + width;
+        public int y1 => y + height;
+
         public NRectangle(int x, int y, int width, int height)
         {
             this.x = x;

@@ -104,7 +104,11 @@ namespace Nofun.Module.VMGP
             int singleTileSizeBytes = (int)((TextureUtil.GetTextureSizeInBits(TileMapTileWidth, TileMapTileHeight, format) + 7) >> 3);
             Span<byte> tileData = headerData.tileSpriteData.AsSpan(system.Memory, singleTileSizeBytes * maxIndex);
 
-            mapAtlas = tilemapCache.Retrive(system.GraphicDriver, headerData, headerData.tileSpriteData.Value, tileData, maxIndex);
+            // Can't set whole map transparent now, since some tiles still have black but not have transparent flag
+            // So the shader black as transparent variable will still have to keep doing its job
+            mapAtlas = tilemapCache.Retrive(system.GraphicDriver, headerData, headerData.tileSpriteData.Value, tileData, maxIndex,
+                ScreenPalette, false);
+
             mapHeaderPtr = header;
             frameAnimate = 0;
             framePassed = 0;
@@ -155,7 +159,7 @@ namespace Nofun.Module.VMGP
             NativeMapHeader mapHeader = mapHeaderPtr.Read(system.Memory);
             bool blackAsTransparentGlobal = BitUtil.FlagSet(mapHeader.flag, TilemapFlags.Transparent);
 
-            system.GraphicDriver.GetClipRect(out int x0, out int y0, out int x1, out int y1);
+            NRectangle currentClip = system.GraphicDriver.ClipRect;
 
             int screenPosX = mapHeader.xPan;
             int screenPosY = mapHeader.yPan;
@@ -163,16 +167,11 @@ namespace Nofun.Module.VMGP
             int xPosNormed = mapHeader.xPos;
             int yPosNormed = mapHeader.yPos;
 
-            if (mapHeader.yPan != 0)
-            {
-                Logger.Trace(LogClass.VMGPGraphic, "Damn");
-            }
-
             int startDrawX = screenPosX - xPosNormed % TileMapTileWidth;
             int startDrawY = screenPosY - yPosNormed % TileMapTileHeight;
 
-            int mapDrawWidth = (int)x1 - startDrawX;
-            int mapDrawHeight = (int)y1 - startDrawY;
+            int mapDrawWidth = currentClip.x1 - startDrawX;
+            int mapDrawHeight = currentClip.y1 - startDrawY;
 
             if ((mapDrawWidth == 0) || (mapDrawHeight == 0))
             {
@@ -193,9 +192,9 @@ namespace Nofun.Module.VMGP
             Span<byte> mapData = mapHeader.mapData.AsSpan(system.Memory, mapHeader.mapWidth * mapHeader.mapHeight * indexingMul);
 
             // Try to clip rect and later restore back
-            system.GraphicDriver.SetClipRect(Math.Max(screenPosX, x0), Math.Max(screenPosY, y0),
-                Math.Min(screenPosX + mapDrawWidth, x1),
-                Math.Min(screenPosY + mapDrawHeight, y1));
+            system.GraphicDriver.ClipRect = new NRectangle(Math.Max(screenPosX, currentClip.x), Math.Max(screenPosY, currentClip.y),
+                Math.Min(mapDrawWidth, currentClip.width),
+                Math.Min(mapDrawHeight, currentClip.height));
 
             // Handle negative tile (they want to draw the screen up a bit)
             for (int y = Math.Abs(Math.Min(tileStartDrawY, 0)); y < tileYCount; y++)
@@ -242,7 +241,7 @@ namespace Nofun.Module.VMGP
                 }
             }
 
-            system.GraphicDriver.SetClipRect(x0, y0, x1, y1);
+            system.GraphicDriver.ClipRect = currentClip;
             framePassed++;
 
             if ((mapHeader.animationSpeed != 0) && (framePassed > mapHeader.animationSpeed))

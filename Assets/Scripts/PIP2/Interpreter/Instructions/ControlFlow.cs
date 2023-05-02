@@ -17,6 +17,7 @@
 using System;
 using Nofun.PIP2.Encoding;
 using Nofun.Util;
+using Nofun.Util.Logging;
 
 namespace Nofun.PIP2.Interpreter
 {

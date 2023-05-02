@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using Nofun.Util.Logging;
 using System;
 using System.Buffers.Binary;
 
@@ -53,31 +54,61 @@ namespace Nofun.VM
         #region Memory Access
         public UInt32 ReadMemory32(UInt32 address)
         {
+            if ((address >= 0) && (address < DataAlignment))
+            {
+                throw new InvalidOperationException($"Reading memory from null page! (address={address})");
+            }
+
             return BitConverter.ToUInt32(memory, (int)address);
         }
 
         public UInt16 ReadMemory16(UInt32 address)
         {
+            if ((address >= 0) && (address < DataAlignment))
+            {
+                throw new InvalidOperationException($"Reading memory from null page! (address={address})");
+            }
+
             return BitConverter.ToUInt16(memory, (int)address);
         }
 
         public byte ReadMemory8(UInt32 address)
         {
+            if ((address >= 0) && (address < DataAlignment))
+            {
+                throw new InvalidOperationException($"Reading memory from null page! (address={address})");
+            }
+
             return memory[address];
         }
 
         public void WriteMemory32(UInt32 address, UInt32 value)
         {
+            if ((address >= 0) && (address < DataAlignment))
+            {
+                throw new InvalidOperationException($"Writing value to null page! (address={address})");
+            }
+
             BinaryPrimitives.WriteUInt32LittleEndian(new Span<byte>(memory, (int)address, 4), value);
         }
 
         public void WriteMemory16(UInt32 address, UInt16 value)
         {
+            if ((address >= 0) && (address < DataAlignment))
+            {
+                throw new InvalidOperationException($"Writing value to null page! (address={address})");
+            }
+
             BinaryPrimitives.WriteUInt16LittleEndian(new Span<byte>(memory, (int)address, 2), value);
         }
 
         public void WriteMemory8(UInt32 address, byte value)
         {
+            if ((address >= 0) && (address < DataAlignment))
+            {
+                throw new InvalidOperationException($"Writing value to null page! (address={address})");
+            }
+
             memory[address] = value;
         }
 

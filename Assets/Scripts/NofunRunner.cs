@@ -58,6 +58,11 @@ namespace Nofun
             Util.Logging.Logger.AddTarget(new UnityLogTarget());
         }
 
+        private void OnDestroy()
+        {
+            system.Stop();
+        }
+
         private void Start()
         {
             SetupLogger();

@@ -80,18 +80,18 @@ namespace Nofun.Driver.Unity.Graphics
 
             newBillboardMesh.uv = new Vector2[]
             {
-                Struct3DToUnity.MophunUVToUnity(billboard.uv0),
-                Struct3DToUnity.MophunUVToUnity(billboard.uv1),
-                Struct3DToUnity.MophunUVToUnity(billboard.uv2),
-                Struct3DToUnity.MophunUVToUnity(billboard.uv3)
+                billboard.uv0.ToUnity(),
+                billboard.uv1.ToUnity(),
+                billboard.uv2.ToUnity(),
+                billboard.uv3.ToUnity()
             };
 
             newBillboardMesh.colors = new Color[]
             {
-                Struct3DToUnity.MophunDColorToUnity(billboard.color0),
-                Struct3DToUnity.MophunDColorToUnity(billboard.color1),
-                Struct3DToUnity.MophunDColorToUnity(billboard.color2),
-                Struct3DToUnity.MophunDColorToUnity(billboard.color3)
+                billboard.color0.ToUnity(),
+                billboard.color1.ToUnity(),
+                billboard.color2.ToUnity(),
+                billboard.color3.ToUnity()
             };
 
             newBillboardMesh.RecalculateNormals();

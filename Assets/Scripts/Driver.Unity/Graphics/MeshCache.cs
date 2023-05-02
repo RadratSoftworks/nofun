@@ -80,10 +80,10 @@ namespace Nofun.Driver.Unity.Graphics
 
         private void DeferMeshCreation(MpMesh mesh, uint targetHash)
         {
-            var verticesTransformed = mesh.vertices.Select(vec => Struct3DToUnity.MophunVector3ToUnity(vec)).ToArray();
-            var uvTransformed = mesh.uvs.Select(uv => Struct3DToUnity.MophunUVToUnity(uv)).ToArray();
-            var normalTransformed = mesh.normals.Select(normal => Struct3DToUnity.MophunVector3ToUnity(normal)).ToArray();
-            var colorTransformed = mesh.diffuses.Select(diffuseCol => Struct3DToUnity.MophunDColorToUnity(diffuseCol)).ToArray();
+            var verticesTransformed = mesh.vertices.Select(vec => vec.ToUnity()).ToArray();
+            var uvTransformed = mesh.uvs.Select(uv => uv.ToUnity()).ToArray();
+            var normalTransformed = mesh.normals.Select(normal => normal.ToUnity()).ToArray();
+            var colorTransformed = mesh.diffuses.Select(diffuseCol => diffuseCol.ToUnity()).ToArray();
 
             int[] triangles = null;
 
@@ -230,7 +230,7 @@ namespace Nofun.Driver.Unity.Graphics
 
             uint hashValue = BitConverter.ToUInt32(hash.GetCurrentHash());
 
-            MeshCacheEntry entry = GetFromCache(hashValue);
+            MeshCacheEntry entry = GetFromCacheSafe(hashValue);
             if (entry != null)
             {
                 existingMesh = entry.mesh;

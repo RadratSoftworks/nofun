@@ -27,6 +27,7 @@ namespace Nofun.Util.Logging
         Loader,
         GameTTY,
         VMGP3D,
-        VSound
+        VSound,
+        VMusic
     }
 }

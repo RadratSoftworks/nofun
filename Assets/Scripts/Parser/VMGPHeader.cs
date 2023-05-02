@@ -25,7 +25,8 @@ namespace Nofun.Parser
 
         public byte[] magic;
         public UInt32 dynamicDataHeapSize;
-        public UInt32 stackSize;
+        public UInt32 stackSize;    // Actually 16-bits
+        public UInt16 flags;
         public UInt32 codeSize;
         public UInt32 dataSize;
         public UInt32 bssSize;
@@ -49,7 +50,8 @@ namespace Nofun.Parser
 
             // Heap and stack size are both in 4-bytes unit
             dynamicDataHeapSize = reader.ReadUInt32() << 2;
-            stackSize = reader.ReadUInt32() << 2;
+            flags = reader.ReadUInt16();
+            stackSize = (uint)reader.ReadUInt16() << 2;
             codeSize = reader.ReadUInt32();
             dataSize = reader.ReadUInt32();
             bssSize = reader.ReadUInt32();

@@ -16,6 +16,7 @@
 
 using System.Collections.Generic;
 using System;
+using Nofun.Util.Logging;
 
 namespace Nofun.Util.Allocator
 {
@@ -31,6 +32,7 @@ namespace Nofun.Util.Allocator
 
         private List<BlockInfo> blocks;
         private long maxSize;
+        private long allocated;
 
         public BlockAllocator(long maxSize)
         {
@@ -70,6 +72,8 @@ namespace Nofun.Util.Allocator
                     block.size -= roundedSize;
                     block.offset += roundedSize;
 
+                    allocated += roundedSize;
+
                     blocks.Add(newBlock);
                     return returnValue;
                 }
@@ -90,6 +94,7 @@ namespace Nofun.Util.Allocator
             };
 
             blocks.Add(newBlockFin);
+            allocated += roundedSize;
 
             return farthestEndOffset;
         }
@@ -101,7 +106,14 @@ namespace Nofun.Util.Allocator
             if (block != null)
             {
                 block.active = false;
+                allocated -= block.size;
+            }
+            else
+            {
+                Logger.Error(LogClass.VMGP3D, $"Can't find offset {offset}");
             }
         }
+
+        public long AmountFree => Math.Max(maxSize - allocated, 0);
     }
 }

@@ -23,6 +23,9 @@ namespace Nofun.Module.VMGP
     [Module]
     public partial class VMGP
     {
+        private const ushort MajorAPIVersion = 1;
+        private const ushort MinorAPIVersion = 50;
+
         private VM.VMSystem system;
 
         public VMGP(VM.VMSystem system)
@@ -43,6 +46,18 @@ namespace Nofun.Module.VMGP
         {
             // TODO: A mechanism to handle printf arguments
             Logger.Debug(LogClass.GameTTY, message.Get(system.Memory));
+        }
+
+        [ModuleCall]
+        private uint vGetVMGPInfo()
+        {
+            return ((uint)MajorAPIVersion << 16) | MinorAPIVersion;
+        }
+
+        [ModuleCall]
+        private uint vUID()
+        {
+            return 0xDEADBEEF;
         }
     }
 }

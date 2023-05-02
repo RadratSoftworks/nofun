@@ -15,6 +15,7 @@
  */
 
 using Nofun.Driver.Graphics;
+using Nofun.Util;
 using Nofun.Util.Logging;
 using Nofun.VM;
 
@@ -41,8 +42,9 @@ namespace Nofun.Module.VMGP3D
         /// </summary>
         private uint activeTextureHandle;
 
-        private bool textureEnabled = true;
-        private MpCompareFunc previousCompareFunc = MpCompareFunc.LessEqual;
+        private bool perspectiveEnable = true;
+
+        private MpCompareFunc previousCompareFunc = MpCompareFunc.Less;
 
         public VMGP3D(VMSystem system)
         {
@@ -58,7 +60,7 @@ namespace Nofun.Module.VMGP3D
         [ModuleCall]
         private void vSetViewport(int left, int top, int width, int height)
         {
-            system.GraphicDriver.SetViewport(left, top, width, height);
+            system.GraphicDriver.Viewport = new NRectangle(left, top, width, height);
         }
 
         [ModuleCall]
@@ -77,7 +79,15 @@ namespace Nofun.Module.VMGP3D
                     break;
 
                 case RenderState.TextureEnable:
-                    textureEnabled = true;
+                    system.GraphicDriver.TextureMode = (value != 0);
+                    break;
+
+                case RenderState.ColorBufferBlendMode:
+                    system.GraphicDriver.ColorBufferBlend = (MpBlendMode)value;
+                    break;
+
+                case RenderState.ShadeMode:
+                    // Literally ignore
                     break;
 
                 case RenderState.ZEnable:
@@ -94,8 +104,12 @@ namespace Nofun.Module.VMGP3D
                         break;
                     }
 
+                case RenderState.PerspectiveEnable:
+                    perspectiveEnable = (value != 0);
+                    break;
+
                 default:
-                    Logger.Trace(LogClass.VMGP3D, $"Unhandled render state {state}");
+                    Logger.Warning(LogClass.VMGP3D, $"Unhandled render state={state}, value={value}");
                     break;
             }
         }
@@ -116,7 +130,7 @@ namespace Nofun.Module.VMGP3D
 
                 activeTextureHandle = 0;
 
-                system.GraphicDriver.SetActiveTexture(activeTexture);
+                system.GraphicDriver.MainTexture = activeTexture;
                 return 1;
             }
             catch (System.Exception ex)
@@ -131,7 +145,7 @@ namespace Nofun.Module.VMGP3D
         {
             NativeBillboard billboard = billboardPtr.Read(system.Memory);
 
-            system.GraphicDriver.Set3DViewMatrix(currentMatrix);
+            system.GraphicDriver.ViewMatrix3D = currentMatrix;
             system.GraphicDriver.DrawBillboard(billboard);
         }
 
@@ -151,8 +165,9 @@ namespace Nofun.Module.VMGP3D
                 topology = (PrimitiveTopology)topology
             };
 
-            system.GraphicDriver.Set3DViewMatrix(currentMatrix);
+            system.GraphicDriver.ViewMatrix3D = currentMatrix;
             system.GraphicDriver.DrawPrimitives(meshMp);
+
             return 1;
         }
     }

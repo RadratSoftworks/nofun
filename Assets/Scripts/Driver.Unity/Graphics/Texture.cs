@@ -61,7 +61,7 @@ namespace Nofun.Driver.Unity.Graphics
             }
         }
 
-        private void UploadSingleMip(byte[] data, int width, int height, int offset, int sizeInBits, int mipLevel, Memory<SColor> palettes)
+        private void UploadSingleMip(byte[] data, int width, int height, int offset, int sizeInBits, int mipLevel, Memory<SColor> palettes, bool zeroAsTransparent)
         {
             bool needTransform = DoesFormatNeedTransform(format);
             int bitsPerPixel = TextureUtil.GetPixelSizeInBits(format);
@@ -81,25 +81,25 @@ namespace Nofun.Driver.Unity.Graphics
                 switch (format)
                 {
                     case Driver.Graphics.TextureFormat.RGB332:
-                        finalConverData = DataConvertor.RGB332ToRGB888(dataSpan, width, height);
+                        finalConverData = DataConvertor.RGB332ToARGB8888(dataSpan, width, height, zeroAsTransparent);
                         break;
 
                     case Driver.Graphics.TextureFormat.Palette2:
-                        finalConverData = DataConvertor.PaletteToRGBA8888(dataSpan, width, height, 1, palettes);
+                        finalConverData = DataConvertor.PaletteToARGB8888(dataSpan, width, height, 1, palettes, zeroAsTransparent);
                         break;
 
                     case Driver.Graphics.TextureFormat.Palette4:
-                        finalConverData = DataConvertor.PaletteToRGBA8888(dataSpan, width, height, 2, palettes);
+                        finalConverData = DataConvertor.PaletteToARGB8888(dataSpan, width, height, 2, palettes, zeroAsTransparent);
                         break;
 
                     case Driver.Graphics.TextureFormat.Palette16:
                     case Driver.Graphics.TextureFormat.Palette16_Alt:
-                        finalConverData = DataConvertor.PaletteToRGBA8888(dataSpan, width, height, 4, palettes);
+                        finalConverData = DataConvertor.PaletteToARGB8888(dataSpan, width, height, 4, palettes, zeroAsTransparent);
                         break;
 
                     case Driver.Graphics.TextureFormat.Palette256:
                     case Driver.Graphics.TextureFormat.Palette256_Alt:
-                        finalConverData = DataConvertor.PaletteToRGBA8888(dataSpan, width, height, 8, palettes);
+                        finalConverData = DataConvertor.PaletteToARGB8888(dataSpan, width, height, 8, palettes, zeroAsTransparent);
                         break;
 
                     default:
@@ -117,7 +117,7 @@ namespace Nofun.Driver.Unity.Graphics
             }
         }
 
-        private void UploadData(byte[] data, int width, int height, int mipCount, Memory<SColor> palettes)
+        private void UploadData(byte[] data, int width, int height, int mipCount, Memory<SColor> palettes, bool zeroAsTransparent)
         {
             bool needTransform = DoesFormatNeedTransform(format);
             int bitsPerPixel = TextureUtil.GetPixelSizeInBits(format);
@@ -125,37 +125,37 @@ namespace Nofun.Driver.Unity.Graphics
             // These format normally also need individual conversion
             int dataPointerInBits = 0;
 
-            for (int i = 0; (i < mipCount) && (width !=0) && (height != 0); i++)
+            for (int i = 0; (i < mipCount) && (width != 0) && (height != 0); i++)
             {
                 int dataSizeInBits = width * height * bitsPerPixel;
-                UploadSingleMip(data, width, height, dataPointerInBits >> 3, dataSizeInBits, i, palettes);
+                UploadSingleMip(data, width, height, dataPointerInBits >> 3, dataSizeInBits, i, palettes, zeroAsTransparent);
 
                 // All start in byte boundary
                 dataPointerInBits += (dataSizeInBits + 7) / 8 * 8;
 
-                width >>= 2;
-                height >>= 2;
+                width >>= 1;
+                height >>= 1;
             }
 
             uTexture.Apply();
         }
 
-        public Texture(byte[] data, int width, int height, int mipCount, Driver.Graphics.TextureFormat format, Memory<SColor> palettes)
+        public Texture(byte[] data, int width, int height, int mipCount, Driver.Graphics.TextureFormat format, Memory<SColor> palettes, bool zeroAsTransparent = false)
         {
             bool needTransform = DoesFormatNeedTransform(format);
 
             this.format = format;
             this.mipCount = mipCount;
 
-            uTexture = new Texture2D(width, height, needTransform ? UnityEngine.TextureFormat.RGB24 : MapMophunFormatToUnity(format), true);
-            UploadData(data, width, height, mipCount, palettes);
+            uTexture = new Texture2D(width, height, needTransform ? UnityEngine.TextureFormat.ARGB32 : MapMophunFormatToUnity(format), true);
+            UploadData(data, width, height, mipCount, palettes, zeroAsTransparent);
         }
 
-        public void SetData(byte[] data, int mipLevel, Memory<SColor> palettes)
+        public void SetData(byte[] data, int mipLevel, Memory<SColor> palettes, bool zeroAsTransparent = false)
         {
             JobScheduler.Instance.RunOnUnityThread(() =>
             {
-                UploadSingleMip(data, uTexture.width >> mipLevel, uTexture.height >> mipLevel, 0, data.Length * 8, mipLevel, palettes);
+                UploadSingleMip(data, uTexture.width >> mipLevel, uTexture.height >> mipLevel, 0, data.Length * 8, mipLevel, palettes, zeroAsTransparent);
             });
         }
 

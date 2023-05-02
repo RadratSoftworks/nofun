@@ -33,5 +33,11 @@ namespace Nofun.Util.Allocator
         /// <param name="offset">Offset returned by allocate. If this offset does not point to
         /// an existing memory, the allocator should do nothing.</param>
         void Free(long offset);
+
+        /// <summary>
+        /// Get the amount of free memory available.
+        /// </summary>
+        /// <returns>Free amount of memory available in bytes unit.</returns>
+        long AmountFree { get; }
     };
 }

@@ -1,0 +1,45 @@
+/*
+ * (C) 2023 Radrat Softworks
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+using Nofun.Driver.Audio;
+using Nofun.Util.Logging;
+using Nofun.VM;
+using System;
+using System.Runtime.InteropServices;
+
+namespace Nofun.Module.VSound
+{
+    [Module]
+    public partial class VMusic
+    {
+        private const int MUSIC_OK = 0;
+        private const int MUSIC_ERR = -1;
+
+        private VMSystem system;
+
+        public VMusic(VMSystem system)
+        {
+            this.system = system;
+        }
+
+        [ModuleCall]
+        int vMusicInit()
+        {
+            Logger.Trace(LogClass.VMusic, "Music initialization stubbed");
+            return MUSIC_ERR;
+        }
+    }
+}

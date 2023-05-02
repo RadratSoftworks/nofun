@@ -83,6 +83,18 @@ namespace Nofun.Module.VMGPCaps
             return 1;
         }
 
+        private int GetCapsComms(VMPtr<CommCaps> capsPtr)
+        {
+            CommCaps caps = new CommCaps()
+            {
+                size = (ushort)Marshal.SizeOf<CommCaps>(),
+                flags = (ushort)CommCapsFlags.StandardMorden
+            };
+
+            capsPtr.Write(system.Memory, caps);
+            return 1;
+        }
+
         [ModuleCall]
         private int vGetCaps(CapsQueryType queryType, VMPtr<Any> buffer)
         {
@@ -96,6 +108,9 @@ namespace Nofun.Module.VMGPCaps
 
                 case CapsQueryType.Sound:
                     return GetCapsSound(buffer.Cast<SoundCaps>());
+
+                case CapsQueryType.Communication:
+                    return GetCapsComms(buffer.Cast<CommCaps>());
 
                 default:
                     throw new UnimplementedFeatureException($"Unimplemented capability {queryType}!");

@@ -41,7 +41,7 @@ namespace Nofun.Module.VMGP
             return (format >= TextureFormat.Palette2) && (format <= TextureFormat.RGB332);
         }
 
-        public ITexture Retrieve(IGraphicDriver driver, NativeSprite spriteInfo, Span<byte> spriteData, SColor[] palettes)
+        public ITexture Retrieve(IGraphicDriver driver, NativeSprite spriteInfo, Span<byte> spriteData, SColor[] palettes, bool color0Transparent)
         {
             TextureFormat format = (TextureFormat)spriteInfo.format;
 
@@ -60,9 +60,13 @@ namespace Nofun.Module.VMGP
             
             if (isPalette)
             {
-                hasher.Append(MemoryMarshal.CreateReadOnlySpan(ref spriteInfo.paletteOffset, 1));
+                byte highestIndex = DataConvertor.FindHighestPaletteIndex(spriteData, spriteInfo.width, spriteInfo.height, (byte)TextureUtil.GetPixelSizeInBits(format));
+                hasher.Append(MemoryMarshal.Cast<SColor, byte>(palettes.AsSpan(spriteInfo.paletteOffset, highestIndex + 1)));
             }
 
+            byte zeroAsTransparent = (byte)(color0Transparent ? 1 : 0);
+
+            hasher.Append(MemoryMarshal.CreateReadOnlySpan(ref zeroAsTransparent, 1));
             hasher.Append(spriteData);
 
             byte[] hashResult = hasher.GetCurrentHash();
@@ -77,7 +81,7 @@ namespace Nofun.Module.VMGP
 
             // Should create a new one
             ITexture finalTex = driver.CreateTexture(spriteData.ToArray(), spriteInfo.width, spriteInfo.height, 1, (TextureFormat)spriteInfo.format,
-                isPalette ? palettes.AsMemory(spriteInfo.paletteOffset) : new Memory<SColor>());
+                isPalette ? palettes.AsMemory(spriteInfo.paletteOffset) : new Memory<SColor>(), color0Transparent);
 
             AddToCache(hash, new SpriteCacheEntry()
             {

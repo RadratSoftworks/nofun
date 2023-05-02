@@ -160,7 +160,7 @@ namespace Nofun.VM
                 case PoolItemType.ImportSymbol:
                     {
                         string value = executable.GetString(poolItem.metaOffset);
-                        return new PoolData(resolver.Resolve(value));
+                        return new PoolData(resolver.Resolve(value), value);
                     }
 
                 case PoolItemType.LocalSymbol:

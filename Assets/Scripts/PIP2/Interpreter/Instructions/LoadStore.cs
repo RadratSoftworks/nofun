@@ -46,6 +46,10 @@ namespace Nofun.PIP2.Interpreter
 
         private void LDQ(WordEncoding encoding)
         {
+            if (encoding.imm == 0x9000)
+            {
+                int ttt = 10;
+            }
             Reg[encoding.d] = BitUtil.SignExtend(encoding.imm);
         }
 

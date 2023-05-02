@@ -11,6 +11,7 @@
         ShadeMode = 7,
         FogEnable = 8,
         TextureEnable = 9,
-        PerspectiveEnable = 10
+        PerspectiveEnable = 10,
+        ColorBufferBlendMode = 20
     }
 }

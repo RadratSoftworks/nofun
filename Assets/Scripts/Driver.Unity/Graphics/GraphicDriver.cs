@@ -38,6 +38,11 @@ namespace Nofun.Driver.Unity.Graphics
 
         private const string UnlitZTestUniformName = "_ZTest";
         private const string UnlitCullUniformName = "_Cull";
+        private const string UnlitBlendSourceFactorUniformName = "_SourceBlendFactor";
+        private const string UnlitBlendDestFactorUniformName = "_DestBlendFactor";
+        private const string UnlitTexturelessUniformName = "_Textureless";
+
+        private const string ZClearValueUniformName = "_ClearValue";
 
         private const int TMPSpawnPerAlloc = 5;
 
@@ -45,11 +50,8 @@ namespace Nofun.Driver.Unity.Graphics
 
         private bool began = false;
         private Action stopProcessor;
-        private Rect scissorRect;
-        private Rect viewportRect;
         private Texture2D whiteTexture;
         private Vector2 screenSize;
-        private float frameTimePassed = -1.0f;
         private Dictionary<string, int> measuredCache;
 
         private TMPro.FontStyles selectedFontStyles;
@@ -57,16 +59,12 @@ namespace Nofun.Driver.Unity.Graphics
         private float selectedOutlineWidth = 0.0f;
         private int fontMeshUsed = 0;
 
-        private CompareFunction depthCompareFunction = CompareFunction.Less;
-        private CullMode cullMode = CullMode.Back;
+        private ClientState serverSideState;
+        private ClientState clientSideState;
         private bool fixedStateChanged = true;
 
-        private Matrix4x4 projectionMatrix3D = Matrix4x4.identity;
-        private Matrix4x4 viewMatrix3D = Matrix4x4.identity;
         private Matrix4x4 orthoMatrix = Matrix4x4.identity;
-
         private bool in3DMode = false;
-        private Texture activeTexture = null;
 
         private BillboardCache billboardCache;
         private MeshCache meshCache;
@@ -87,10 +85,17 @@ namespace Nofun.Driver.Unity.Graphics
         private Material mophunUnlitMaterial;
 
         [SerializeField]
+        private Material clearZMaterial;
+
+        [SerializeField]
         private Camera mophunCamera;
 
         private CommandBuffer commandBuffer;
+
         private Mesh quadMesh;
+        private Mesh quadFlipXMesh;
+        private Mesh quadFlipYMesh;
+        private Mesh quadFlipXYMesh;
 
         private List<TMPro.TMP_Text> textRenderInternals;
         private Dictionary<ulong, Material> unlitMaterialCache;
@@ -102,25 +107,25 @@ namespace Nofun.Driver.Unity.Graphics
 
         private float SecondPerFrame => 1.0f / FpsLimit;
 
-        private ulong BuildStateIdentifier()
-        {
-            return ((ulong)cullMode & 0b11) | ((ulong)depthCompareFunction & 0b1111) << 2;
-        }
-
         private void PrepareUnlitMaterial()
         {
             if (fixedStateChanged)
             {
-                ulong stateIdentifier = BuildStateIdentifier();
+                ulong stateIdentifier = serverSideState.MaterialIdentifier;
                 if (!unlitMaterialCache.ContainsKey(stateIdentifier))
                 {
                     Material mat = new Material(mophunUnlitMaterial);
-                    mat.SetFloat(UnlitCullUniformName, (float)cullMode);
-                    mat.SetFloat(UnlitZTestUniformName, (float)depthCompareFunction);
+                    mat.SetFloat(UnlitCullUniformName, (float)MpEnumUtils.MpCullModeToUnity(serverSideState.cullMode));
+                    mat.SetFloat(UnlitZTestUniformName, (float)MpEnumUtils.MpCompareFunctionToUnity(serverSideState.depthCompareFunc));
+
+                    Tuple<BlendMode, BlendMode> blendFactors = MpEnumUtils.MpBlendModeToBlendFactors(serverSideState.blendMode);
+                    mat.SetFloat(UnlitBlendSourceFactorUniformName, (float)blendFactors.Item1);
+                    mat.SetFloat(UnlitBlendDestFactorUniformName, (float)blendFactors.Item2);
 
                     unlitMaterialCache.Add(stateIdentifier, mat);
                 }
                 currentUnlitMaterial = unlitMaterialCache[stateIdentifier];
+                fixedStateChanged = false;
             }
         }
 
@@ -167,18 +172,48 @@ namespace Nofun.Driver.Unity.Graphics
             };
 
             quadMesh.uv = uv;
+
+            quadFlipXMesh = Instantiate(quadMesh);
+            quadFlipXMesh.uv = new Vector2[4]
+            {
+                new Vector2(1, 1),
+                new Vector2(1, 0),
+                new Vector2(0, 0),
+                new Vector2(0, 1)
+            };
+
+            quadFlipYMesh = Instantiate(quadMesh);
+            quadFlipYMesh.uv = new Vector2[4]
+            {
+                new Vector2(0, 0),
+                new Vector2(0, 1),
+                new Vector2(1, 1),
+                new Vector2(1, 0)
+            };
+
+            quadFlipXYMesh = Instantiate(quadMesh);
+            quadFlipXYMesh.uv = new Vector2[4]
+            {
+                new Vector2(1, 0),
+                new Vector2(1, 1),
+                new Vector2(0, 1),
+                new Vector2(0, 0)
+            };
         }
 
         public void Initialize(Vector2 size)
         {
             screenTextureBackBuffer = new RenderTexture((int)size.x, (int)size.y, 32);
-            scissorRect = new Rect(0, 0, size.x, size.y);
-            viewportRect = new Rect(0, 0, size.x, size.y);
-
+            
             billboardCache = new();
             meshCache = new();
             unlitMaterialCache = new();
             measuredCache = new();
+            clientSideState = new();
+            serverSideState = new();
+
+            clientSideState.scissorRect = serverSideState.scissorRect = new Rect(0, 0, size.x, size.y);
+            clientSideState.viewportRect = serverSideState.viewportRect = new Rect(0, 0, size.x, size.y);
 
             SetupWhiteTexture();
             SetupQuadMesh();
@@ -206,12 +241,12 @@ namespace Nofun.Driver.Unity.Graphics
             return new Vector2(x, screenSize.y - y);
         }
 
-        private void DrawTexture(ITexture tex, Rect destRect, Rect sourceRect, float centerX, float centerY, float rotation, SColor color, bool blackIsTransparent)
+        private void DrawTexture(ITexture tex, Rect destRect, Rect sourceRect, float centerX, float centerY, float rotation, SColor color, bool blackIsTransparent, bool flipX, bool flipY)
         {
-            DrawTexture(((Texture)tex).NativeTexture, destRect, sourceRect, centerX, centerY, rotation, color, blackIsTransparent);
+            DrawTexture(((Texture)tex).NativeTexture, destRect, sourceRect, centerX, centerY, rotation, color, blackIsTransparent, flipX, flipY);
         }
 
-        private void DrawTexture(Texture2D tex, Rect destRect, Rect sourceRect, float centerX, float centerY, float rotation, SColor color, bool blackIsTransparent)
+        private void DrawTexture(Texture2D tex, Rect destRect, Rect sourceRect, float centerX, float centerY, float rotation, SColor color, bool blackIsTransparent, bool flipX = false, bool flipY = false)
         {
             JobScheduler.Instance.RunOnUnityThread(() =>
             {
@@ -237,7 +272,9 @@ namespace Nofun.Driver.Unity.Graphics
                 block.SetMatrix(TexcoordTransformMatrixUniformName, coordMatrix);
                 block.SetColor(ColorUniformName, color.ToUnityColor());
 
-                commandBuffer.DrawMesh(quadMesh, drawMatrix, mophunDrawTextureMaterial, 0, 0, block);
+                Mesh meshToDraw = (flipX && flipY) ? quadFlipXYMesh : (flipX ? quadFlipXMesh : (flipY ? quadFlipYMesh : quadMesh));
+
+                commandBuffer.DrawMesh(meshToDraw, drawMatrix, mophunDrawTextureMaterial, 0, 0, block);
             });
         }
 
@@ -245,8 +282,8 @@ namespace Nofun.Driver.Unity.Graphics
         {
             if (in3DMode)
             {
-                commandBuffer.SetProjectionMatrix(projectionMatrix3D);
-                commandBuffer.SetViewMatrix(viewMatrix3D);
+                commandBuffer.SetProjectionMatrix(serverSideState.projectionMatrix3D);
+                commandBuffer.SetViewMatrix(serverSideState.viewMatrix3D);
             }
             else
             {
@@ -287,11 +324,11 @@ namespace Nofun.Driver.Unity.Graphics
             commandBuffer.Clear();
 
             commandBuffer.SetRenderTarget(screenTextureBackBuffer);
-            commandBuffer.SetViewport(GetUnityScreenRect(viewportRect));
+            commandBuffer.SetViewport(GetUnityScreenRect(serverSideState.viewportRect));
             
-            if (scissorRect.size != Vector2.zero)
+            if (serverSideState.scissorRect.size != Vector2.zero)
             {
-                commandBuffer.EnableScissorRect(GetUnityScreenRect(scissorRect));
+                commandBuffer.EnableScissorRect(GetUnityScreenRect(serverSideState.scissorRect));
             }
 
             began = true;
@@ -319,17 +356,20 @@ namespace Nofun.Driver.Unity.Graphics
             {
                 BeginRender();
 
-                commandBuffer.ClearRenderTarget(true, false, new Color(), value);
+                MaterialPropertyBlock block = new MaterialPropertyBlock();
+                block.SetFloat(ZClearValueUniformName, value);
+
+                commandBuffer.DrawMesh(quadMesh, Matrix4x4.identity, clearZMaterial, 0, 0, block);
             });
         }
 
-        public ITexture CreateTexture(byte[] data, int width, int height, int mipCount, Driver.Graphics.TextureFormat format, Memory<SColor> palettes = new Memory<SColor>())
+        public ITexture CreateTexture(byte[] data, int width, int height, int mipCount, Driver.Graphics.TextureFormat format, Memory<SColor> palettes = new Memory<SColor>(), bool zeroAsTransparent = false)
         {
             ITexture result = null;
 
             JobScheduler.Instance.RunOnUnityThreadSync(() =>
             {
-                result = new Texture(data, width, height, mipCount, format, palettes);
+                result = new Texture(data, width, height, mipCount, format, palettes, zeroAsTransparent);
             });
 
             return result;
@@ -372,7 +412,8 @@ namespace Nofun.Driver.Unity.Graphics
         }
 
         public void DrawTexture(int posX, int posY, int centerX, int centerY, int rotation, ITexture texture,
-            int sourceX = -1, int sourceY = -1, int width = -1, int height = -1, bool blackIsTransparent = false)
+            int sourceX = -1, int sourceY = -1, int width = -1, int height = -1, bool blackIsTransparent = false,
+            bool flipX = false, bool flipY = false)
         {
             JobScheduler.Instance.RunOnUnityThread(() =>
             {
@@ -389,7 +430,7 @@ namespace Nofun.Driver.Unity.Graphics
                     sourceRect = new Rect((float)sourceX / texture.Width, (float)sourceY / texture.Height, (float)widthToUse / texture.Width, (float)heightToUse / texture.Height);
                 }
 
-                DrawTexture(texture, destRect, sourceRect, centerX, centerY, rotation, new SColor(1, 1, 1), blackIsTransparent);
+                DrawTexture(texture, destRect, sourceRect, centerX, centerY, rotation, new SColor(1, 1, 1), blackIsTransparent, flipX, flipY);
             });
         }
 
@@ -440,8 +481,6 @@ namespace Nofun.Driver.Unity.Graphics
 
             JobScheduler.Instance.RunOnUnityThreadSync(() =>
             {
-                frameTimePassed = 0.0f;
-
                 if (mophunCamera.renderingPath == RenderingPath.DeferredShading)
                 {
                     mophunCamera.AddCommandBuffer(CameraEvent.AfterGBuffer, commandBuffer);
@@ -466,52 +505,6 @@ namespace Nofun.Driver.Unity.Graphics
                 // Sleep to keep up with the predefined FPS
                 System.Threading.Thread.Sleep((int)(remaining * 1000));
             }
-        }
-
-        public void SetClipRect(int x0, int y0, int x1, int y1)
-        {
-            Rect previousRect = scissorRect;
-            scissorRect = new Rect(x0, y0, x1 - x0, y1 - y0);
-        
-            if (previousRect != scissorRect)
-            {
-                Rect copyUnityRect = GetUnityScreenRect(scissorRect);
-
-                JobScheduler.Instance.RunOnUnityThread(() =>
-                {
-                    if (began)
-                    {
-                        commandBuffer.EnableScissorRect(copyUnityRect);
-                    }
-                });
-            }
-        }
-
-        public void SetViewport(int left, int top, int width, int height)
-        {
-            Rect previousRect = viewportRect;
-            viewportRect = new Rect(left, top, width, height);
-
-            if (previousRect != viewportRect)
-            {
-                Rect copyUnityRect = GetUnityScreenRect(scissorRect);
-
-                JobScheduler.Instance.RunOnUnityThread(() =>
-                {
-                    if (began)
-                    {
-                        commandBuffer.SetViewport(copyUnityRect);
-                    }
-                });
-            }
-        }
-
-        public void GetClipRect(out int x0, out int y0, out int x1, out int y1)
-        {
-            x0 = (int)scissorRect.xMin;
-            x1 = (int)scissorRect.xMax;
-            y0 = (int)scissorRect.yMin;
-            y1 = (int)scissorRect.yMax;
         }
 
         private float EmulatedPointToPixels(float point)
@@ -688,42 +681,42 @@ namespace Nofun.Driver.Unity.Graphics
             get
             {
                 MaterialPropertyBlock block = new MaterialPropertyBlock();
-                block.SetTexture(MainTexUniformName, activeTexture.NativeTexture);
-
+                block.SetTexture(MainTexUniformName, serverSideState.textureMode ? serverSideState.mainTexture.NativeTexture : whiteTexture);
+                block.SetFloat(UnlitTexturelessUniformName, serverSideState.textureMode ? 0.0f : 1.0f);
                 return block;
             }
-        }
-
-        public void SetActiveTexture(ITexture tex)
-        {
-            JobScheduler.Instance.RunOnUnityThread(() =>
-            {
-                activeTexture = tex as Texture;
-            });
         }
 
         public void DrawBillboard(NativeBillboard billboard)
         {
             JobScheduler.Instance.RunOnUnityThread(() =>
             {
-                CullMode previous = cullMode;
-                CullModeUnity = CullMode.Back;
+                MpCullMode? previousCull = serverSideState.cullMode;
+                if (serverSideState.cullMode != MpCullMode.CounterClockwise)
+                {
+                    serverSideState.cullMode = MpCullMode.CounterClockwise;
+                    fixedStateChanged = true;
+                }
 
                 BeginRender(mode2D: false);
 
                 Mesh billboardMesh = billboardCache.GetBillboardMesh(billboard);
 
-                Matrix4x4 modelMatrix = Matrix4x4.Translate(Struct3DToUnity.MophunVector3ToUnity(billboard.position));
+                Matrix4x4 modelMatrix = Matrix4x4.Translate(billboard.position.ToUnity());
 
                 Vector2 pivotV = GetPivotMultiplier((BillboardPivot)billboard.rotationPointFlag);
                 Vector2 size = new Vector2(FixedUtil.FixedToFloat(billboard.fixedWidth), FixedUtil.FixedToFloat(billboard.fixedHeight));
 
                 modelMatrix *= Matrix4x4.TRS(pivotV * size, Quaternion.AngleAxis(FixedUtil.FixedToFloat(billboard.rotation), Vector3.forward),
-                    size) * Matrix4x4.Translate(-pivotV * size);
+                    new Vector3(size.x, size.y, 1)) * Matrix4x4.Translate(-pivotV * size);
 
                 // Billboard is unlit? It seems so. So not much pass
                 commandBuffer.DrawMesh(billboardMesh, modelMatrix, currentUnlitMaterial, 0, 0, UnlitPropertyBlock);
-                CullModeUnity = previous;
+                if (previousCull != null)
+                {
+                    serverSideState.cullMode = previousCull.Value;
+                    fixedStateChanged = true;
+                }
             });
         }
 
@@ -743,75 +736,24 @@ namespace Nofun.Driver.Unity.Graphics
             });
         }
 
-        public void Set3DProjectionMatrix(Matrix4x4 matrix)
-        {
-            projectionMatrix3D = matrix;
-
-            JobScheduler.Instance.RunOnUnityThread(() =>
-            {
-                if (in3DMode)
-                {
-                    commandBuffer.SetProjectionMatrix(matrix);
-                }
-            });
-        }
-
-        public void Set3DViewMatrix(Matrix4x4 matrix)
-        {
-            if (viewMatrix3D != matrix)
-            {
-                viewMatrix3D = matrix;
-
-                JobScheduler.Instance.RunOnUnityThread(() =>
-                {
-                    if (in3DMode)
-                    {
-                        commandBuffer.SetViewMatrix(matrix);
-                    }
-                });
-            }
-        }
-
-        private CullMode CullModeUnity
-        {
-            get => this.cullMode;
-            set
-            {
-                if (cullMode != value)
-                {
-                    cullMode = value;
-                    fixedStateChanged = true;
-                }
-            }
-        }
-
         public MpCullMode Cull
         {
             set
             {
-                JobScheduler.Instance.RunOnUnityThread(() =>
+                if (clientSideState.cullMode != value)
                 {
-                    CullMode newCullMode = CullMode.Back;
-                    switch (value)
+                    clientSideState.cullMode = value;
+
+                    JobScheduler.Instance.RunOnUnityThread(() =>
                     {
-                        case MpCullMode.None:
-                            newCullMode = CullMode.Off;
-                            break;
-
-                        case MpCullMode.Clockwise:
-                            newCullMode = CullMode.Front;
-                            break;
-
-                        case MpCullMode.CounterClockwise:
-                            newCullMode = CullMode.Back;
-                            break;
-
-                        default:
-                            throw new ArgumentException($"Invalid cull mode: {value}");
-                    }
-
-                    CullModeUnity = newCullMode;
-                });
+                        serverSideState.cullMode = value;
+                        fixedStateChanged = true;
+                    });
+                }
+            }
+            get
+            {
+                return clientSideState.cullMode;
             }
         }
 
@@ -819,54 +761,162 @@ namespace Nofun.Driver.Unity.Graphics
         {
             set
             {
-                JobScheduler.Instance.RunOnUnityThread(() =>
+                if (clientSideState.depthCompareFunc != value)
                 {
-                    CompareFunction compareFuncNew = CompareFunction.LessEqual;
-                    switch (value)
+                    clientSideState.depthCompareFunc = value;
+
+                    JobScheduler.Instance.RunOnUnityThread(() =>
                     {
-                        case MpCompareFunc.Never:
-                            compareFuncNew = CompareFunction.Never;
-                            break;
-
-                        case MpCompareFunc.Less:
-                            compareFuncNew = CompareFunction.Less;
-                            break;
-
-                        case MpCompareFunc.LessEqual:
-                            compareFuncNew = CompareFunction.LessEqual;
-                            break;
-
-                        case MpCompareFunc.Equal:
-                            compareFuncNew = CompareFunction.Equal;
-                            break;
-
-                        case MpCompareFunc.Greater:
-                            compareFuncNew = CompareFunction.Greater;
-                            break;
-
-                        case MpCompareFunc.GreaterEqual:
-                            compareFuncNew = CompareFunction.GreaterEqual;
-                            break;
-
-                        case MpCompareFunc.NotEqual:
-                            compareFuncNew = CompareFunction.NotEqual;
-                            break;
-
-                        case MpCompareFunc.Always:
-                            compareFuncNew = CompareFunction.Always;
-                            break;
-
-                        default:
-                            throw new ArgumentException($"Unknown depth function {value}");
-                            break;
-                    }
-
-                    if (compareFuncNew != this.depthCompareFunction)
-                    {
-                        this.depthCompareFunction = compareFuncNew;
+                        serverSideState.depthCompareFunc = value;
                         fixedStateChanged = true;
-                    }
-                });
+                    });
+                }
+            }
+            get => clientSideState.depthCompareFunc;
+        }
+
+        public MpBlendMode ColorBufferBlend
+        {
+            set
+            {
+                if (clientSideState.blendMode != value)
+                {
+                    clientSideState.blendMode = value;
+
+                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    {
+                        serverSideState.blendMode = value;
+                        fixedStateChanged = true;
+                    });
+                }
+            }
+            get => clientSideState.blendMode;
+        }
+
+        public bool TextureMode
+        {
+            set
+            {
+                if (clientSideState.textureMode != value)
+                {
+                    clientSideState.textureMode = value;
+
+                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    {
+                        serverSideState.textureMode = value;
+                    });
+                }
+            }
+            get => clientSideState.textureMode;
+        }
+
+        public NRectangle ClipRect
+        {
+            set
+            {
+                Rect unityRect = value.ToUnity();
+
+                if (clientSideState.scissorRect != unityRect)
+                {
+                    clientSideState.scissorRect = unityRect;
+
+                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    {
+                        serverSideState.scissorRect = unityRect;
+
+                        if (began)
+                        {
+                            commandBuffer.EnableScissorRect(GetUnityScreenRect(unityRect));
+                        }
+                    });
+                }
+            }
+            get => clientSideState.scissorRect.ToMophun();
+        }
+
+        public NRectangle Viewport
+        {
+            set
+            {
+                Rect unityRect = value.ToUnity();
+
+                if (clientSideState.viewportRect != unityRect)
+                {
+                    clientSideState.viewportRect = unityRect;
+
+                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    {
+                        serverSideState.viewportRect = unityRect;
+
+                        if (began)
+                        {
+                            commandBuffer.SetViewport(GetUnityScreenRect(unityRect));
+                        }
+                    });
+                }
+            }
+            get => clientSideState.viewportRect.ToMophun();
+        }
+
+        public Matrix4x4 ProjectionMatrix3D
+        {
+            get => clientSideState.projectionMatrix3D;
+            set
+            {
+                if (clientSideState.projectionMatrix3D != value)
+                {
+                    clientSideState.projectionMatrix3D = value;
+
+                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    {
+                        serverSideState.projectionMatrix3D = value;
+
+                        if (began && in3DMode)
+                        {
+                            commandBuffer.SetProjectionMatrix(value);
+                        }
+                    });
+                }
+            }
+        }
+
+        public Matrix4x4 ViewMatrix3D
+        {
+            get => clientSideState.viewMatrix3D;
+            set
+            {
+                if (clientSideState.viewMatrix3D != value)
+                {
+                    clientSideState.viewMatrix3D = value;
+
+                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    {
+                        serverSideState.viewMatrix3D = value;
+
+                        if (began && in3DMode)
+                        {
+                            commandBuffer.SetViewMatrix(value);
+                        }
+                    });
+                }
+            }
+        }
+
+        public ITexture MainTexture
+        {
+            get => clientSideState.mainTexture;
+            set
+            {
+                Texture casted = value as Texture;
+                if (clientSideState.mainTexture != casted)
+                {
+                    clientSideState.mainTexture = casted;
+
+                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    {
+                        serverSideState.mainTexture = casted;
+                    });
+                }
             }
         }
 

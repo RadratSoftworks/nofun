@@ -1299,8 +1299,8 @@ MonoBehaviour:
   inputDriver: {fileID: 36796497}
   audioDriver: {fileID: 1316056871}
   graphicDriver: {fileID: 1719026072}
-  fpsLimit: 30
-  executableFilePath: e:\jeff.mpn
+  fpsLimit: 60
+  executableFilePath: e:\davinci.mpn
 --- !u!4 &1698624928
 Transform:
   m_ObjectHideFlags: 0
@@ -1375,6 +1375,7 @@ MonoBehaviour:
   displayImage: {fileID: 1748530797}
   mophunDrawTextureMaterial: {fileID: 2100000, guid: d8bcbd9e353f34543911d57f9d2b4bfb, type: 2}
   mophunUnlitMaterial: {fileID: 2100000, guid: 82e3b8bb7a917dd4aa169007d7528749, type: 2}
+  clearZMaterial: {fileID: 2100000, guid: 1ff24dd811a688c4c84545f79d44b6ad, type: 2}
   mophunCamera: {fileID: 519420031}
 --- !u!1 &1724386823
 GameObject:

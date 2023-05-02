@@ -21,7 +21,9 @@ namespace Nofun.Module.VMGP3D
     {
         private static ITexture Upload(IGraphicDriver driver, Span<byte> textureData, TextureFormat format, uint lods, uint mipCount, Memory<SColor> palettes)
         {
-            return driver.CreateTexture(textureData.ToArray(), 1 << (int)(lods & 0xFF), 1 << (int)((lods >> 8) & 0xFF), (int)mipCount, format, palettes);
+            // Indicies format will not admit 0 as transparent, but RGB332 would according to doc
+            bool zeroAsTransparent = (format == TextureFormat.RGB332);
+            return driver.CreateTexture(textureData.ToArray(), 1 << (int)(lods & 0xFF), 1 << (int)((lods >> 8) & 0xFF), (int)mipCount, format, palettes, zeroAsTransparent);
         }
 
         public static ITexture Upload(IGraphicDriver driver, VMPtr<byte> dataPtr, VMMemory memory, TextureFormat format, uint lods, uint mipCount, Memory<SColor> palettes)
@@ -47,6 +49,9 @@ namespace Nofun.Module.VMGP3D
 
         public ITexture Get(IGraphicDriver driver, VMPtr<byte> dataPtr, VMMemory memory, TextureFormat format, uint lods, uint mipCount, Memory<SColor> palettes)
         {
+            // Does not include top lod
+            mipCount += 1;
+
             XxHash32 hasher = new();
 
             int lodX = (int)(lods & 0xFF);
@@ -56,10 +61,21 @@ namespace Nofun.Module.VMGP3D
             long totalSize = 0;
             int actualMipCount = 0;
 
+            byte highestPaletteIndex = 0;
+            bool isPalette = TextureUtil.IsPaletteFormat(format);
+            byte bitsSize = (byte)TextureUtil.GetPixelSizeInBits(format);
+
             for (int i = 0; (i < mipCount) && (lodY >= 0) && (lodY >= 0); i++)
             {
                 long textureSizeThisLevel = (TextureUtil.GetTextureSizeInBits(1 << lodX, 1 << lodY, format) + 7) >> 3;
-                hasher.Append(hashDataPtr.AsSpan(memory, (int)textureSizeThisLevel));
+                Span<byte> data = hashDataPtr.AsSpan(memory, (int)textureSizeThisLevel);
+
+                hasher.Append(data);
+
+                if (isPalette)
+                {
+                    highestPaletteIndex = DataConvertor.FindHighestPaletteIndex(data, 1 << lodX, 1 << lodY, bitsSize);
+                }
 
                 hashDataPtr += (int)textureSizeThisLevel;
                 totalSize += textureSizeThisLevel;
@@ -68,6 +84,11 @@ namespace Nofun.Module.VMGP3D
                 lodY -= 1;
 
                 actualMipCount++;
+            }
+
+            if (isPalette)
+            {
+                hasher.Append(MemoryMarshal.Cast<SColor, byte>(palettes.Span.Slice(0, highestPaletteIndex + 1)));
             }
 
             hasher.Append(MemoryMarshal.Cast<TextureFormat, byte>(MemoryMarshal.CreateReadOnlySpan(ref format, 1)));

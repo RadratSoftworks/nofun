@@ -44,6 +44,10 @@ namespace Nofun.PIP2.Interpreter
 
         private void ADDHi(TwoSourcesEncoding encoding)
         {
+            if (Reg[Register.PC] == 0x4584 + 0x1000)
+            {
+                int asdadk = 10;
+            }
             Reg16[encoding.d] = (ushort)(Reg16[encoding.s] + BitUtil.SignExtendToShort(encoding.t));
         }
 
@@ -147,6 +151,12 @@ namespace Nofun.PIP2.Interpreter
             Reg[encoding.d] = Reg[encoding.s] >> (byte)Reg[encoding.t];
         }
 
+        private void SRA(TwoSourcesEncoding encoding)
+        {
+            // NOTE: Must case to byte for C#. May revisit if bugged
+            Reg[encoding.d] = (uint)((int)Reg[encoding.s] >> (byte)Reg[encoding.t]);
+        }
+
         private void SRLi(TwoSourcesEncoding encoding)
         {
             Reg[encoding.d] = Reg[encoding.s] >> encoding.t;
@@ -222,6 +232,11 @@ namespace Nofun.PIP2.Interpreter
             Reg[encoding.d] = Reg[encoding.s] | (uint)FetchImmediate();
         }
 
+        private void ORH(TwoSourcesEncoding encoding)
+        {
+            Reg16[encoding.d] = (ushort)(Reg16[encoding.s] | Reg16[encoding.t]);
+        }
+
         private void ORB(TwoSourcesEncoding encoding)
         {
             Reg8[encoding.d] = (byte)(Reg8[encoding.s] | Reg8[encoding.t]);
@@ -235,6 +250,10 @@ namespace Nofun.PIP2.Interpreter
 
 
         #region XOR instructions family
+        private void XOR(TwoSourcesEncoding encoding)
+        {
+            Reg[encoding.d] = Reg[encoding.s] ^ Reg[encoding.t];
+        }
 
         private void XORi(TwoSourcesEncoding encoding)
         {

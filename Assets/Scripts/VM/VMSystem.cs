@@ -19,10 +19,12 @@ using Nofun.Driver.Input;
 using Nofun.Driver.Audio;
 using Nofun.Parser;
 using Nofun.PIP2;
+using Nofun.PIP2.Assembler;
 using System;
 using Nofun.Util;
 using Nofun.Driver.Time;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Nofun.VM
 {
@@ -43,8 +45,9 @@ namespace Nofun.VM
         private uint roundedHeapSize;
         private string persistentDataPath;
 
-        private uint constructorAddress;
-        private uint destructorAddress;
+        private uint constructorListAddress;
+        private uint destructorListAddress;
+        private uint listRunAddress;
         private uint stackStartAddress;
         private uint heapAddress;
 
@@ -62,6 +65,26 @@ namespace Nofun.VM
         public uint HeapEnd => HeapStart + HeapSize;
         public string PersistentDataPath => persistentDataPath;
 
+        private void CreateCallListInvokeCode(Span<uint> memorySpan)
+        {
+            Assembler assembler = new Assembler();
+
+            assembler.PUSH_RA();
+            assembler.MOV(Register.S1, Register.P0);
+
+            Label loopPoint = assembler.L;
+            assembler.LDW(Register.S0, Register.S1, Assembler.Constant(0));
+            Label targetJump = assembler.BEQI(Register.S0, 0);
+
+            assembler.CALLr(Register.S0);
+            assembler.ADDI(Register.S1, Register.S1, Assembler.Constant(4));
+            assembler.JP(loopPoint);
+            assembler.L = targetJump;
+
+            assembler.RET_RA();
+            assembler.Assemble(memorySpan);
+        }
+
         private void LoadModulesAndProgram(VMLoader loader)
         {
             RegisterModules();
@@ -69,24 +92,20 @@ namespace Nofun.VM
             var result = loader.Load(memory.GetMemorySpan((int)ProgramStartOffset, (int)loader.EstimateNeededProgramSize()),
                 ProgramStartOffset, callMap);
 
-            constructorAddress = result.Find(poolData => poolData?.Name?.Equals("~C", StringComparison.OrdinalIgnoreCase) ?? false)?.ImmediateInteger ?? 0;
-            destructorAddress = result.Find(poolData => poolData?.Name?.Equals("~D", StringComparison.OrdinalIgnoreCase) ?? false)?.ImmediateInteger ?? 0;
+            constructorListAddress = result.Find(poolData => poolData?.Name?.Equals("~C", StringComparison.OrdinalIgnoreCase) ?? false)?.ImmediateInteger ?? 0;
+            destructorListAddress = result.Find(poolData => poolData?.Name?.Equals("~D", StringComparison.OrdinalIgnoreCase) ?? false)?.ImmediateInteger ?? 0;
 
-            if (constructorAddress != 0)
+            if ((constructorListAddress != 0) || (destructorListAddress != 0))
             {
-                constructorAddress = Memory.ReadMemory32(constructorAddress);
+                CreateCallListInvokeCode(MemoryMarshal.Cast<byte, uint>(memory.GetMemorySpan((int)listRunAddress, (int)VMMemory.DataAlignment)));
             }
 
-            if (destructorAddress != 0)
-            {
-                destructorAddress = Memory.ReadMemory32(destructorAddress);
-            }
-
-            if (constructorAddress != 0)
+            if (constructorListAddress != 0)
             {
                 // Launch the constructor automatically
                 processor.Reg[Register.RA] = ProgramStartOffset;
-                processor.Reg[Register.PC] = constructorAddress;
+                processor.Reg[Register.P0] = constructorListAddress;
+                processor.Reg[Register.PC] = listRunAddress;
             }
             else
             {
@@ -158,6 +177,9 @@ namespace Nofun.VM
             roundedHeapSize = MemoryUtil.AlignUp(executable.Header.dynamicDataHeapSize, VMMemory.DataAlignment);
             totalSize += VMMemory.DataAlignment + roundedHeapSize;
 
+            listRunAddress = heapAddress + roundedHeapSize;
+            totalSize += VMMemory.DataAlignment;
+
             memory = new VMMemory(totalSize);
             processor = new PIP2.Interpreter.Interpreter(new PIP2.ProcessorConfig()
             {
@@ -185,9 +207,10 @@ namespace Nofun.VM
         public bool RunDestructor()
         {
             // Ignore all things and set pc directly
-            if (destructorAddress != 0)
+            if (destructorListAddress != 0)
             {
-                processor.Reg[Register.PC] = destructorAddress;
+                processor.Reg[Register.P0] = destructorListAddress;
+                processor.Reg[Register.PC] = listRunAddress;
                 return true;
             }
 

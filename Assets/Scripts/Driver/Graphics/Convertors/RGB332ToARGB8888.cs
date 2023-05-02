@@ -30,18 +30,28 @@ namespace Nofun.Driver.Graphics
             0, 36, 73, 109, 146, 182, 219, 255
         };
 
-        public static byte[] RGB332ToRGB888(Span<byte> data, int width, int height)
+        public static byte[] RGB332ToARGB8888(Span<byte> data, int width, int height, bool zeroAsTransparent)
         {
-            byte[] newData = new byte[width * height * 3];
+            byte[] newData = new byte[width * height * 4];
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
                     byte pixel = data[y * width + x];
-
-                    newData[y * width * 3 + x * 3 + 0] = ThreeBitsRGB332Palette[(pixel >> 5) & 0b111];
-                    newData[y * width * 3 + x * 3 + 1] = ThreeBitsRGB332Palette[(pixel >> 2) & 0b111];
-                    newData[y * width * 3 + x * 3 + 2] = TwoBitsRGB332Palette[pixel & 0b11];
+                    if (zeroAsTransparent && (pixel == 0))
+                    {
+                        newData[y * width * 4 + x * 4] = 0;
+                        newData[y * width * 4 + x * 4 + 1] = 0;
+                        newData[y * width * 4 + x * 4 + 2] = 0;
+                        newData[y * width * 4 + x * 4 + 3] = 0;
+                    }
+                    else
+                    {
+                        newData[y * width * 4 + x * 4] = 255;
+                        newData[y * width * 4 + x * 4 + 1] = ThreeBitsRGB332Palette[(pixel >> 5) & 0b111];
+                        newData[y * width * 4 + x * 4 + 2] = ThreeBitsRGB332Palette[(pixel >> 2) & 0b111];
+                        newData[y * width * 4 + x * 4 + 3] = TwoBitsRGB332Palette[pixel & 0b11];
+                    }
                 }
             }
 

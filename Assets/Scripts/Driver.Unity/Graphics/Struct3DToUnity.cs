@@ -16,26 +16,45 @@
 
 using Nofun.Module.VMGP3D;
 using Nofun.Util;
-
 using UnityEngine;
 
 namespace Nofun.Driver.Unity.Graphics
 {
     public static class Struct3DToUnity
     {
-        public static Vector2 MophunUVToUnity(NativeUV uv)
+        public static Vector2 ToUnity(this NativeUV uv)
         {
             return new Vector2(FixedUtil.Fixed9PointToFloat(uv.fixedU), FixedUtil.Fixed9PointToFloat(uv.fixedV));
         }
 
-        public static Vector3 MophunVector3ToUnity(NativeVector3D v)
+        public static Vector3 ToUnity(this NativeVector3D v)
         {
             return new Vector3(FixedUtil.FixedToFloat(v.fixedX), FixedUtil.FixedToFloat(v.fixedY), FixedUtil.FixedToFloat(v.fixedZ));
         }
 
-        public static Color MophunDColorToUnity(NativeDiffuseColor color)
+        public static Color ToUnity(this NativeDiffuseColor color)
         {
             return new Color(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
+        }
+
+        public static Rect ToUnity(this NRectangle rect)
+        {
+            return new Rect(rect.x, rect.y, rect.width, rect.height);
+        }
+
+        public static NRectangle ToMophun(this Rect rect)
+        {
+            return new NRectangle((int)rect.x, (int)rect.y, (int)rect.width, (int)rect.height);
+        }
+
+        public static NativeVector3D ToMophun(this Vector3 v)
+        {
+            return new NativeVector3D()
+            {
+                fixedX = FixedUtil.FloatToFixed(v.x),
+                fixedY = FixedUtil.FloatToFixed(v.y),
+                fixedZ = FixedUtil.FloatToFixed(v.z),
+            };
         }
     }
 }

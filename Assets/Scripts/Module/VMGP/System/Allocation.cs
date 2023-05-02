@@ -18,12 +18,20 @@ using Nofun.VM;
 using Nofun.Util.Allocator;
 using Nofun.Util.Logging;
 
+using System;
+
 namespace Nofun.Module.VMGP
 {
     [Module]
     public partial class VMGP
     {
         private ISpaceAllocator heapAllocator;
+
+        [ModuleCall]
+        private uint vMemFree()
+        {
+            return (uint)heapAllocator.AmountFree;
+        }
 
         [ModuleCall]
         private VMPtr<Any> vNewPtr(uint size)
@@ -34,6 +42,10 @@ namespace Nofun.Module.VMGP
                 Logger.Error(LogClass.VMGPSystem, $"Failed to allocate new pointer with size of {size}");
                 return VMPtr<Any>.Null;
             }
+
+            // We need to memset this to zero. If this is debug mode, memset it to 0x1C
+            Span<byte> allocatedSpan = system.Memory.GetMemorySpan((int)(offset + system.HeapStart), (int)size);
+            allocatedSpan.Fill(0);
 
             return new VMPtr<Any>((uint)(offset + system.HeapStart));
         }

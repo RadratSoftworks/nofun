@@ -16,6 +16,8 @@
 
 using Nofun.Driver.Graphics;
 using Nofun.Util;
+using Nofun.Util.Logging;
+using Nofun.VM;
 using System;
 
 namespace Nofun.Module.VMGP
@@ -26,29 +28,6 @@ namespace Nofun.Module.VMGP
         private int foregroundColor;
         private int backgroundColor;
         private uint currentTransferMode = (uint)TransferMode.Transparent;
-
-        private int GetSimpleSpriteRotation()
-        {
-            bool flipXSet = BitUtil.FlagSet(currentTransferMode, TransferMode.FlipX);
-            bool flipYSet = BitUtil.FlagSet(currentTransferMode, TransferMode.FlipX);
-        
-            if (flipXSet && flipYSet)
-            {
-                return 270;
-            }
-
-            if (flipXSet)
-            {
-                return 180;
-            }
-
-            if (flipYSet)
-            {
-                return 90;
-            }
-
-            return 0;
-        }
 
         [ModuleCall]
         private void vClearScreen(Int32 color)
@@ -81,6 +60,17 @@ namespace Nofun.Module.VMGP
         }
 
         [ModuleCall]
+        private void vSetPalette(VMPtr<ushort> colors, byte startIndex, ushort count)
+        {
+            count = Math.Min(count, (ushort)256);
+            Span<ushort> colorSpan = colors.AsSpan(system.Memory, count);
+            for (int i = 0; i < count; i++)
+            {
+                ScreenPalette[startIndex + i] = SColor.FromRgb555(colorSpan[i]);
+            }
+        }
+
+        [ModuleCall]
         private int vFindRGBIndex(uint rgb)
         {
             SColor colorMatch = SColor.FromRgb555(rgb);
@@ -110,7 +100,7 @@ namespace Nofun.Module.VMGP
         [ModuleCall]
         private void vSetClipWindow(ushort x0, ushort y0, ushort x1, ushort y1)
         {
-            system.GraphicDriver.SetClipRect(x0, y0, x1, y1);
+            system.GraphicDriver.ClipRect = new NRectangle(x0, y0, x1 - x0, y1 - y0);
         }
 
         [ModuleCall]
@@ -144,6 +134,12 @@ namespace Nofun.Module.VMGP
         {
             vUpdateMap();
             vUpdateSprite();
+        }
+
+        [ModuleCall]
+        private void vSetDisplayWindow(int width, int height)
+        {
+            Logger.Trace(LogClass.VMGPGraphic, $"Set display window stubbed (width={width}, height={height})");
         }
     }
 }

@@ -70,5 +70,12 @@ namespace Nofun.Driver.Graphics
         {
             return GetPixelSizeInBits(format) * width * height;
         }
+
+        public static bool IsPaletteFormat(TextureFormat format)
+        {
+            return (format == TextureFormat.Palette2) || (format == TextureFormat.Palette4) ||
+                (format == TextureFormat.Palette16_Alt) || (format == TextureFormat.Palette256_Alt) ||
+                (format == TextureFormat.Palette16) || (format == TextureFormat.Palette256);
+        }
     }
 }

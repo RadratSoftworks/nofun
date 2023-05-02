@@ -46,7 +46,8 @@ namespace Nofun.Module.VMGP
         [ModuleCall]
         private int vStrLen(VMString str)
         {
-            return str.Get(system.Memory).Length;
+            var strstr = str.Get(system.Memory);
+            return strstr.Length;
         }
 
         private VMPtr<byte> NumberToString(long val, VMPtr<byte> buf, byte len, byte pad)
@@ -67,8 +68,10 @@ namespace Nofun.Module.VMGP
                 }
             }
 
-            destBuf[Math.Max(valConverted.Length, len)] = 0;
-            return buf + len;
+            int nullTerminatorPosition = Math.Max(valConverted.Length, len);
+
+            destBuf[nullTerminatorPosition] = 0;
+            return buf + nullTerminatorPosition;
         }
 
         [ModuleCall]
@@ -81,6 +84,35 @@ namespace Nofun.Module.VMGP
         private VMPtr<byte> vutoa(uint val, VMPtr<byte> buf, byte len, byte pad)
         {
             return NumberToString(val, buf, len, pad);
+        }
+
+        [ModuleCall]
+        private int vatoi(VMPtr<byte> str, VMPtr<uint> end)
+        {
+            string strConvert = "";
+
+            while (true)
+            {
+                byte charVal = str.Read(system.Memory);
+
+                if ((charVal >= '0') && (charVal <= '9'))
+                {
+                    strConvert += (char)charVal;
+                }
+                else
+                {
+                    if (!end.IsNull)
+                    {
+                        end.Write(system.Memory, str.Value);
+                    }
+
+                    break;
+                }
+
+                str += 1;
+            }
+
+            return (strConvert.Length == 0) ? 0 : int.Parse(strConvert);
         }
     }
 }

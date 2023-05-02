@@ -46,9 +46,10 @@ namespace Nofun.PIP2
             this.dataType = PoolDataType.ImmInteger;
         }
 
-        public PoolData(Action function)
+        public PoolData(Action function, string name)
         {
             this.function = function;
+            this.name = name;
             this.dataType = PoolDataType.Import;
         }
 
