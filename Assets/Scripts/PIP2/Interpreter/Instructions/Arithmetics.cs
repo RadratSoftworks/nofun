@@ -44,10 +44,6 @@ namespace Nofun.PIP2.Interpreter
 
         private void ADDHi(TwoSourcesEncoding encoding)
         {
-            if (Reg[Register.PC] == 0x4584 + 0x1000)
-            {
-                int asdadk = 10;
-            }
             Reg16[encoding.d] = (ushort)(Reg16[encoding.s] + BitUtil.SignExtendToShort(encoding.t));
         }
 

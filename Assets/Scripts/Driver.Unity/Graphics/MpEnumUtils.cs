@@ -1,12 +1,13 @@
 using Nofun.Driver.Graphics;
 using System;
+using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace Nofun.Driver.Unity.Graphics
 {
     public static class MpEnumUtils
     {
-        public static Tuple<BlendMode, BlendMode> MpBlendModeToBlendFactors(MpBlendMode mode)
+        public static Tuple<BlendMode, BlendMode> ToUnity(this MpBlendMode mode)
         {
             switch (mode)
             {
@@ -27,7 +28,7 @@ namespace Nofun.Driver.Unity.Graphics
             }
         }
 
-        public static CullMode MpCullModeToUnity(MpCullMode mode)
+        public static CullMode ToUnity(this MpCullMode mode)
         {
             switch (mode)
             {
@@ -45,7 +46,7 @@ namespace Nofun.Driver.Unity.Graphics
             }
         }
 
-        public static CompareFunction MpCompareFunctionToUnity(MpCompareFunc func)
+        public static CompareFunction ToUnity(this MpCompareFunc func)
         {
             CompareFunction compareFuncNew = CompareFunction.LessEqual;
             switch (func)
@@ -87,6 +88,27 @@ namespace Nofun.Driver.Unity.Graphics
             }
 
             return compareFuncNew;
+        }
+
+        public static FilterMode ToUnity(this MpFilterMode mode)
+        {
+            switch (mode)
+            {
+                case MpFilterMode.Nearest:
+                case MpFilterMode.MipNearest:
+                case MpFilterMode.LinearMipNearest:
+                    return FilterMode.Point;
+
+                case MpFilterMode.Linear:
+                    return FilterMode.Bilinear;
+
+                case MpFilterMode.MipLinear:
+                case MpFilterMode.LinearMipLinear:
+                    return FilterMode.Trilinear;
+
+                default:
+                    throw new ArgumentException($"Unknown filter mode {mode}");
+            }
         }
     }
 }

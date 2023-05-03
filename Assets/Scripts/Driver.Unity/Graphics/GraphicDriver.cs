@@ -41,6 +41,7 @@ namespace Nofun.Driver.Unity.Graphics
         private const string UnlitBlendSourceFactorUniformName = "_SourceBlendFactor";
         private const string UnlitBlendDestFactorUniformName = "_DestBlendFactor";
         private const string UnlitTexturelessUniformName = "_Textureless";
+        private const string UnlitTextureBlendModeUniformName = "_TextureBlendMode";
 
         private const string ZClearValueUniformName = "_ClearValue";
 
@@ -90,6 +91,9 @@ namespace Nofun.Driver.Unity.Graphics
         [SerializeField]
         private Camera mophunCamera;
 
+        [SerializeField]
+        private bool coverScreen = false;
+
         private CommandBuffer commandBuffer;
 
         private Mesh quadMesh;
@@ -115,10 +119,10 @@ namespace Nofun.Driver.Unity.Graphics
                 if (!unlitMaterialCache.ContainsKey(stateIdentifier))
                 {
                     Material mat = new Material(mophunUnlitMaterial);
-                    mat.SetFloat(UnlitCullUniformName, (float)MpEnumUtils.MpCullModeToUnity(serverSideState.cullMode));
-                    mat.SetFloat(UnlitZTestUniformName, (float)MpEnumUtils.MpCompareFunctionToUnity(serverSideState.depthCompareFunc));
+                    mat.SetFloat(UnlitCullUniformName, (float)serverSideState.cullMode.ToUnity());
+                    mat.SetFloat(UnlitZTestUniformName, (float)serverSideState.depthCompareFunc.ToUnity());
 
-                    Tuple<BlendMode, BlendMode> blendFactors = MpEnumUtils.MpBlendModeToBlendFactors(serverSideState.blendMode);
+                    Tuple<BlendMode, BlendMode> blendFactors = serverSideState.blendMode.ToUnity();
                     mat.SetFloat(UnlitBlendSourceFactorUniformName, (float)blendFactors.Item1);
                     mat.SetFloat(UnlitBlendDestFactorUniformName, (float)blendFactors.Item2);
 
@@ -228,7 +232,26 @@ namespace Nofun.Driver.Unity.Graphics
 
         private void Start()
         {
-            Initialize(new Vector2(176, 208));
+            RectTransform transform = displayImage.GetComponent<RectTransform>();
+            Vector2 presetSize = new Vector2(176, 208);
+
+            transform.anchoredPosition = Vector2.zero;
+            transform.offsetMin = Vector2.zero;
+
+            if (coverScreen)
+            {
+                transform.anchorMin = Vector2.zero;
+                transform.anchorMax = Vector2.one;
+                transform.offsetMax = Vector2.zero;
+            }
+            else
+            {
+                transform.anchorMin = transform.anchorMax = Vector2.one / 2;
+                transform.sizeDelta = presetSize;
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(transform);
+            Initialize(coverScreen ? transform.rect.size : presetSize);
         }
 
         private Rect GetUnityScreenRect(Rect curRect)
@@ -466,6 +489,8 @@ namespace Nofun.Driver.Unity.Graphics
         {
             JobScheduler.Instance.RunOnUnityThread(() =>
             {
+                BeginRender(mode2D: true);
+
                 Rect destRect = new Rect(x0, y0, x1 - x0, y1 - y0);
                 Rect sourceRect = new Rect(0, 0, 1, 1);
 
@@ -683,6 +708,7 @@ namespace Nofun.Driver.Unity.Graphics
                 MaterialPropertyBlock block = new MaterialPropertyBlock();
                 block.SetTexture(MainTexUniformName, serverSideState.textureMode ? serverSideState.mainTexture.NativeTexture : whiteTexture);
                 block.SetFloat(UnlitTexturelessUniformName, serverSideState.textureMode ? 0.0f : 1.0f);
+                block.SetFloat(UnlitTextureBlendModeUniformName, (float)serverSideState.blendMode + 0.5f);
                 return block;
             }
         }
@@ -915,6 +941,23 @@ namespace Nofun.Driver.Unity.Graphics
                     JobScheduler.Instance.RunOnUnityThread(() =>
                     {
                         serverSideState.mainTexture = casted;
+                    });
+                }
+            }
+        }
+
+        public MpTextureBlendMode TextureBlendMode
+        {
+            get => clientSideState.textureBlendMode;
+            set
+            {
+                if (clientSideState.textureBlendMode != value)
+                {
+                    clientSideState.textureBlendMode = value;
+
+                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    {
+                        serverSideState.textureBlendMode = value;
                     });
                 }
             }

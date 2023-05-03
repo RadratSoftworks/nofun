@@ -3,6 +3,7 @@ Shader "Unlit/StateConfigurableDraw"
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
+        _TextureBlendMode ("Texture blend mode", Float) = 4.5
         [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("ZTest", Float) = 4
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 2
         [Enum(UnityEngine.Rendering.BlendMode)] _SourceBlendFactor("Source blend factor", Float) = 5
@@ -13,7 +14,7 @@ Shader "Unlit/StateConfigurableDraw"
         Tags { "RenderType"="Opaque" }
         ZTest [_ZTest]
         Cull [_Cull]
-        Blend [_SourceBlendFactor] [_DestBlendFactor]
+        Blend [_SourceBlendFactor] [_DestBlendFactor], Zero One
 
         LOD 100
 
@@ -46,6 +47,7 @@ Shader "Unlit/StateConfigurableDraw"
             float4 _MainTex_ST;
 
             uniform float _Textureless;
+            uniform float _TextureBlendMode;
 
             v2f vert (appdata v)
             {
@@ -62,6 +64,14 @@ Shader "Unlit/StateConfigurableDraw"
             {
                 // sample the texture
                 fixed4 col = (_Textureless > 0.5f) ? i.color : tex2D(_MainTex, i.uv);
+                if (_Textureless > 0.5f) {
+                    if (_TextureBlendMode >= 2) {
+                        col *= i.color;
+                    }
+                    else if (_TextureBlendMode >= 4) {
+                        col += i.color;
+                    }
+                }
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, col);
                 return col;

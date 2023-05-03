@@ -59,7 +59,7 @@ namespace Nofun.VM
             return EstimatedCodeSectionSize() + EstimatedDataSectionSize();
         }
 
-        private void ProcessRelocation(VMGPPoolItem item, Span<byte> codeData, Span<byte> dataSpan, UInt32 codeAddress, UInt32 dataAddress, UInt32 bssAddress)
+        private PoolData ProcessRelocation(VMGPPoolItem item, Span<byte> codeData, Span<byte> dataSpan, UInt32 codeAddress, UInt32 dataAddress, UInt32 bssAddress)
         {
             if ((item.itemTarget != 1) && (item.itemTarget != 2))
             {
@@ -76,7 +76,7 @@ namespace Nofun.VM
             catch (Exception e)
             {
                 Logger.Warning(LogClass.Loader, $"Slicing relocation data failed with: {e}");
-                return;
+                return null;
             }
    
             if (item.poolType == PoolItemType.SectionRelativeReloc)
@@ -108,6 +108,8 @@ namespace Nofun.VM
                             throw new InvalidOperationException("Unknown segment to relocate data value to!");
                         }
                 }
+
+                return null;
             }
             else
             {
@@ -126,6 +128,8 @@ namespace Nofun.VM
                         BinaryPrimitives.WriteUInt32BigEndian(targetValue, value);
                     }
                 }
+
+                return new PoolData(item.metaOffset);
             }
         }
 
@@ -186,8 +190,7 @@ namespace Nofun.VM
                 case PoolItemType.Swap32Reloc:
                 case PoolItemType.Swap16Reloc:
                     {
-                        ProcessRelocation(poolItem, codeData, dataSpan, codeAddress, dataAddress, bssAddress);
-                        return null;
+                        return ProcessRelocation(poolItem, codeData, dataSpan, codeAddress, dataAddress, bssAddress);
                     }
 
                 case PoolItemType.Const32:

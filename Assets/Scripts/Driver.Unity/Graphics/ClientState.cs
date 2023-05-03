@@ -25,6 +25,7 @@ namespace Nofun.Driver.Unity.Graphics
     {
         public MpCullMode cullMode = MpCullMode.CounterClockwise;
         public MpBlendMode blendMode = MpBlendMode.Replace;
+        public MpTextureBlendMode textureBlendMode = MpTextureBlendMode.Modulate;
         public bool textureMode = false;
         public MpCompareFunc depthCompareFunc = MpCompareFunc.Less;
         public Rect scissorRect;

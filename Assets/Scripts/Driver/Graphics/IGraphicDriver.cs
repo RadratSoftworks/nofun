@@ -61,6 +61,7 @@ namespace Nofun.Driver.Graphics
         MpCullMode Cull { get; set; }
         MpCompareFunc DepthFunction { get; set; }
         MpBlendMode ColorBufferBlend { get; set; }
+        MpTextureBlendMode TextureBlendMode { get; set; }
         bool TextureMode { get; set; }
         NRectangle ClipRect { get; set; }
         NRectangle Viewport { get; set; }

@@ -1377,6 +1377,7 @@ MonoBehaviour:
   mophunUnlitMaterial: {fileID: 2100000, guid: 82e3b8bb7a917dd4aa169007d7528749, type: 2}
   clearZMaterial: {fileID: 2100000, guid: 1ff24dd811a688c4c84545f79d44b6ad, type: 2}
   mophunCamera: {fileID: 519420031}
+  coverScreen: 1
 --- !u!1 &1724386823
 GameObject:
   m_ObjectHideFlags: 0
@@ -1591,7 +1592,7 @@ RectTransform:
   m_GameObject: {fileID: 1748530795}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1479404595}

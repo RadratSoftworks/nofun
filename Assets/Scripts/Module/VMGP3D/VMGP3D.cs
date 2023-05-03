@@ -104,6 +104,18 @@ namespace Nofun.Module.VMGP3D
                         break;
                     }
 
+                case RenderState.FilterMode:
+                    if (activeTexture != null)
+                    {
+                        activeTexture.Filter = (MpFilterMode)value;
+                    }
+
+                    break;
+
+                case RenderState.TextureBlendMode:
+                    system.GraphicDriver.TextureBlendMode = (MpTextureBlendMode)value;
+                    break;
+
                 case RenderState.PerspectiveEnable:
                     perspectiveEnable = (value != 0);
                     break;

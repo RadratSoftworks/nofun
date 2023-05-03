@@ -26,6 +26,8 @@ namespace Nofun.Driver.Unity.Graphics
         private Texture2D uTexture;
         private Driver.Graphics.TextureFormat format;
         private int mipCount;
+        private MpFilterMode cachedFilter;
+        private UnityEngine.FilterMode cachedUnityFilter;
 
         public Texture2D NativeTexture => uTexture;
 
@@ -148,7 +150,12 @@ namespace Nofun.Driver.Unity.Graphics
             this.mipCount = mipCount;
 
             uTexture = new Texture2D(width, height, needTransform ? UnityEngine.TextureFormat.ARGB32 : MapMophunFormatToUnity(format), true);
+            uTexture.filterMode = FilterMode.Trilinear;
+
             UploadData(data, width, height, mipCount, palettes, zeroAsTransparent);
+
+            cachedUnityFilter = FilterMode.Trilinear;
+            cachedFilter = MpFilterMode.LinearMipLinear;
         }
 
         public void SetData(byte[] data, int mipLevel, Memory<SColor> palettes, bool zeroAsTransparent = false)
@@ -177,6 +184,25 @@ namespace Nofun.Driver.Unity.Graphics
                     stream.Write(pngData, 0, pngData.Length);
                 }
             });
+        }
+
+        public MpFilterMode Filter
+        {
+            get => cachedFilter;
+            set
+            {
+                cachedFilter = value;
+
+                FilterMode unityFilter = value.ToUnity();
+                if (cachedUnityFilter != unityFilter)
+                {
+                    cachedUnityFilter = unityFilter;
+                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    {
+                        uTexture.filterMode = unityFilter;
+                    });
+                }
+            }
         }
     }
 }

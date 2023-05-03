@@ -14,28 +14,24 @@
  * limitations under the License.
  */
 
-namespace Nofun.Module.VMGP3D
+namespace Nofun.Driver.Graphics
 {
-    public struct V3DMatrix
+    public enum MpTextureBlendMode
     {
-        public int m00;
-        public int m01;
-        public int m02;
-        public int m03;
+        /// <summary>
+        /// Use texel without fragment colour.
+        /// </summary>
+        Replace = 1,
 
-        public int m10;
-        public int m11;
-        public int m12;
-        public int m13;
+        /// <summary>
+        /// Multiplies fragment colour with texel.
+        /// </summary>
+        Modulate = 2,
 
-        public int m20;
-        public int m21;
-        public int m22;
-        public int m23;
-
-        public int m30;
-        public int m31;
-        public int m32;
-        public int m33;
+        /// <summary>
+        /// Add fragment colour with texel.
+        /// </summary>
+        /// 
+        Add = 4
     }
 }
