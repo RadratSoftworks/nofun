@@ -46,7 +46,14 @@ namespace Nofun.PIP2.Interpreter
                     // Add to skip the pool item number
                     Reg[Register.PC] += 4;
 
-                    poolItem.Function();
+                    try
+                    {
+                        poolItem.Function();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Trace(LogClass.PIP2, $"{ex}");
+                    }
                 }
                 else if (poolItem.DataType == PoolDataType.ImmInteger)
                 {

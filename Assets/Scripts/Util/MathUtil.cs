@@ -35,5 +35,10 @@ namespace Nofun.Util
         {
             return radians * 180.0f / (float) System.Math.PI;
         }
+
+        public static float Degs2Rad(float degs)
+        {
+            return degs / 180.0f * (float)System.Math.PI;
+        }
     }
 }

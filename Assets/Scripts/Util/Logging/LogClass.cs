@@ -28,6 +28,7 @@ namespace Nofun.Util.Logging
         GameTTY,
         VMGP3D,
         VSound,
-        VMusic
+        VMusic,
+        PIP2
     }
 }

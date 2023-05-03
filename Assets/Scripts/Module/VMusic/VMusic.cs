@@ -15,9 +15,11 @@
  */
 
 using Nofun.Driver.Audio;
+using Nofun.Module.VMStream;
 using Nofun.Util.Logging;
 using Nofun.VM;
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Nofun.Module.VSound
@@ -28,11 +30,24 @@ namespace Nofun.Module.VSound
         private const int MUSIC_OK = 0;
         private const int MUSIC_ERR = -1;
 
+        private enum LoadType: uint
+        {
+            Stream = 0,
+            Resource = 1,
+            File = 2
+        }
+
         private VMSystem system;
 
         public VMusic(VMSystem system)
         {
             this.system = system;
+        }
+
+        [ModuleCall]
+        private int vMusicLoad(int handle, int type)
+        {
+            return MUSIC_ERR;
         }
 
         [ModuleCall]

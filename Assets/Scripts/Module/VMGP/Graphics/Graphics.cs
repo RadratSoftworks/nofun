@@ -98,7 +98,7 @@ namespace Nofun.Module.VMGP
         }
 
         [ModuleCall]
-        private void vSetClipWindow(ushort x0, ushort y0, ushort x1, ushort y1)
+        private void vSetClipWindow(short x0, short y0, short x1, short y1)
         {
             system.GraphicDriver.ClipRect = new NRectangle(x0, y0, x1 - x0, y1 - y0);
         }

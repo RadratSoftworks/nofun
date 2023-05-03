@@ -24,6 +24,7 @@ using System;
 using UnityEngine.UI;
 using UnityEngine.Rendering;
 using Nofun.Module.VMGP3D;
+using System.Linq;
 
 namespace Nofun.Driver.Unity.Graphics
 {
@@ -33,8 +34,6 @@ namespace Nofun.Driver.Unity.Graphics
         private const int MEASURED_CACHE_LIMIT = 4000;
         private const string BlackTransparentUniformName = "_Black_Transparent";
         private const string MainTexUniformName = "_MainTex";
-        private const string TexcoordTransformMatrixUniformName = "_TexToLocal";
-        private const string ColorUniformName = "_Color";
 
         private const string UnlitZTestUniformName = "_ZTest";
         private const string UnlitCullUniformName = "_Cull";
@@ -67,8 +66,8 @@ namespace Nofun.Driver.Unity.Graphics
         private Matrix4x4 orthoMatrix = Matrix4x4.identity;
         private bool in3DMode = false;
 
-        private BillboardCache billboardCache;
         private MeshCache meshCache;
+        private MeshBatcher meshBatcher;
 
         [SerializeField]
         private TMPro.TMP_Text[] textRenders;
@@ -95,16 +94,23 @@ namespace Nofun.Driver.Unity.Graphics
         private bool coverScreen = false;
 
         private CommandBuffer commandBuffer;
-
         private Mesh quadMesh;
-        private Mesh quadFlipXMesh;
-        private Mesh quadFlipYMesh;
-        private Mesh quadFlipXYMesh;
 
         private List<TMPro.TMP_Text> textRenderInternals;
         private Dictionary<ulong, Material> unlitMaterialCache;
 
-        private Material currentUnlitMaterial;
+        private Material currentMaterial;
+
+        private enum BatchingMode
+        {
+            None,
+            Render2D,
+            Render3D
+        }
+
+        private BatchingMode currentBatching = BatchingMode.None;
+        private Texture2D current2DTexture = null;
+        private bool currentBlackAsTransparent = false;
 
         [HideInInspector]
         public float FpsLimit { get; set; }
@@ -128,9 +134,14 @@ namespace Nofun.Driver.Unity.Graphics
 
                     unlitMaterialCache.Add(stateIdentifier, mat);
                 }
-                currentUnlitMaterial = unlitMaterialCache[stateIdentifier];
+                currentMaterial = unlitMaterialCache[stateIdentifier];
                 fixedStateChanged = false;
             }
+        }
+
+        private void HandleFixedStateChangedClient()
+        {
+            FlushBatch();
         }
 
         public Action StopProcessorAction
@@ -143,6 +154,91 @@ namespace Nofun.Driver.Unity.Graphics
             whiteTexture = new Texture2D(1, 1);
             whiteTexture.SetPixel(0, 0, Color.white);
             whiteTexture.Apply();
+        }
+
+        private void Flush3DBatch()
+        {
+            if (meshBatcher.Flush())
+            {
+                JobScheduler.Instance.RunOnUnityThread(() =>
+                {
+                    BeginRender(mode2D: false);
+
+                    commandBuffer.DrawMesh(meshBatcher.Pop(), Matrix4x4.identity, currentMaterial, 0, 0, UnlitPropertyBlock);
+                });
+            }
+        }
+
+        private void Flush2DBatch()
+        {
+            if (meshBatcher.Flush())
+            {
+                Texture2D currentTexCopy = current2DTexture;
+                bool blackAsTransparentCopy = currentBlackAsTransparent;
+
+                JobScheduler.Instance.RunOnUnityThread(() =>
+                {
+                    BeginRender(mode2D: true);
+
+                    MaterialPropertyBlock block = new MaterialPropertyBlock();
+                    block.SetTexture(MainTexUniformName, currentTexCopy);
+                    block.SetFloat(BlackTransparentUniformName, blackAsTransparentCopy ? 1.0f : 0.0f);
+
+                    commandBuffer.DrawMesh(meshBatcher.Pop(), Matrix4x4.identity, mophunDrawTextureMaterial, 0, 0, block);
+                });
+            }
+        }
+
+        private void FlushBatch()
+        {
+            switch (currentBatching)
+            {
+                case BatchingMode.Render2D:
+                    Flush2DBatch();
+                    break;
+
+                case BatchingMode.Render3D:
+                    Flush3DBatch();
+                    break;
+
+                case BatchingMode.None:
+                    break;
+
+                default:
+                    throw new ArgumentException("Invalid batch mode!");
+            }
+        }
+
+        private void BeginBatching(BatchingMode mode = BatchingMode.Render2D)
+        {
+            if (currentBatching == BatchingMode.None)
+            {
+                currentBatching = mode;
+                current2DTexture = null;
+
+                return;
+            }
+
+            if (mode != currentBatching)
+            {
+                FlushBatch();
+
+                currentBatching = mode;
+                current2DTexture = null;
+            }
+        }
+
+        private void Begin2DBatching(Texture2D currentTex, bool blackAsTransparent = false)
+        {
+            BeginBatching(BatchingMode.Render2D);
+
+            if (((current2DTexture != null) && (current2DTexture != currentTex)) || (currentBlackAsTransparent != blackAsTransparent))
+            {
+                Flush2DBatch();
+            }
+
+            current2DTexture = currentTex;
+            currentBlackAsTransparent = blackAsTransparent;
         }
 
         private void SetupQuadMesh()
@@ -176,41 +272,14 @@ namespace Nofun.Driver.Unity.Graphics
             };
 
             quadMesh.uv = uv;
-
-            quadFlipXMesh = Instantiate(quadMesh);
-            quadFlipXMesh.uv = new Vector2[4]
-            {
-                new Vector2(1, 1),
-                new Vector2(1, 0),
-                new Vector2(0, 0),
-                new Vector2(0, 1)
-            };
-
-            quadFlipYMesh = Instantiate(quadMesh);
-            quadFlipYMesh.uv = new Vector2[4]
-            {
-                new Vector2(0, 0),
-                new Vector2(0, 1),
-                new Vector2(1, 1),
-                new Vector2(1, 0)
-            };
-
-            quadFlipXYMesh = Instantiate(quadMesh);
-            quadFlipXYMesh.uv = new Vector2[4]
-            {
-                new Vector2(1, 0),
-                new Vector2(1, 1),
-                new Vector2(0, 1),
-                new Vector2(0, 0)
-            };
         }
 
         public void Initialize(Vector2 size)
         {
             screenTextureBackBuffer = new RenderTexture((int)size.x, (int)size.y, 32);
             
-            billboardCache = new();
             meshCache = new();
+            meshBatcher = new();
             unlitMaterialCache = new();
             measuredCache = new();
             clientSideState = new();
@@ -269,36 +338,83 @@ namespace Nofun.Driver.Unity.Graphics
             DrawTexture(((Texture)tex).NativeTexture, destRect, sourceRect, centerX, centerY, rotation, color, blackIsTransparent, flipX, flipY);
         }
 
-        private void DrawTexture(Texture2D tex, Rect destRect, Rect sourceRect, float centerX, float centerY, float rotation, SColor color, bool blackIsTransparent, bool flipX = false, bool flipY = false)
+        private void DrawRectBoardGeneral(Rect destRect, Vector2[] uvs, float centerX, float centerY, float rotation, Color[] color, bool flipX = false, bool flipY = false, float z = 0.0f)
         {
-            JobScheduler.Instance.RunOnUnityThread(() =>
+            float orgX = destRect.x;
+            float orgY = destRect.y;
+
+            float sinRot = (float)Math.Sin(MathUtil.Degs2Rad(rotation));
+            float cosRot = (float)Math.Cos(MathUtil.Degs2Rad(rotation));
+            centerX *= -1;
+
+            var vertices = new Vector3[]
             {
-                var coordMatrix = Matrix4x4.TRS(new Vector3(sourceRect.x, sourceRect.y, 0.0f), Quaternion.identity, new Vector3(sourceRect.width, sourceRect.height));
+                new Vector3(orgX + centerX * cosRot - centerY * sinRot, orgY + centerX * sinRot + centerY * cosRot, z),
+                new Vector3(orgX + (centerX + destRect.width) * cosRot - centerY * sinRot, orgY + (destRect.width + centerX) * sinRot + centerY * cosRot, z),
+                new Vector3(orgX + centerX * cosRot - (centerY + destRect.height) * sinRot, orgY + centerX * sinRot + (centerY + destRect.height) * cosRot, z),
+                new Vector3(orgX + (centerX + destRect.width) * cosRot - (centerY + destRect.height) * sinRot, orgY + (centerX + destRect.width) * sinRot + (centerY + destRect.height) * cosRot, z)
+            };
 
-                Matrix4x4 drawMatrix;
+            var triangles = new int[]
+            {
+                0, 2, 3,
+                0, 3, 1
+            };
 
-                if (rotation == 0.0f)
-                {
-                    drawMatrix = Matrix4x4.TRS(new Vector3(destRect.x - centerX, ScreenHeight - (destRect.y - centerY + destRect.height), 0),
-                        Quaternion.identity, new Vector3(destRect.width, destRect.height, 0));
-                }
-                else
-                {
-                    drawMatrix = Matrix4x4.Translate(new Vector3(destRect.x - centerX, ScreenHeight - (destRect.y - centerY + destRect.height), 0));
-                    drawMatrix *= Matrix4x4.TRS(new Vector3(centerX, -centerY), Quaternion.AngleAxis(rotation, Vector3.forward), new Vector3(destRect.width, destRect.height, 0));
-                    drawMatrix *= Matrix4x4.Translate(new Vector3(-centerX, centerY));
-                }
+            if (flipX)
+            {
+                (uvs[0].x, uvs[1].x) = (uvs[1].x, uvs[0].x);
+                (uvs[2].x, uvs[3].x) = (uvs[3].x, uvs[2].x);
+            }
 
-                MaterialPropertyBlock block = new MaterialPropertyBlock();
-                block.SetTexture(MainTexUniformName, tex);
-                block.SetFloat(BlackTransparentUniformName, blackIsTransparent ? 1.0f : 0.0f);
-                block.SetMatrix(TexcoordTransformMatrixUniformName, coordMatrix);
-                block.SetColor(ColorUniformName, color.ToUnityColor());
+            if (flipY)
+            {
+                (uvs[0].y, uvs[2].y) = (uvs[2].y, uvs[0].y);
+                (uvs[1].y, uvs[3].y) = (uvs[3].y, uvs[1].y);
+            }
 
-                Mesh meshToDraw = (flipX && flipY) ? quadFlipXYMesh : (flipX ? quadFlipXMesh : (flipY ? quadFlipYMesh : quadMesh));
+            meshBatcher.AddBasic(vertices, uvs, color, triangles);
+        }
 
-                commandBuffer.DrawMesh(meshToDraw, drawMatrix, mophunDrawTextureMaterial, 0, 0, block);
-            });
+        private void DrawRectBoardGeneral2D(Rect destRect, Rect sourceRect, float centerX, float centerY, float rotation, SColor color, bool flipX = false, bool flipY = false, float z = 0.0f)
+        {
+            if (!destRect.Intersects(clientSideState.scissorRect, out Rect drawArea))
+            {
+                return;
+            }
+
+            if (drawArea != destRect)
+            {
+                float xRatio = (drawArea.x - destRect.x) / destRect.width;
+                float yRatio = (drawArea.y - destRect.y) / destRect.height;
+                float widthRatio = drawArea.width / destRect.width;
+                float heightRatio = drawArea.height / destRect.height;
+
+                destRect = drawArea;
+
+                sourceRect.x += xRatio * sourceRect.width;
+                sourceRect.y += yRatio * sourceRect.height;
+                sourceRect.width *= widthRatio;
+                sourceRect.height *= heightRatio;
+            }
+
+            destRect = GetUnityScreenRect(destRect);
+
+            var uvs = new Vector2[]
+            {
+                new Vector2(sourceRect.x, sourceRect.y + sourceRect.height),
+                new Vector2(sourceRect.x + sourceRect.width, sourceRect.y + sourceRect.height),
+                new Vector2(sourceRect.x, sourceRect.y),
+                new Vector2(sourceRect.x + sourceRect.width, sourceRect.y)
+            };
+
+            DrawRectBoardGeneral(destRect, uvs, centerX, centerY, rotation, Enumerable.Repeat(color.ToUnityColor(), 4).ToArray(), flipX, flipY, z);
+        }
+
+        private void DrawTexture(Texture2D tex, Rect destRect, Rect sourceRect, float centerX, float centerY, float rotation, SColor color, bool blackIsTransparent, bool flipX = false, bool flipY = false, float z = 0.0f)
+        {
+            Begin2DBatching(tex, blackIsTransparent);
+            DrawRectBoardGeneral2D(destRect, sourceRect, centerX, centerY, rotation, color, flipX, flipY);
         }
 
         private void UpdateRenderMode()
@@ -307,11 +423,17 @@ namespace Nofun.Driver.Unity.Graphics
             {
                 commandBuffer.SetProjectionMatrix(serverSideState.projectionMatrix3D);
                 commandBuffer.SetViewMatrix(serverSideState.viewMatrix3D);
+
+                if (serverSideState.scissorRect.size != Vector2.zero)
+                {
+                    commandBuffer.EnableScissorRect(GetUnityScreenRect(serverSideState.scissorRect));
+                }
             }
             else
             {
                 commandBuffer.SetViewMatrix(Matrix4x4.identity);
                 commandBuffer.SetProjectionMatrix(orthoMatrix);
+                commandBuffer.DisableScissorRect();
             }
         }
 
@@ -349,12 +471,8 @@ namespace Nofun.Driver.Unity.Graphics
             commandBuffer.SetRenderTarget(screenTextureBackBuffer);
             commandBuffer.SetViewport(GetUnityScreenRect(serverSideState.viewportRect));
             
-            if (serverSideState.scissorRect.size != Vector2.zero)
-            {
-                commandBuffer.EnableScissorRect(GetUnityScreenRect(serverSideState.scissorRect));
-            }
-
             began = true;
+            in3DMode = !mode2D;
 
             UpdateRenderMode();
             PrepareUnlitMaterial();
@@ -366,6 +484,8 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void ClearScreen(SColor color)
         {
+            FlushBatch();
+
             JobScheduler.Instance.RunOnUnityThread(() =>
             {
                 BeginRender();
@@ -375,6 +495,8 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void ClearDepth(float value)
         {
+            FlushBatch();
+
             JobScheduler.Instance.RunOnUnityThread(() =>
             {
                 BeginRender();
@@ -402,65 +524,53 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void DrawText(int posX, int posY, int sizeX, int sizeY, List<int> positions, ITexture atlas, TextDirection direction, SColor textColor)
         {
-            JobScheduler.Instance.RunOnUnityThread(() =>
+            if (positions.Count % 2 != 0)
             {
-                BeginRender();
+                throw new ArgumentException("The list of bound values are not aligned by 2!");
+            }
 
-                if (positions.Count % 2 != 0)
-                {
-                    throw new ArgumentException("The list of bound values are not aligned by 2!");
-                }
+            // Just draw them one by one, verticies this small should not be instancing.
+            // Batching them would be cool though :)
+            int advX = (direction == TextDirection.Horizontal) ? sizeX : 0;
+            int advY = (direction == TextDirection.VerticalUp) ? -sizeY : (direction == TextDirection.VerticalDown) ? sizeY : 0;
 
-                // Just draw them one by one, verticies this small should not be instancing.
-                // Batching them would be cool though :)
-                int advX = (direction == TextDirection.Horizontal) ? sizeX : 0;
-                int advY = (direction == TextDirection.VerticalUp) ? -sizeY : (direction == TextDirection.VerticalDown) ? sizeY : 0;
+            Texture2D nativeTex = ((Texture)atlas).NativeTexture;
 
-                Texture2D nativeTex = ((Texture)atlas).NativeTexture;
+            float sizeXNormed = (float)sizeX / atlas.Width;
+            float sizeYNormed = (float)sizeY / atlas.Height;
 
-                float sizeXNormed = (float)sizeX / nativeTex.width;
-                float sizeYNormed = (float)sizeY / nativeTex.height;
+            for (int i = 0; i < positions.Count; i += 2)
+            {
+                Rect destRect = new Rect(posX, posY, sizeX, sizeY);
+                Rect sourceRect = new Rect((float)positions[i] / atlas.Width, (float)positions[i + 1] / atlas.Height, sizeXNormed, sizeYNormed);
 
-                for (int i = 0; i < positions.Count; i += 2)
-                {
-                    Rect destRect = new Rect(posX, posY, sizeX, sizeY);
-                    Rect sourceRect = new Rect((float)positions[i] / nativeTex.width, (float)positions[i + 1] / nativeTex.height, sizeXNormed, sizeYNormed);
+                DrawTexture(nativeTex, destRect, sourceRect, 0, 0, 0, textColor, false);
 
-                    DrawTexture(nativeTex, destRect, sourceRect, 0, 0, 0, textColor, false);
-
-                    posX += advX;
-                    posY += advY;
-                }
-            });
+                posX += advX;
+                posY += advY;
+            }
         }
 
         public void DrawTexture(int posX, int posY, int centerX, int centerY, int rotation, ITexture texture,
             int sourceX = -1, int sourceY = -1, int width = -1, int height = -1, bool blackIsTransparent = false,
             bool flipX = false, bool flipY = false)
         {
-            JobScheduler.Instance.RunOnUnityThread(() =>
+            int widthToUse = (width == -1) ? texture.Width : width;
+            int heightToUse = (height == -1) ? texture.Height : height;
+
+            Rect destRect = new Rect(posX, posY, widthToUse, heightToUse);
+            Rect sourceRect = new Rect(0, 0, 1, 1);
+
+            if ((sourceX != -1) && (sourceY != -1))
             {
-                BeginRender();
+                sourceRect = new Rect((float)sourceX / texture.Width, (float)sourceY / texture.Height, (float)widthToUse / texture.Width, (float)heightToUse / texture.Height);
+            }
 
-                int widthToUse = (width == -1) ? texture.Width : width;
-                int heightToUse = (height == -1) ? texture.Height : height;
-
-                Rect destRect = new Rect(posX, posY, widthToUse, heightToUse);
-                Rect sourceRect = new Rect(0, 0, 1, 1);
-
-                if ((sourceX != -1) && (sourceY != -1))
-                {
-                    sourceRect = new Rect((float)sourceX / texture.Width, (float)sourceY / texture.Height, (float)widthToUse / texture.Width, (float)heightToUse / texture.Height);
-                }
-
-                DrawTexture(texture, destRect, sourceRect, centerX, centerY, rotation, new SColor(1, 1, 1), blackIsTransparent, flipX, flipY);
-            });
+            DrawTexture(texture, destRect, sourceRect, centerX, centerY, rotation, new SColor(1, 1, 1), blackIsTransparent, flipX, flipY);
         }
 
         private void DrawLineDetail(int x0, int y0, int x1, int y1, SColor lineColor, float lineThick)
         {
-            BeginRender(mode2D: true);
-
             Vector2 start = new Vector2(x0, -y0);
             Vector2 end = new Vector2(x1, -y1);
 
@@ -479,46 +589,42 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void DrawLine(int x0, int y0, int x1, int y1, SColor lineColor)
         {
-            JobScheduler.Instance.RunOnUnityThread(() =>
-            {
-                DrawLineThickScaled(x0, y0, x1, y1, lineColor);
-            });
+            DrawLineThickScaled(x0, y0, x1, y1, lineColor);
         }
 
         public void FillRect(int x0, int y0, int x1, int y1, SColor color)
         {
-            JobScheduler.Instance.RunOnUnityThread(() =>
-            {
-                BeginRender(mode2D: true);
+            Rect destRect = new Rect(x0, y0, x1 - x0, y1 - y0);
+            Rect sourceRect = new Rect(0, 0, 1, 1);
 
-                Rect destRect = new Rect(x0, y0, x1 - x0, y1 - y0);
-                Rect sourceRect = new Rect(0, 0, 1, 1);
-
-                DrawTexture(whiteTexture, destRect, sourceRect, 0, 0, 0, color, false);
-            });
+            DrawTexture(whiteTexture, destRect, sourceRect, 0, 0, 0, color, false);
         }
 
         #endregion
 
         public void FlipScreen()
         {
+            FlushBatch();
+
             DateTime flipStart = DateTime.Now;
 
             JobScheduler.Instance.RunOnUnityThreadSync(() =>
             {
-                if (mophunCamera.renderingPath == RenderingPath.DeferredShading)
-                {
-                    mophunCamera.AddCommandBuffer(CameraEvent.AfterGBuffer, commandBuffer);
-                }
-                else
-                {
-                    mophunCamera.AddCommandBuffer(CameraEvent.AfterForwardOpaque, commandBuffer);
-                }
-
                 if (began)
                 {
-                    began = false;
+                    if (mophunCamera.renderingPath == RenderingPath.DeferredShading)
+                    {
+                        mophunCamera.AddCommandBuffer(CameraEvent.AfterGBuffer, commandBuffer);
+                    }
+                    else
+                    {
+                        mophunCamera.AddCommandBuffer(CameraEvent.AfterForwardOpaque, commandBuffer);
+                    }
+
                     fontMeshUsed = 0;
+                    meshBatcher.Reset();
+
+                    began = false;
                 }
             });
 
@@ -608,6 +714,8 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void DrawSystemText(short x0, short y0, string text, SColor backColor, SColor foreColor)
         {
+            FlushBatch();
+
             JobScheduler.Instance.RunOnUnityThread(() =>
             {
                 BeginRender();
@@ -715,51 +823,65 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void DrawBillboard(NativeBillboard billboard)
         {
-            JobScheduler.Instance.RunOnUnityThread(() =>
+            BeginBatching(BatchingMode.Render3D);
+
+            MpCullMode previousCull = Cull;
+            Cull = MpCullMode.CounterClockwise;
+
+            Rect destRect = new Rect(FixedUtil.FixedToFloat(billboard.position.fixedX), FixedUtil.FixedToFloat(billboard.position.fixedY),
+                FixedUtil.FixedToFloat(billboard.fixedWidth), FixedUtil.FixedToFloat(billboard.fixedHeight));
+
+            Vector2[] uvs = new Vector2[]
             {
-                MpCullMode? previousCull = serverSideState.cullMode;
-                if (serverSideState.cullMode != MpCullMode.CounterClockwise)
-                {
-                    serverSideState.cullMode = MpCullMode.CounterClockwise;
-                    fixedStateChanged = true;
-                }
+                billboard.uv0.ToUnity(),
+                billboard.uv1.ToUnity(),
+                billboard.uv3.ToUnity(),
+                billboard.uv2.ToUnity(),
+            };
 
-                BeginRender(mode2D: false);
+            Color[] colors = new Color[]
+            {
+                billboard.color0.ToUnity(),
+                billboard.color1.ToUnity(),
+                billboard.color3.ToUnity(),
+                billboard.color2.ToUnity()
+            };
 
-                Mesh billboardMesh = billboardCache.GetBillboardMesh(billboard);
+            Vector2 center = destRect.size;
 
-                Matrix4x4 modelMatrix = Matrix4x4.Translate(billboard.position.ToUnity());
+            center *= GetPivotMultiplier((BillboardPivot)billboard.rotationPointFlag);
+            destRect.min += center;
 
-                Vector2 pivotV = GetPivotMultiplier((BillboardPivot)billboard.rotationPointFlag);
-                Vector2 size = new Vector2(FixedUtil.FixedToFloat(billboard.fixedWidth), FixedUtil.FixedToFloat(billboard.fixedHeight));
-
-                modelMatrix *= Matrix4x4.TRS(pivotV * size, Quaternion.AngleAxis(FixedUtil.FixedToFloat(billboard.rotation), Vector3.forward),
-                    new Vector3(size.x, size.y, 1)) * Matrix4x4.Translate(-pivotV * size);
-
-                // Billboard is unlit? It seems so. So not much pass
-                commandBuffer.DrawMesh(billboardMesh, modelMatrix, currentUnlitMaterial, 0, 0, UnlitPropertyBlock);
-                if (previousCull != null)
-                {
-                    serverSideState.cullMode = previousCull.Value;
-                    fixedStateChanged = true;
-                }
-            });
+            DrawRectBoardGeneral(destRect, uvs, center.x, center.y, billboard.rotation, colors, z: FixedUtil.FixedToFloat(billboard.position.fixedZ));
+            Cull = previousCull;
         }
 
         public void DrawPrimitives(MpMesh meshToDraw)
         {
-            uint identifier = meshCache.GetMeshIdentifier(meshToDraw, out Mesh targetMesh);
+            BeginBatching(BatchingMode.Render3D);
 
-            JobScheduler.Instance.RunOnUnityThread(() =>
+            if (meshBatcher.Batchable(meshToDraw))
             {
-                BeginRender(mode2D: false);
-                if (targetMesh == null)
-                {
-                    targetMesh = meshCache.GetMesh(identifier);
-                }
+                meshBatcher.Add(meshToDraw);
+                return;
+            }
+            else
+            {
+                FlushBatch();
 
-                commandBuffer.DrawMesh(targetMesh, Matrix4x4.identity, currentUnlitMaterial, 0, 0, UnlitPropertyBlock);
-            });
+                uint identifier = meshCache.GetMeshIdentifier(meshToDraw, out Mesh targetMesh);
+
+                JobScheduler.Instance.RunOnUnityThread(() =>
+                {
+                    BeginRender(mode2D: false);
+                    if (targetMesh == null)
+                    {
+                        targetMesh = meshCache.GetMesh(identifier);
+                    }
+
+                    commandBuffer.DrawMesh(targetMesh, Matrix4x4.identity, currentMaterial, 0, 0, UnlitPropertyBlock);
+                });
+            }
         }
 
         public MpCullMode Cull
@@ -769,6 +891,7 @@ namespace Nofun.Driver.Unity.Graphics
                 if (clientSideState.cullMode != value)
                 {
                     clientSideState.cullMode = value;
+                    HandleFixedStateChangedClient();
 
                     JobScheduler.Instance.RunOnUnityThread(() =>
                     {
@@ -790,6 +913,7 @@ namespace Nofun.Driver.Unity.Graphics
                 if (clientSideState.depthCompareFunc != value)
                 {
                     clientSideState.depthCompareFunc = value;
+                    HandleFixedStateChangedClient();
 
                     JobScheduler.Instance.RunOnUnityThread(() =>
                     {
@@ -808,6 +932,7 @@ namespace Nofun.Driver.Unity.Graphics
                 if (clientSideState.blendMode != value)
                 {
                     clientSideState.blendMode = value;
+                    HandleFixedStateChangedClient();
 
                     JobScheduler.Instance.RunOnUnityThread(() =>
                     {
@@ -826,6 +951,7 @@ namespace Nofun.Driver.Unity.Graphics
                 if (clientSideState.textureMode != value)
                 {
                     clientSideState.textureMode = value;
+                    HandleFixedStateChangedClient();
 
                     JobScheduler.Instance.RunOnUnityThread(() =>
                     {
@@ -845,12 +971,16 @@ namespace Nofun.Driver.Unity.Graphics
                 if (clientSideState.scissorRect != unityRect)
                 {
                     clientSideState.scissorRect = unityRect;
+                    if (currentBatching == BatchingMode.Render3D)
+                    {
+                        FlushBatch();
+                    }
 
                     JobScheduler.Instance.RunOnUnityThread(() =>
                     {
                         serverSideState.scissorRect = unityRect;
 
-                        if (began)
+                        if (began && in3DMode)
                         {
                             commandBuffer.EnableScissorRect(GetUnityScreenRect(unityRect));
                         }
@@ -892,6 +1022,7 @@ namespace Nofun.Driver.Unity.Graphics
                 if (clientSideState.projectionMatrix3D != value)
                 {
                     clientSideState.projectionMatrix3D = value;
+                    HandleFixedStateChangedClient();
 
                     JobScheduler.Instance.RunOnUnityThread(() =>
                     {
@@ -914,6 +1045,7 @@ namespace Nofun.Driver.Unity.Graphics
                 if (clientSideState.viewMatrix3D != value)
                 {
                     clientSideState.viewMatrix3D = value;
+                    HandleFixedStateChangedClient();
 
                     JobScheduler.Instance.RunOnUnityThread(() =>
                     {
@@ -937,6 +1069,7 @@ namespace Nofun.Driver.Unity.Graphics
                 if (clientSideState.mainTexture != casted)
                 {
                     clientSideState.mainTexture = casted;
+                    HandleFixedStateChangedClient();
 
                     JobScheduler.Instance.RunOnUnityThread(() =>
                     {
@@ -954,6 +1087,7 @@ namespace Nofun.Driver.Unity.Graphics
                 if (clientSideState.textureBlendMode != value)
                 {
                     clientSideState.textureBlendMode = value;
+                    HandleFixedStateChangedClient();
 
                     JobScheduler.Instance.RunOnUnityThread(() =>
                     {

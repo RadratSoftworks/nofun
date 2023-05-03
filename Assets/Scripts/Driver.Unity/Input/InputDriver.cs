@@ -96,6 +96,18 @@ namespace Nofun.Driver.Unity.Input
             }
         }
 
+        public void OnSelect(InputValue value)
+        {
+            if (value.isPressed)
+            {
+                buttonData |= (uint)Driver.Input.KeyCode.Select;
+            }
+            else
+            {
+                buttonData &= ~(uint)Driver.Input.KeyCode.Select;
+            }
+        }
+
         public uint GetButtonData()
         {
             return buttonData;

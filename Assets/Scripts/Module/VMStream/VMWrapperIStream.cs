@@ -44,15 +44,18 @@ namespace Nofun.Module.VMGP
             }
 
             FileMode openMode = writable ? FileMode.OpenOrCreate : FileMode.Open;
+
+            // Truncate and create is very similar, except that truncate requires the file to already exist
+            // If both these flags present, prefer create
             if (BitUtil.FlagSet(mode, StreamFlags.Trunc))
             {
                 openMode = FileMode.Truncate;
             }
-            else if (BitUtil.FlagSet(mode, StreamFlags.Create))
+            if (BitUtil.FlagSet(mode, StreamFlags.Create))
             {
                 openMode = FileMode.Create;
             }
-            else if (BitUtil.FlagSet(mode, StreamFlags.MustNotExistBefore))
+            if (BitUtil.FlagSet(mode, StreamFlags.MustNotExistBefore) && ((openMode == FileMode.Create) || (openMode == FileMode.Truncate)))
             {
                 if (File.Exists(filePath))
                 {

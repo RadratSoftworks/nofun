@@ -38,32 +38,40 @@ namespace Nofun.Module.VMStream
             streams = new();
         }
 
-        [ModuleCall]
-        private int vStreamOpen(VMString fileName, uint mode)
+        public IVMHostStream Open(string fileName, uint mode)
         {
             StreamType wantedType = (StreamType)(mode & 0xFF);
             IVMHostStream targetedStream;
 
+            switch (wantedType)
+            {
+                case StreamType.Resource:
+                    {
+                        targetedStream = VMResourceStream.Create(system.Executable, mode);
+                        break;
+                    }
+                case StreamType.File:
+                    {
+                        targetedStream = VMWrapperIStream.Create(system.PersistentDataPath, fileName, mode);
+                        break;
+                    }
+                default:
+                    {
+                        throw new UnimplementedFeatureException($"Unimplemented stream type: {wantedType}!");
+                    }
+            }
+
+            return targetedStream;
+        }
+
+        [ModuleCall]
+        private int vStreamOpen(VMString fileName, uint mode)
+        {
+            IVMHostStream targetedStream;
+
             try
             {
-                switch (wantedType)
-                {
-                    case StreamType.Resource:
-                        {
-                            targetedStream = VMResourceStream.Create(system.Executable, mode);
-                            break;
-                        }
-                    case StreamType.File:
-                        {
-                            targetedStream = VMWrapperIStream.Create(system.PersistentDataPath, fileName.Get(system.Memory), mode);
-                            break;
-                        }
-                    default:
-                        {
-                            string filePath = fileName.Get(system.Memory);
-                            throw new UnimplementedFeatureException($"Unimplemented stream type: {wantedType}!");
-                        }
-                }
+                targetedStream = Open((fileName.Address == 0) ? "" : fileName.Get(system.Memory), mode);
             }
             catch (System.Exception e)
             {

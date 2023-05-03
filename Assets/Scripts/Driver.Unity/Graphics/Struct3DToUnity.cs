@@ -56,5 +56,26 @@ namespace Nofun.Driver.Unity.Graphics
                 fixedZ = FixedUtil.FloatToFixed(v.z),
             };
         }
+
+        public static bool Intersects(this Rect r1, Rect r2, out Rect area)
+        {
+            area = new Rect();
+
+            if (r2.Overlaps(r1))
+            {
+                area.x = Mathf.Max(r1.x, r2.x);
+                area.y = Mathf.Max(r1.y, r2.y);
+
+                float x2 = Mathf.Min(r1.max.x, r2.max.x);
+                float y2 = Mathf.Min(r1.max.y, r2.max.y);
+
+                area.width = x2 - area.x;
+                area.height = y2 - area.y;
+
+                return true;
+            }
+
+            return false;
+        }
     }
 }

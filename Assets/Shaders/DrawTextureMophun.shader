@@ -15,6 +15,7 @@ Shader "Unlit/DrawTextureMophun"
     struct appdata_t {
         float4 vertex : POSITION;
         float2 texcoord : TEXCOORD0;
+        float4 color: COLOR;
         UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
@@ -28,8 +29,6 @@ Shader "Unlit/DrawTextureMophun"
     sampler2D _MainTex;
     float4 _MainTex_ST;
 
-    uniform float4x4 _TexToLocal;
-    uniform float4 _Color;
     uniform float _Black_Transparent;
 
     v2f vert (appdata_t v)
@@ -38,8 +37,8 @@ Shader "Unlit/DrawTextureMophun"
         UNITY_SETUP_INSTANCE_ID(v);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
         o.vertex = UnityObjectToClipPos(v.vertex);
-        o.texcoord = mul(_TexToLocal, float4(TRANSFORM_TEX(v.texcoord, _MainTex), 0, 1)).xy;
-        o.color = _Color;
+        o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
+        o.color = v.color;
 
         return o;
     }
@@ -75,6 +74,21 @@ Shader "Unlit/DrawTextureMophun"
     SubShader {
 
         Tags { "RenderType"="Overlay" }
+
+        Lighting Off
+        Blend SrcAlpha OneMinusSrcAlpha
+        Cull Off
+        ZWrite Off
+        ZTest Always
+
+        Pass {
+            CGPROGRAM
+            ENDCG
+        }
+    }
+
+    SubShader {
+        Tags { "RenderType" = "Opaque" }
 
         Lighting Off
         Blend SrcAlpha OneMinusSrcAlpha

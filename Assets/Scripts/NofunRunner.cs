@@ -67,13 +67,24 @@ namespace Nofun
         {
             SetupLogger();
 
+            string targetExecutable = executableFilePath;
+
+#if !UNITY_EDITOR && NOFUN_PRODUCTION
+            string[] cmdLines = System.Environment.GetCommandLineArgs();
+
+            if (cmdLines.Length >= 2)
+            {
+                targetExecutable = cmdLines[1];
+            }
+#endif
+
             timeDriver = new TimeDriver();
 
-            executable = new VMGPExecutable(new FileStream(executableFilePath, FileMode.Open, FileAccess.ReadWrite,
+            executable = new VMGPExecutable(new FileStream(targetExecutable, FileMode.Open, FileAccess.ReadWrite,
                 FileShare.Read));
 
             system = new VMSystem(executable, new VMSystemCreateParameters(graphicDriver, inputDriver, audioDriver, timeDriver,
-                Application.persistentDataPath, executableFilePath));
+                Application.persistentDataPath, targetExecutable));
 
             // Setup graphics driver
             graphicDriver.StopProcessorAction = () => system.Processor.Stop();

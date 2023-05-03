@@ -21,7 +21,7 @@ namespace Nofun.Util.Logging
 {
     public static class Logger
     {
-        private static LogLevel minLevel = LogLevel.Debug;
+        private static LogLevel minLevel = LogLevel.Trace;
         private static event EventHandler<LogEventArgs> Outputter;
         private static List<ILogTarget> logTargets = new();
 
