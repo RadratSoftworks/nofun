@@ -29,7 +29,7 @@ jobs:
           targetPlatform: ${{ matrix.target.platform }}
           customImage: ${{ matrix.target.image }}
           buildName: nofun
-          buildPath: build/${{ matrix.target.platform }}
+          buildsPath: build/${{ matrix.target.platform }}
       - uses: actions/upload-artifact@v2
         with:
           name: nofun_${{ matrix.target.platform }}
