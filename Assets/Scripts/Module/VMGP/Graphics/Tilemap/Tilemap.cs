@@ -48,7 +48,7 @@ namespace Nofun.Module.VMGP
 
         private bool IsTilemapFormatCurrentlyImplemented(TextureFormat format)
         {
-            return (format == TextureFormat.RGB332);
+            return (format == TextureFormat.RGB332) || (format == TextureFormat.Palette256);
         }
 
         [ModuleCall]

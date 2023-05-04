@@ -46,6 +46,7 @@ namespace Nofun.PIP2.Interpreter
                     // Add to skip the pool item number
                     Reg[Register.PC] += 4;
 
+#if !UNITY_EDITOR && NOFUN_PRODUCTION
                     try
                     {
                         poolItem.Function();
@@ -54,6 +55,9 @@ namespace Nofun.PIP2.Interpreter
                     {
                         Logger.Trace(LogClass.PIP2, $"{ex}");
                     }
+#else
+                    poolItem.Function();
+#endif
                 }
                 else if (poolItem.DataType == PoolDataType.ImmInteger)
                 {

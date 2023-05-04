@@ -73,7 +73,7 @@ namespace Nofun.Module.VMGP
                     int paletteIndex = (charData[(pixelIterated * 2) >> 3] >> ((pixelIterated & 3) * 2)) & 0b11;
                     SColor color = palette[paletteIndex + nativeFont.paletteOffset];
 
-                    textureData[destLine * AtlasByteWidth + destColumnTemp * 4] = (byte)(color.FullBlack ? 0 : 255);
+                    textureData[destLine * AtlasByteWidth + destColumnTemp * 4] = (byte)((paletteIndex == 0) ? 0 : 255);
                     textureData[destLine * AtlasByteWidth + destColumnTemp * 4 + 1] = (byte)(color.r * 255);
                     textureData[destLine * AtlasByteWidth + destColumnTemp * 4 + 2] = (byte)(color.g * 255);
                     textureData[destLine * AtlasByteWidth + destColumnTemp * 4 + 3] = (byte)(color.b * 255);

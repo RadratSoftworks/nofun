@@ -51,5 +51,12 @@ namespace Nofun.Driver.Graphics
                     ((value >> 5) & 0b11111) / 31.0f,
                     (value & 0b11111) / 31.0f);
         }
+
+        public static SColor FromRgb888(uint value)
+        {
+            return new SColor(((value >> 16) & 0xFF) / 255.0f,
+                    ((value >> 8) & 0xFF) / 255.0f,
+                    (value & 0xFF) / 255.0f);
+        }
     };
 }

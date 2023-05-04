@@ -46,7 +46,7 @@ namespace Nofun.Module.VMGP
 
         private bool IsTilemapDataSupported(TextureFormat format)
         {
-            return (format == TextureFormat.RGB332);
+            return (format == TextureFormat.RGB332) || (format == TextureFormat.Palette256);
         }
 
         public static void GetTilePositionInAtlas(int tileIndex, out int x, out int y)
@@ -117,7 +117,7 @@ namespace Nofun.Module.VMGP
                 }
                 else
                 {
-                    resultTexture = driver.CreateTexture(dataUpload, 256, 64, 1, TextureFormat.RGB332, palettes, zeroAsTransparent);
+                    resultTexture = driver.CreateTexture(dataUpload, 256, 64, 1, tileMapFormat, palettes, zeroAsTransparent);
                 }
             }
 

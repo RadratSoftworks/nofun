@@ -55,6 +55,14 @@ namespace Nofun.Util
             this.cache = new();
         }
 
+        public override void Clear()
+        {
+            lock (cache)
+            {
+                cache.Clear();
+            }
+        }
+
         public abstract override void Purge();
     }
 }

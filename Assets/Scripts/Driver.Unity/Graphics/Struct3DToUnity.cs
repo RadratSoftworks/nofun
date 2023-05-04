@@ -32,6 +32,11 @@ namespace Nofun.Driver.Unity.Graphics
             return new Vector3(FixedUtil.FixedToFloat(v.fixedX), FixedUtil.FixedToFloat(v.fixedY), FixedUtil.FixedToFloat(v.fixedZ));
         }
 
+        public static Vector4 ToUnity(this NativeVector4D v)
+        {
+            return new Vector4(FixedUtil.FixedToFloat(v.fixedX), FixedUtil.FixedToFloat(v.fixedY), FixedUtil.FixedToFloat(v.fixedZ), FixedUtil.FixedToFloat(v.fixedW));
+        }
+
         public static Color ToUnity(this NativeDiffuseColor color)
         {
             return new Color(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
@@ -54,6 +59,17 @@ namespace Nofun.Driver.Unity.Graphics
                 fixedX = FixedUtil.FloatToFixed(v.x),
                 fixedY = FixedUtil.FloatToFixed(v.y),
                 fixedZ = FixedUtil.FloatToFixed(v.z),
+            };
+        }
+
+        public static NativeVector4D ToMophun(this Vector4 v)
+        {
+            return new NativeVector4D()
+            {
+                fixedX = FixedUtil.FloatToFixed(v.x),
+                fixedY = FixedUtil.FloatToFixed(v.y),
+                fixedZ = FixedUtil.FloatToFixed(v.z),
+                fixedW = FixedUtil.FloatToFixed(v.w),
             };
         }
 

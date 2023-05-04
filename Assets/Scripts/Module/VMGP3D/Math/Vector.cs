@@ -20,6 +20,7 @@ using Nofun.VM;
 using System;
 
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Nofun.Module.VMGP3D
 {
@@ -79,6 +80,85 @@ namespace Nofun.Module.VMGP3D
                 fixedY = FixedUtil.FloatToFixed(FixedUtil.FixedToFloat(lhsValue.fixedY) * FixedUtil.FixedToFloat(rhsValue.fixedY)),
                 fixedZ = FixedUtil.FloatToFixed(FixedUtil.FixedToFloat(lhsValue.fixedZ) * FixedUtil.FixedToFloat(rhsValue.fixedZ)),
             });
+        }
+
+        [ModuleCall]
+        private void vVectorNormalize(VMPtr<NativeVector3D> dest)
+        {
+            NativeVector3D destValue = dest.Read(system.Memory);
+            float x = FixedUtil.FixedToFloat(destValue.fixedX);
+            float y = FixedUtil.FixedToFloat(destValue.fixedY);
+            float z = FixedUtil.FixedToFloat(destValue.fixedZ);
+
+            double length = Math.Sqrt(z * z + x * x + y * y);
+            dest.Write(system.Memory, new NativeVector3D()
+            {
+                fixedX = FixedUtil.FloatToFixed((float)(x / length)),
+                fixedY = FixedUtil.FloatToFixed((float)(y / length)),
+                fixedZ = FixedUtil.FloatToFixed((float)(z / length)),
+            });
+        }
+
+        [ModuleCall]
+        private void vCrossProduct(VMPtr<NativeVector3D> dest, VMPtr<NativeVector3D> lhs, VMPtr<NativeVector3D> rhs)
+        {
+            NativeVector3D lhsValue = lhs.Read(system.Memory);
+            NativeVector3D rhsValue = rhs.Read(system.Memory);
+
+            float lhsX = FixedUtil.FixedToFloat(lhsValue.fixedX);
+            float lhsY = FixedUtil.FixedToFloat(lhsValue.fixedY);
+            float lhsZ = FixedUtil.FixedToFloat(lhsValue.fixedZ);
+
+            float rhsX = FixedUtil.FixedToFloat(rhsValue.fixedX);
+            float rhsY = FixedUtil.FixedToFloat(rhsValue.fixedY);
+            float rhsZ = FixedUtil.FixedToFloat(rhsValue.fixedZ);
+
+            dest.Write(system.Memory, new NativeVector3D()
+            {
+                fixedX = FixedUtil.FloatToFixed((float)(lhsY * rhsZ - lhsZ * rhsY)),
+                fixedY = FixedUtil.FloatToFixed((float)(lhsZ * rhsX - lhsX * rhsZ)),
+                fixedZ = FixedUtil.FloatToFixed((float)(lhsX * rhsY - lhsY * rhsX)),
+            });
+        }
+
+        [ModuleCall]
+        private int vDotProduct(VMPtr<NativeVector3D> lhs, VMPtr<NativeVector3D> rhs)
+        {
+            NativeVector3D lhsValue = lhs.Read(system.Memory);
+            NativeVector3D rhsValue = rhs.Read(system.Memory);
+
+            float lhsX = FixedUtil.FixedToFloat(lhsValue.fixedX);
+            float lhsY = FixedUtil.FixedToFloat(lhsValue.fixedY);
+            float lhsZ = FixedUtil.FixedToFloat(lhsValue.fixedZ);
+
+            float rhsX = FixedUtil.FixedToFloat(rhsValue.fixedX);
+            float rhsY = FixedUtil.FixedToFloat(rhsValue.fixedY);
+            float rhsZ = FixedUtil.FixedToFloat(rhsValue.fixedZ);
+
+            return FixedUtil.FloatToFixed(lhsX * rhsX + lhsY * rhsY + lhsZ * rhsZ);
+        }
+
+        [ModuleCall]
+        [UncertainImplementation("It outputs a Vector4, while viewport scale only affect x and y. Need to verify with original implementation.")]
+        private void vVectorProjectV3(VMPtr<NativeVector4D> destPtr, VMPtr<NativeVector3D> sourcePtr, int count)
+        {
+            Span<NativeVector3D> source = sourcePtr.AsSpan(system.Memory, count);
+            Span<NativeVector4D> dest = destPtr.AsSpan(system.Memory, count);
+
+            NRectangle viewportRect = system.GraphicDriver.Viewport;
+
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 sourceV3 = source[i].ToUnity();
+                Vector4 projected = projectionMatrix * new Vector4(sourceV3.x, sourceV3.y, sourceV3.z, 1.0f);
+
+                // Map to 0..1
+                projected /= projected.w;
+                projected += Vector4.one;
+                projected.Scale(new Vector4(viewportRect.width * 0.5f, viewportRect.height * 0.5f, 1.0f, 1.0f));
+
+                dest[i] = (projected + new Vector4(viewportRect.x, viewportRect.y, 0.0f, 0.0f)).ToMophun();
+            }
         }
     }
 }

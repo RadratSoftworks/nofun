@@ -26,7 +26,7 @@ namespace Nofun.Driver.Graphics
     {
         public static List<int> Generate(int verticesCount, PrimitiveTopology topology, int addOffset = 0)
         {
-            List<int> newIndicies = null;
+            List<int> newIndicies = new();
             
             switch (topology)
             {
@@ -43,6 +43,8 @@ namespace Nofun.Driver.Graphics
                             newIndicies.Add(addOffset + (winding ? i + 1 : i));
                             newIndicies.Add(addOffset + (winding ? i : i + 1));
                             newIndicies.Add(addOffset + i + 2);
+
+                            winding = !winding;
                         }
 
                         break;

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using Nofun.Driver.Unity.Graphics;
 using Nofun.Util;
 using Nofun.VM;
 using System;
@@ -35,6 +36,7 @@ namespace Nofun.Module.VMGP3D
 
         private Matrix4x4 currentMatrix = Matrix4x4.identity;
         private Matrix4x4 projectionMatrix = Matrix4x4.identity;
+        private Matrix4x4 lightMatrix = Matrix4x4.identity;
 
         private Matrix4x4 ReadMatrix(VMPtr<V3DMatrix> matrix)
         {
@@ -156,6 +158,12 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
+        private void vMatrixScale(int xFixed, int yFixed, int zFixed)
+        {
+            currentMatrix *= Matrix4x4.Scale(new Vector3(FixedUtil.FixedToFloat(xFixed), FixedUtil.FixedToFloat(yFixed), FixedUtil.FixedToFloat(zFixed)));
+        }
+
+        [ModuleCall]
         private void vMatrixRotateX(short d)
         {
             currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * FullCircleDegrees, Vector3.right));
@@ -188,10 +196,26 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
+        private void vMatrixLookAt(VMPtr<NativeVector3D> vEyePtr, VMPtr<NativeVector3D> vAtptr, VMPtr<NativeVector3D> vUpPtr)
+        {
+            Vector3 eye = vEyePtr.Read(system.Memory).ToUnity();
+            Vector3 at = vAtptr.Read(system.Memory).ToUnity();
+            Vector3 up = vUpPtr.Read(system.Memory).ToUnity();
+
+            currentMatrix *= Matrix4x4.LookAt(eye, at, up);
+        }
+
+        [ModuleCall]
         void vMatrixSetProjection(VMPtr<V3DMatrix> matrix)
         {
             projectionMatrix = ReadMatrix(matrix);
             system.GraphicDriver.ProjectionMatrix3D = projectionMatrix;
+        }
+
+        [ModuleCall]
+        private void vMatrixSetLight(VMPtr<V3DMatrix> matrixPtr)
+        {
+            lightMatrix = ReadMatrix(matrixPtr);
         }
     }
 }

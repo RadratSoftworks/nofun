@@ -419,21 +419,17 @@ namespace Nofun.Driver.Unity.Graphics
 
         private void UpdateRenderMode()
         {
+            commandBuffer.DisableScissorRect();
+
             if (in3DMode)
             {
                 commandBuffer.SetProjectionMatrix(serverSideState.projectionMatrix3D);
                 commandBuffer.SetViewMatrix(serverSideState.viewMatrix3D);
-
-                if (serverSideState.scissorRect.size != Vector2.zero)
-                {
-                    commandBuffer.EnableScissorRect(GetUnityScreenRect(serverSideState.scissorRect));
-                }
             }
             else
             {
                 commandBuffer.SetViewMatrix(Matrix4x4.identity);
                 commandBuffer.SetProjectionMatrix(orthoMatrix);
-                commandBuffer.DisableScissorRect();
             }
         }
 
@@ -971,19 +967,10 @@ namespace Nofun.Driver.Unity.Graphics
                 if (clientSideState.scissorRect != unityRect)
                 {
                     clientSideState.scissorRect = unityRect;
-                    if (currentBatching == BatchingMode.Render3D)
-                    {
-                        FlushBatch();
-                    }
 
                     JobScheduler.Instance.RunOnUnityThread(() =>
                     {
                         serverSideState.scissorRect = unityRect;
-
-                        if (began && in3DMode)
-                        {
-                            commandBuffer.EnableScissorRect(GetUnityScreenRect(unityRect));
-                        }
                     });
                 }
             }

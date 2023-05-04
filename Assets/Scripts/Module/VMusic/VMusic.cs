@@ -47,6 +47,14 @@ namespace Nofun.Module.VSound
         [ModuleCall]
         private int vMusicLoad(int handle, int type)
         {
+            Logger.Trace(LogClass.VMusic, "Music load stubbed");
+            return MUSIC_ERR;
+        }
+
+        [ModuleCall]
+        private int vMusicGetHandle(VMPtr<byte> soundData)
+        {
+            Logger.Trace(LogClass.VMusic, "Music get handle stubbed");
             return MUSIC_ERR;
         }
 

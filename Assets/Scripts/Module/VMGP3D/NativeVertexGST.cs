@@ -1,4 +1,4 @@
-/*
+﻿/*
  * (C) 2023 Radrat Softworks
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-namespace Nofun.Util
+namespace Nofun.Module.VMGP3D
 {
-    public abstract class Cache<T> where T : ICacheEntry
+    public struct NativeVertexGST
     {
-        protected abstract T GetFromCache(uint key);
-
-        protected abstract void AddToCache(uint key, T entry);
-
-        public abstract void Purge();
-
-        public abstract void Clear();
+        public NativeVector4D position;
+        public NativeDiffuseColor diffuse;
+        public NativeSpecularColor specular;
+        public NativeUV uv;
     }
 }
