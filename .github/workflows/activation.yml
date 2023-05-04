@@ -1,6 +1,4 @@
 name: Acquire activation file
-on:
-  branch: tryci
 jobs:
   activation:
     name: Request manual activation file 🔑
