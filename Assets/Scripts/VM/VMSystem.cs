@@ -148,7 +148,7 @@ namespace Nofun.VM
             }
             else
             {
-                persistentDataPath = Path.Join(persistentDataPath, gameName.Replace(" ", ""));
+                persistentDataPath = Path.Join(persistentDataPath, string.Join('_', gameName.Replace(" ", "").Split(Path.GetInvalidFileNameChars())));
             }
 
             Directory.CreateDirectory(persistentDataPath);
