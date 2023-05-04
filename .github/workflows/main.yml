@@ -31,4 +31,4 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: nofun_${{ matrix.target.platform }}
-          path: build/${{ matrix.target.image }}
+          path: build/${{ matrix.target.platform }}
