@@ -1,0 +1,37 @@
+name: Build emulator
+
+on: [push, pull_request]
+
+jobs:
+  buildForAllSupportedPlatforms:
+    name: Build for ${{ matrix.target.platform }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - platform: StandaloneWindows64
+            image: "unityci/editor:ubuntu-2021.3.20f1-windows-mono-1.1.2"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          lfs: true
+      - uses: actions/cache@v2
+        with:
+          path: Library
+          key: Library-${{ matrix.target.platform }}
+          restore-keys: Library-
+      - uses: game-ci/unity-builder@v2
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: ${{ matrix.target.platform }}
+          customImage: ${{ matrix.target.image }}
+          buildName: nofun
+      - uses: actions/upload-artifact@v2
+        with:
+          name: nofun_${{ matrix.target.platform }}
+          path: build/${{ matrix.target.platform }}
