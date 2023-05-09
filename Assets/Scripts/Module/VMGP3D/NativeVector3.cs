@@ -21,5 +21,12 @@ namespace Nofun.Module.VMGP3D
         public int fixedX;
         public int fixedY;
         public int fixedZ;
+
+        public NativeVector3D(int fixedX, int fixedY, int fixedZ)
+        {
+            this.fixedX = fixedX;
+            this.fixedY = fixedY;
+            this.fixedZ = fixedZ;
+        }
     }
 }

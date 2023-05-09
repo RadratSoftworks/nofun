@@ -44,8 +44,6 @@ namespace Nofun.Module.VMGP3D
         /// </summary>
         private uint activeTextureHandle;
 
-        private bool perspectiveEnable = true;
-
         private MpCompareFunc previousCompareFunc = MpCompareFunc.Less;
 
         private NativeMaterial2 material;
@@ -123,8 +121,13 @@ namespace Nofun.Module.VMGP3D
                     system.GraphicDriver.TextureBlendMode = (MpTextureBlendMode)value;
                     break;
 
+                case RenderState.LightingEnable:
+                    break;
+
+                // These are ignorable
                 case RenderState.PerspectiveEnable:
-                    perspectiveEnable = (value != 0);
+                case RenderState.TransparentEnable:
+                case RenderState.AlphaEnable:
                     break;
 
                 default:
@@ -303,9 +306,46 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
-        private void vDrawPolygon()
+        private void vDrawPolygon(VMPtr<NativeVertexGST> v1Ptr, VMPtr<NativeVertexGST> v2Ptr, VMPtr<NativeVertexGST> v3Ptr)
         {
+            NativeVertexGST v1 = v1Ptr.Read(system.Memory);
+            NativeVertexGST v2 = v2Ptr.Read(system.Memory);
+            NativeVertexGST v3 = v3Ptr.Read(system.Memory);
 
+            MpMesh meshMp = new MpMesh();
+
+            meshMp.vertices = new NativeVector3D[]
+            {
+                new NativeVector3D(v1.position.fixedX, v1.position.fixedY, v1.position.fixedZ),
+                new NativeVector3D(v2.position.fixedX, v2.position.fixedY, v2.position.fixedZ),
+                new NativeVector3D(v3.position.fixedX, v3.position.fixedY, v3.position.fixedZ),
+            };
+
+            meshMp.uvs = new NativeUV[]
+            {
+                v1.uv,
+                v2.uv,
+                v3.uv
+            };
+
+            meshMp.diffuses = new NativeDiffuseColor[]
+            {
+                v1.diffuse,
+                v2.diffuse,
+                v3.diffuse
+            };
+
+            meshMp.speculars = new NativeSpecularColor[]
+            {
+                v1.specular,
+                v2.specular,
+                v3.specular
+            };
+
+            meshMp.topology = PrimitiveTopology.TriangleList;
+
+            system.GraphicDriver.ViewMatrix3D = currentMatrix;
+            system.GraphicDriver.DrawPrimitives(meshMp);
         }
 
         [ModuleCall]

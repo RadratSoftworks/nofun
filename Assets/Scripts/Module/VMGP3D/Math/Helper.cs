@@ -58,16 +58,17 @@ namespace Nofun.Module.VMGP3D
             float ny = (v1z * v2x - v1x * v2z);
             float nz = (v1x * v2y - v1y * v2x);
 
+            float lengthn = (float)Math.Sqrt(nx * nx + ny * ny + nz * nz);
             float dist = -(x1 * nx + x2 * ny + x3 * nz);
 
             plane.normal = new NativeVector3D()
             {
-                fixedX = FixedUtil.FloatToFixed(nx),
-                fixedY = FixedUtil.FloatToFixed(ny),
-                fixedZ = FixedUtil.FloatToFixed(nz)
+                fixedX = FixedUtil.FloatToFixed(nx / lengthn),
+                fixedY = FixedUtil.FloatToFixed(ny / lengthn),
+                fixedZ = FixedUtil.FloatToFixed(nz / lengthn)
             };
 
-            plane.fixedDistance = FixedUtil.FloatToFixed(dist);
+            plane.fixedDistance = FixedUtil.FloatToFixed(dist / lengthn);
             destPlanePtr.Write(system.Memory, plane);
         }
 
@@ -129,44 +130,60 @@ namespace Nofun.Module.VMGP3D
             NativeBBox box = boxPtr.Read(system.Memory);
             Matrix4x4 pv = projectionMatrix * currentMatrix;
 
-            // Calculate the frustum using Gribb/Hartmann
-            // float[4] plane contains x,y,z and dist
-            /*
-            float[,] planes = new float[6, 4];
+            // Can use Gribb/Hartman too. But this is more easy to read for me
+            // Basically, transform the box into world space, after that check if at least one vertice's x,y,z is in near plane distance range or not (in w range)
+            // Of course, if it's outside the w range, we would not even need to draw it at all. This means that is in view frustum would also consider intersect a win
+            Vector3 boxMin = box.min.ToUnity();
+            Vector3 boxMax = box.max.ToUnity();
 
-            for (int i = 3; i >= 0; i--) planes[0, i] = view.GetColumn(3)[i] + view.GetColumn(0)[i];    // Left
-            for (int i = 3; i >= 0; i--) planes[1, i] = view.GetColumn(3)[i] - view.GetColumn(0)[i];    // Right
-            for (int i = 3; i >= 0; i--) planes[2, i] = view.GetColumn(3)[i] + view.GetColumn(1)[i];    // Bottom
-            for (int i = 3; i >= 0; i--) planes[3, i] = view.GetColumn(3)[i] - view.GetColumn(1)[i];    // Top 
-            for (int i = 3; i >= 0; i--) planes[4, i] = view.GetColumn(3)[i] + view.GetColumn(2)[i];    // Near
-            for (int i = 3; i >= 0; i--) planes[5, i] = view.GetColumn(3)[i] - view.GetColumn(2)[i];    // Far
-
-            // https://gist.github.com/Kinwailo/d9a07f98d8511206182e50acda4fbc9b
-            for (int i = 0; i < 6; i++)
+            Vector4[] pointChecks = new Vector4[]
             {
-                Vector3 vmin = new Vector3(planes[i, 0] > 0 ? boxMin.x : boxMax.x, planes[i, 1] > 0 ? boxMin.y : boxMax.y, planes[i, 2] > 0 ? boxMin.z : boxMax.z);
-                Vector3 vmax = new Vector3(planes[i, 0] > 0 ? boxMax.x : boxMin.x, planes[i, 1] > 0 ? boxMax.y : boxMin.y, planes[i, 2] > 0 ? boxMax.z : boxMin.z);
-                Vector3 planeNormal = new Vector3(planes[i, 0], planes[i, 1], planes[i, 2]);
+                pv * new Vector4(boxMin.x, boxMin.y, boxMin.z, 1.0f),
+                pv * new Vector4(boxMin.x, boxMin.y, boxMax.z, 1.0f),
+                pv * new Vector4(boxMax.x, boxMin.y, boxMax.z, 1.0f),
+                pv * new Vector4(boxMax.x, boxMin.y, boxMin.z, 1.0f),
+                pv * new Vector4(boxMax.x, boxMax.y, boxMax.z, 1.0f),
+                pv * new Vector4(boxMax.x, boxMax.y, boxMin.z, 1.0f),
+                pv * new Vector4(boxMin.x, boxMax.y, boxMin.z, 1.0f),
+                pv * new Vector4(boxMin.x, boxMax.y, boxMax.z, 1.0f)
+            };
 
-                if (Vector3.Dot(planeNormal, vmin) + planes[i, 3] > 0)
+            for (int c = 0; c < 3; c++)
+            {
+                bool fullInside = false;
+
+                for (int i = 0; i < pointChecks.Length; i++)
                 {
-                    // Outside
+                    if (pointChecks[i][c] > -pointChecks[i][3])
+                    {
+                        fullInside = true;
+                        break;
+                    }
+                }
+
+                if (!fullInside)
+                {
                     return 0;
                 }
 
-                if (Vector3.Dot(planeNormal, vmax) + planes[i, 3] >= 0)
+                fullInside = false;
+
+                for (int i = 0; i < pointChecks.Length; i++)
                 {
-                    // Intersect
-                    return 1;
+                    if (pointChecks[i][c] < pointChecks[i][3])
+                    {
+                        fullInside = true;
+                        break;
+                    }
+                }
+
+                if (!fullInside)
+                {
+                    return 0;
                 }
             }
 
-            // Inside
-            return 1;*/
-            Vector3 boxMin = pv * box.min.ToUnity();
-            Vector3 boxMax = pv * box.max.ToUnity();
-
-
+            return 1;
         }
     }
 }

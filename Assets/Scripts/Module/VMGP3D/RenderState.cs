@@ -13,7 +13,10 @@
         TextureEnable = 9,
         PerspectiveEnable = 10,
         TextureBlendMode = 11,
+        AlphaEnable = 12,
         FilterMode = 13,
+        TransparentEnable = 15,
+        LightingEnable = 17,
         ColorBufferBlendMode = 20
     }
 }

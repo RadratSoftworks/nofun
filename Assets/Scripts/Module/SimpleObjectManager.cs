@@ -36,6 +36,14 @@ namespace Nofun.Module
             this.maxFd = maxFd;
         }
 
+        public void Reset()
+        {
+            handleAlloc = new(handleAlloc.Capacity);
+            nextFd = 1;
+
+            objects.Clear();
+        }
+
         public T Get(int handle)
         {
             if (objects.TryGetValue(handle, out T obj))
