@@ -285,6 +285,30 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
+        private void vResetLights()
+        {
+
+        }
+
+        [ModuleCall]
+        private void vSetFogColor()
+        {
+
+        }
+
+        [ModuleCall]
+        private void vSetLight()
+        {
+
+        }
+
+        [ModuleCall]
+        private void vDrawPolygon()
+        {
+
+        }
+
+        [ModuleCall]
         private void vSetAmbientLight(uint colour)
         {
             globalAmbientColour = SColor.FromRgb888(colour);

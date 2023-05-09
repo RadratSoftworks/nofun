@@ -43,13 +43,13 @@ namespace Nofun.Module.VMGP3D
         [ModuleCall]
         private int vCos(int fixedV)
         {
-            return FixedUtil.FloatToFixed((float)Math.Cos(FixedUtil.Fixed11PointToFloat((short)fixedV)));
+            return FixedUtil.FloatToFixed((float)Math.Cos(FixedUtil.Fixed11PointToFloat((short)fixedV) * FullCircleRads));
         }
 
         [ModuleCall]
         private int vSin(int fixedV)
         {
-            return FixedUtil.FloatToFixed((float)Math.Sin(FixedUtil.Fixed11PointToFloat((short)fixedV)));
+            return FixedUtil.FloatToFixed((float)Math.Sin(FixedUtil.Fixed11PointToFloat((short)fixedV) * FullCircleRads));
         }
     }
 }
