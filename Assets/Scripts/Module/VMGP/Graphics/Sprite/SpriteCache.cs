@@ -57,11 +57,13 @@ namespace Nofun.Module.VMGP
             hasher.Append(MemoryMarshal.CreateReadOnlySpan(ref spriteInfo.format, 1));
             hasher.Append(MemoryMarshal.Cast<ushort, byte>(MemoryMarshal.CreateReadOnlySpan(ref spriteInfo.width, 1)));
             hasher.Append(MemoryMarshal.Cast<ushort, byte>(MemoryMarshal.CreateReadOnlySpan(ref spriteInfo.height, 1)));
-            
+
+            int paletteOffset = (format == TextureFormat.Palette256) ? 0 : spriteInfo.paletteOffset;
+
             if (isPalette)
             {
                 byte highestIndex = DataConvertor.FindHighestPaletteIndex(spriteData, spriteInfo.width, spriteInfo.height, (byte)TextureUtil.GetPixelSizeInBits(format));
-                hasher.Append(MemoryMarshal.Cast<SColor, byte>(palettes.AsSpan(spriteInfo.paletteOffset, highestIndex + 1)));
+                hasher.Append(MemoryMarshal.Cast<SColor, byte>(palettes.AsSpan(paletteOffset, highestIndex + 1)));
             }
 
             byte zeroAsTransparent = (byte)(color0Transparent ? 1 : 0);
@@ -81,7 +83,7 @@ namespace Nofun.Module.VMGP
 
             // Should create a new one
             ITexture finalTex = driver.CreateTexture(spriteData.ToArray(), spriteInfo.width, spriteInfo.height, 1, (TextureFormat)spriteInfo.format,
-                isPalette ? palettes.AsMemory(spriteInfo.paletteOffset) : new Memory<SColor>(), color0Transparent);
+                isPalette ? palettes.AsMemory(paletteOffset) : new Memory<SColor>(), color0Transparent);
 
             AddToCache(hash, new SpriteCacheEntry()
             {

@@ -73,6 +73,29 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
+        private short vCollisionPointBox(VMPtr<NativeVector3D> point, VMPtr<NativeBBox> box)
+        {
+            NativeVector3D pointValue = point.Read(system.Memory);
+            NativeBBox boxValue = box.Read(system.Memory);
+
+            bool hit = (boxValue.min <= pointValue) && (pointValue <= boxValue.max);
+            return (short)(hit ? 1 : 0);
+        }
+
+        [ModuleCall]
+        private short vCollisionBoxBox(VMPtr<NativeBBox> box1, VMPtr<NativeBBox> box2)
+        {
+            NativeBBox box1Value = box1.Read(system.Memory);
+            NativeBBox box2Value = box2.Read(system.Memory);
+
+            bool collide = ((box1Value.min.fixedX <= box2Value.max.fixedX) && (box1Value.max.fixedX >= box2Value.min.fixedX) &&
+                (box1Value.min.fixedY <= box2Value.max.fixedY) && (box1Value.max.fixedY >= box2Value.min.fixedY) &&
+                (box1Value.min.fixedZ <= box2Value.max.fixedZ) && (box1Value.max.fixedZ >= box2Value.min.fixedZ));
+            
+            return (short)(collide ? 1 : 0);
+        }
+
+        [ModuleCall]
         private short vCollisionVectorPlane(VMPtr<NativeVector3D> collisionPointPtr, VMPtr<NativeVector3D> linePointsPtr, VMPtr<NativePlane> planePtr)
         {
             NativePlane plane = planePtr.Read(system.Memory);

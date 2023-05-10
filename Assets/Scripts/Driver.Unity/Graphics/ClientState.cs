@@ -24,10 +24,10 @@ namespace Nofun.Driver.Unity.Graphics
     public class ClientState
     {
         public MpCullMode cullMode = MpCullMode.CounterClockwise;
-        public MpBlendMode blendMode = MpBlendMode.Replace;
+        public MpBlendMode blendMode = MpBlendMode.Alpha;
         public MpTextureBlendMode textureBlendMode = MpTextureBlendMode.Modulate;
         public bool textureMode = false;
-        public MpCompareFunc depthCompareFunc = MpCompareFunc.Less;
+        public MpCompareFunc depthCompareFunc = MpCompareFunc.Always;
         public Rect scissorRect;
         public Rect viewportRect;
         public Matrix4x4 projectionMatrix3D;

@@ -53,6 +53,11 @@ namespace Nofun.Module.VMGP
         [ModuleCall]
         private void vDisposePtr(VMPtr<Any> ptr)
         {
+            if (ptr.IsNull)
+            {
+                return;
+            }
+
             if ((ptr < system.HeapStart) || (ptr >= system.HeapEnd))
             {
                 Logger.Warning(LogClass.VMGPSystem, $"Pointer 0x{ptr.address:X} is not in heap range, dispose failed!");

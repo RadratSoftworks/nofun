@@ -93,7 +93,7 @@ namespace Nofun.Module.VMGP3D
                 matrix[0].m13 = FixedUtil.FloatToFixed(currentMatrix.m13);
 
 
-                matrix[0].m21 = FixedUtil.FloatToFixed(currentMatrix.m20);
+                matrix[0].m20 = FixedUtil.FloatToFixed(currentMatrix.m20);
                 matrix[0].m21 = FixedUtil.FloatToFixed(currentMatrix.m21);
                 matrix[0].m22 = FixedUtil.FloatToFixed(currentMatrix.m22);
                 matrix[0].m23 = FixedUtil.FloatToFixed(currentMatrix.m23);
@@ -217,6 +217,11 @@ namespace Nofun.Module.VMGP3D
         private void vMatrixSetLight(VMPtr<V3DMatrix> matrixPtr)
         {
             lightMatrix = ReadMatrix(matrixPtr);
+        }
+
+        public void Insane()
+        {
+            currentMatrix = Matrix4x4.identity;
         }
     }
 }
