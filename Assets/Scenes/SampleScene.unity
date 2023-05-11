@@ -1300,7 +1300,7 @@ MonoBehaviour:
   audioDriver: {fileID: 1316056871}
   graphicDriver: {fileID: 1719026072}
   fpsLimit: 60
-  executableFilePath: g:\fatal.mpn
+  executableFilePath: e:\davinci.mpn
 --- !u!4 &1698624928
 Transform:
   m_ObjectHideFlags: 0

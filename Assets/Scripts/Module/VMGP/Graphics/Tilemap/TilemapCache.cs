@@ -114,7 +114,7 @@ namespace Nofun.Module.VMGP
 
                 if (resultTexture != null)
                 {
-                    resultTexture.SetData(dataUpload, 0);
+                    resultTexture.SetData(dataUpload, 0, palettes, zeroAsTransparent);
                     resultTexture.Apply();
                 }
                 else

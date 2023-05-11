@@ -23,7 +23,7 @@ namespace Nofun.Module.VMGP
     [Module]
     public partial class VMGP
     {
-        private const ushort MajorAPIVersion = 1;
+        private const ushort MajorAPIVersion = 2;
         private const ushort MinorAPIVersion = 50;
 
         private VM.VMSystem system;

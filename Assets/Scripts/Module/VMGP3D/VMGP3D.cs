@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+using NoAlloq;
 using Nofun.Driver.Graphics;
 using Nofun.Util;
 using Nofun.Util.Logging;
 using Nofun.VM;
+using System;
 
 namespace Nofun.Module.VMGP3D
 {
@@ -38,11 +40,7 @@ namespace Nofun.Module.VMGP3D
         /// </summary>
         private ITexture activeTexture;
 
-        /// <summary>
-        /// Handle of the active texture in the permanent texture manager.
-        /// If this equals to zero, it means current texture, if not null, comes from texture cache.
-        /// </summary>
-        private uint activeTextureHandle;
+        private SimpleObjectManager<ITexture> managedTextures;
 
         private MpCompareFunc previousCompareFunc = MpCompareFunc.Less;
 
@@ -53,6 +51,7 @@ namespace Nofun.Module.VMGP3D
         {
             this.system = system;
             this.textureCache = new();
+            this.managedTextures = new();
 
             material = new();
         }
@@ -150,8 +149,6 @@ namespace Nofun.Module.VMGP3D
                 activeTexture = textureCache.Get(system.GraphicDriver, textureData, system.Memory, (TextureFormat)format,
                     lods, mipCount, system.VMGPModule.ScreenPalette);
 
-                activeTextureHandle = 0;
-
                 system.GraphicDriver.MainTexture = activeTexture;
                 return 1;
             }
@@ -159,6 +156,54 @@ namespace Nofun.Module.VMGP3D
             {
                 Logger.Error(LogClass.VMGP3D, $"Set texture failed with exception: {ex}");
                 return 0;
+            }
+        }
+
+        [ModuleCall]
+        private int vCreateTexture(VMPtr<NativeTexture> tex)
+        {
+            NativeTexture texValue = tex.Read(system.Memory);
+            
+            int textureWidth = 1 << (int)texValue.lodX;
+            int textureHeight = 1 << (int)texValue.lodY;
+            TextureFormat format = (TextureFormat)texValue.textureFormat;
+
+            long texSize = TextureUtil.GetTextureSizeInBytes(textureWidth, textureHeight, format);
+            SColor[] palettes = null;
+            
+            if (TextureUtil.IsPaletteFormat(format))
+            {
+                bool argb = TextureUtil.IsPaletteARGB8(format);
+
+                palettes = texValue.palette.AsSpan(system.Memory, (int)texValue.paletteCount).Select(
+                    color => argb ? SColor.FromArgb8888(color) : SColor.FromRgb555(color)).ToArray();
+            }
+
+            Span<byte> data = texValue.textureData.AsSpan(system.Memory, (int)texSize);
+            ITexture texDriver = system.GraphicDriver.CreateTexture(data.ToArray(), textureWidth, textureHeight,
+                (int)texValue.mipmapCount + 1, format, palettes, true);
+
+            return managedTextures.Add(texDriver);
+        }
+
+        [ModuleCall]
+        private void vDeleteTexture(int handle)
+        {
+            managedTextures.Remove(handle);
+        }
+
+        [ModuleCall]
+        private void vSetActiveTexture(int index)
+        {
+            ITexture refer = managedTextures.Get(index);
+            if (refer == null)
+            {
+                Logger.Error(LogClass.VMGP3D, $"Setting a null texture with handle {index}");
+            }
+            else
+            {
+                activeTexture = refer;
+                system.GraphicDriver.MainTexture = activeTexture;
             }
         }
 
