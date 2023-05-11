@@ -17,6 +17,7 @@
 using Nofun.Driver.Audio;
 using Nofun.Module.VMStream;
 using Nofun.Util.Logging;
+using Nofun.Util;
 using Nofun.VM;
 using System;
 using System.IO;
@@ -44,6 +45,65 @@ namespace Nofun.Module.VMusic
             this.system = system;
         }
 
+        private void ParseMusicStream(IVMHostStream stream)
+        {
+            Span<NativeMusicHeader> header = stackalloc NativeMusicHeader[1];
+            int headerSize = Marshal.SizeOf<NativeMusicHeader>();
+
+            if (stream.Read(MemoryMarshal.Cast<NativeMusicHeader, byte>(header), null) != headerSize)
+            {
+                throw new InvalidDataException("Failed to read music header!");
+            }
+
+            int dataLeft = header[0].totalDataSize - header[0].songLength - headerSize;
+            Span<ushort> wordDataUnk = stackalloc ushort[header[0].songLength];
+
+            if (dataLeft > 0)
+            {
+                if (dataLeft != header[0].songLength * 2)
+                {
+                    throw new InvalidDataException("Remaining data size not equal to word data size!");
+                }
+
+                if (stream.Read(MemoryMarshal.Cast<ushort, byte>(wordDataUnk), null) != dataLeft)
+                {
+                    throw new InvalidDataException("Failed to read word data!");
+                }
+            }
+            else
+            {
+                wordDataUnk.Fill(header[0].defaultRowCount);
+            }
+
+            Span<byte> songData = stackalloc byte[header[0].songLength];
+            if (stream.Read(songData, null) != header[0].songLength)
+            {
+                throw new InvalidDataException("Failed to read song data!");
+            }
+
+            // Start reading shit
+            Span<short> maxAndExtendedOffsetBits = stackalloc short[2];
+            uint compressedSize = 0;
+
+            if (stream.Read(MemoryMarshal.Cast<short, byte>(maxAndExtendedOffsetBits), null) != 4)
+            {
+                throw new InvalidDataException("Failed to read max and extended offset bits!");
+            }
+
+            if (stream.Read(MemoryMarshal.Cast<uint, byte>(MemoryMarshal.CreateSpan(ref compressedSize, 1)), null) != 4)
+            {
+                throw new InvalidDataException("Failed to read compressed data size!");
+            }
+
+            Memory<byte> compressedData = new byte[compressedSize];
+            if (stream.Read(compressedData.Span, null) != compressedSize)
+            {
+                throw new InvalidDataException("Failed to read unknown compressed data");
+            }
+
+            int test = 10;
+        }
+
         [ModuleCall]
         private int vMusicLoad(int handle, int type)
         {
@@ -51,21 +111,11 @@ namespace Nofun.Module.VMusic
             {
                 case LoadType.Resource:
                 {
-                    IVMHostStream test = system.VMStreamModule.Open("", (uint)StreamFlags.Read | (uint)StreamType.Resource | (uint)(handle << 16));
-                    if (test != null)
+                    IVMHostStream stream = system.VMStreamModule.Open("", (uint)StreamFlags.Read | (uint)StreamType.Resource | (uint)(handle << 16));
+                    if (stream != null)
                     {
-                        Span<NativeMusicHeader> header = stackalloc NativeMusicHeader[1];
-                        test.Read(MemoryMarshal.Cast<NativeMusicHeader, byte>(header), null);
-                        int asd = 5;
-
-                        Span<byte> bData = stackalloc byte[header[0].unkDataSize];
-                            test.Read(bData, null);
-
-                            using (FileStream fs = File.OpenWrite("E:\\testtest.rwrw"))
-                            {
-                                fs.Write(bData);
-                            }
-                        }
+                        ParseMusicStream(stream);
+                    }
                     break;
                 }
             }

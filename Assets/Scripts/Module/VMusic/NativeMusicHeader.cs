@@ -14,25 +14,30 @@
  * limitations under the License.
  */
 
- namespace Nofun.Module.VMusic
- {
+namespace Nofun.Module.VMusic
+{
     public unsafe struct NativeMusicHeader
     {
         public fixed byte magicMhdr[4];
         public ushort totalDataSize;
-        public ushort unk06_Flags;
-        public byte unk08;
-        public byte unk09;
-        public byte unkWordCount;
-        public byte unk0B;
-        public byte unk0C;
+        // XM flag. 0 = Amiga, 1 = Linear
+        public ushort flags;
+        // The format follows MIDI standard. 0 is single track, 1 is multi track, 2 is multi song.
+        public byte format;
+        // Channel count from 1-32
+        public byte channelCount;
+        public byte patternCount;
+        public byte sampleCount;
+        public byte instrumentCount;
         public byte unk0D;
         public byte unk0E;
-        public byte sampleBlockSize;
+        public byte unk0F;
         public byte unk10;
-        public byte unkDataSize;
-        public ushort wordFillForUnkWord;
-        public uint unk14;
-        public uint unk18;
+        public byte songLength;
+        // Default row count for each pattern
+        // Pattern length is always in 5-bytes unit
+        public ushort defaultRowCount;
+        public uint defaultTempo;
+        public uint defaultBPM;
     }
- }
+}
