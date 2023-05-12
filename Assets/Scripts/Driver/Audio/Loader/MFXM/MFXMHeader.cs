@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-namespace Nofun.Module.VMusic
+namespace Nofun.Loader.MFXM
 {
-    public unsafe struct NativeMusicHeader
+    public unsafe struct MFXMHeader
     {
         public fixed byte magicMhdr[4];
-        public ushort totalDataSize;
+        public ushort totalHeaderSectionSize;
         // XM flag. 0 = Amiga, 1 = Linear
         public ushort flags;
         // The format follows MIDI standard. 0 is single track, 1 is multi track, 2 is multi song.

@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-namespace Nofun.Module.VMusic
+namespace Nofun.Loader.MFXM
 {
-    // After this header, data is followed
-    public struct NativeSampleHeader
+    public struct MFXMInstrumentHeader
     {
         public ushort headerSize;
-        public uint sampleLengthInBytes;
-        public uint loopStart;
-        public uint loopEnd;
-        // Bit 3 set: ADPCM
-        // Bit 2 set: 16-bit
-        public byte flags;
-        public byte unk0E;
-        public byte unk0F;
-        public ushort unk10;
+        /// <summary>
+        /// Bit 0: On - contains volume points
+        /// Bit 1: On - contains panning points
+        /// Bit 2: On - Contains vibrato data
+        /// </summary>
+        public byte flag;
+        public byte sampleNumbersCount;
+        public ushort volumeFade;
     }
 }
