@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using SharpMik.Player;
 
 namespace SharpMik.SoftwareMixers
@@ -33,8 +30,6 @@ namespace SharpMik.SoftwareMixers
 
 			return false;
 		}
-
-
 
 		int Mix32MonoNormal(short[] srce, int[] dest, int index, int increment, int todo, int place)
 		{
@@ -449,7 +444,7 @@ namespace SharpMik.SoftwareMixers
 					{
 						if (m_IsStereo)
 						{
-							if ((m_CurrentVoiceInfo.Panning == SharpMikCommon.PAN_SURROUND) && (ModDriver.Mode & SharpMikCommon.DMODE_SURROUND) == SharpMikCommon.DMODE_SURROUND)
+							if ((m_CurrentVoiceInfo.Panning == SharpMikCommon.PAN_SURROUND) && (Driver.Mode & SharpMikCommon.DMODE_SURROUND) == SharpMikCommon.DMODE_SURROUND)
 							{
 								m_CurrentVoiceInfo.CurrentSampleIndex = (long)Mix32StereoSurround(s, buff, (int)m_CurrentVoiceInfo.CurrentSampleIndex, (int)m_CurrentVoiceInfo.CurrentIncrement, (int)done, place);
 							}
@@ -467,7 +462,7 @@ namespace SharpMik.SoftwareMixers
 					{
 						if (m_IsStereo)
 						{
-							if ((m_CurrentVoiceInfo.Panning == SharpMikCommon.PAN_SURROUND) && (ModDriver.Mode & SharpMikCommon.DMODE_SURROUND) == SharpMikCommon.DMODE_SURROUND)
+							if ((m_CurrentVoiceInfo.Panning == SharpMikCommon.PAN_SURROUND) && (Driver.Mode & SharpMikCommon.DMODE_SURROUND) == SharpMikCommon.DMODE_SURROUND)
 							{
 								m_CurrentVoiceInfo.CurrentSampleIndex = (long)Mix64StereoSurround(s, buff, m_CurrentVoiceInfo.CurrentSampleIndex, m_CurrentVoiceInfo.CurrentIncrement, done, place);
 							}
@@ -605,10 +600,10 @@ namespace SharpMik.SoftwareMixers
 				{
 					if ((m_VcMode & SharpMikCommon.DMODE_SOFT_MUSIC) == SharpMikCommon.DMODE_SOFT_MUSIC)
 					{
-						ModPlayer.Player_HandleTick();
+						m_modPlayer.Player_HandleTick();
 					}
 
-					m_TickLeft = (ModDriver.MixFrequency * 125 * SAMPLING_FACTOR) / (ModDriver.Bpm * 50);
+					m_TickLeft = (Driver.MixFrequency * 125 * SAMPLING_FACTOR) / (Driver.Bpm * 50);
 					m_TickLeft &= ~(SAMPLING_FACTOR - 1);
 				}
 				left = (int)Math.Min(m_TickLeft, todo);
@@ -644,7 +639,7 @@ namespace SharpMik.SoftwareMixers
 
 						if (m_CurrentVoiceInfo.Active != 0)
 						{
-							m_CurrentVoiceInfo.CurrentIncrement = ((long)(m_CurrentVoiceInfo.Frequency << (FRACBITS - SAMPLING_SHIFT))) / ModDriver.MixFrequency;
+							m_CurrentVoiceInfo.CurrentIncrement = ((long)(m_CurrentVoiceInfo.Frequency << (FRACBITS - SAMPLING_SHIFT))) / Driver.MixFrequency;
 
 							if ((m_CurrentVoiceInfo.Flags & SharpMikCommon.SF_REVERSE) != 0)
 							{
@@ -683,10 +678,10 @@ namespace SharpMik.SoftwareMixers
 						}
 					}
 
-					if (ModDriver.Reverb != 0)
+					if (Driver.Reverb != 0)
 					{
-						if (ModDriver.Reverb > 15) 
-							ModDriver.Reverb = 15;
+						if (Driver.Reverb > 15) 
+							Driver.Reverb = 15;
 
 						//MixReverb(vc_tickbuf, portion);
 					}

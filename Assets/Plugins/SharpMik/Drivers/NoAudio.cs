@@ -31,9 +31,9 @@ namespace SharpMik.Drivers
 			return true;
 		}
 
-		public override bool Init()
+		public override bool Init(Player.ModPlayer player)
 		{
-			return base.Init();
+			return base.Init(player);
 		}
 
 		public override void Exit()

@@ -30,14 +30,14 @@ namespace Nofun.Loader.MFXM
         public byte sampleCount;
         public byte instrumentCount;
         public byte unk0D;
-        public byte unk0E;
-        public byte unk0F;
+        public byte defaultTempo;
+        public byte defaultBPM;
         public byte unk10;
         public byte songLength;
         // Default row count for each pattern
         // Pattern length is always in 5-bytes unit
         public ushort defaultRowCount;
-        public uint defaultTempo;
-        public uint defaultBPM;
+        public uint unk14;
+        public uint unk18;
     }
 }

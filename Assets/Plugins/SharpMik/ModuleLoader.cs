@@ -63,13 +63,13 @@ namespace SharpMik
 
 
 		#region Module Loading
-		public static Module Load(String fileName)
+		public static Module Load(ModPlayer player, String fileName)
 		{
 			try
 			{
 				using (Stream stream = new FileStream(fileName, FileMode.Open,FileAccess.Read))
 				{
-					return Load(stream,64,0);
+					return Load(player, stream, 64,0);
 				}
 			}
 			catch (System.Exception ex)
@@ -78,7 +78,7 @@ namespace SharpMik
 			}
 		}
 
-		public static Module Load(Stream stream, int maxchan, int curious)
+		public static Module Load(ModPlayer player, Stream stream, int maxchan, int curious)
 		{
 			BuildRegisteredModules();
 			Module mod = null;
@@ -149,7 +149,7 @@ namespace SharpMik
 
 				if (loaded)
 				{
-					ML_LoadSamples(mod, modReader);
+					ML_LoadSamples(player, mod, modReader);
 
 					if (!((mod.flags & SharpMikCommon.UF_PANNING) == SharpMikCommon.UF_PANNING))
 					{
@@ -178,7 +178,7 @@ namespace SharpMik
 							mod.flags |= SharpMikCommon.UF_NNA;
 						}
 
-						if (ModDriver.MikMod_SetNumVoices_internal(maxchan, -1))
+						if (player.Driver.MikMod_SetNumVoices_internal(maxchan, -1))
 						{
 							mod = null;
 							return null;
@@ -187,9 +187,9 @@ namespace SharpMik
 
 
 
-					SampleLoader.SL_LoadSamples();
+					player.Driver.SampleLoader.SL_LoadSamples();
 
-					ModPlayer.Player_Init(mod);
+					player.Player_Init(mod);
 				}
 				else
 				{
@@ -222,7 +222,7 @@ namespace SharpMik
 
 
 		#region Common Load Implementation
-		private static bool ML_LoadSamples(Module of, ModuleReader modreader)
+		private static bool ML_LoadSamples(ModPlayer player, Module of, ModuleReader modreader)
 		{
 			int u;
 
@@ -230,7 +230,7 @@ namespace SharpMik
 			{
 				if (of.samples[u].length != 0)
 				{
-					SampleLoader.SL_RegisterSample(of.samples[u], (int)SharpMikCommon.MDTypes.MD_MUSIC, modreader);
+					player.Driver.SampleLoader.SL_RegisterSample(of.samples[u], (int)SharpMikCommon.MDTypes.MD_MUSIC, modreader);
 				}
 			}
 
@@ -242,13 +242,13 @@ namespace SharpMik
 
 
 		#region Module unloading
-		public static void UnLoad(Module mod)
+		public static void UnLoad(ModPlayer player, Module mod)
 		{
-			ModPlayer.Player_Exit_internal(mod);
-			ML_FreeEx(mod);
+			player.Player_Exit_internal(mod);
+			ML_FreeEx(player, mod);
 		}
 
-		static void ML_FreeEx(Module mf)
+		private static void ML_FreeEx(ModPlayer player, Module mf)
 		{
 			if (mf.samples != null)
 			{
@@ -256,9 +256,9 @@ namespace SharpMik
 				{
 					if (mf.samples[t].length != 0)
 					{
-						if (ModDriver.Driver != null)
+						if (player.Driver != null)
 						{
-							ModDriver.Driver.SampleUnload(mf.samples[t].handle);
+							player.Driver.Driver.SampleUnload(mf.samples[t].handle);
 						}						
 					}
 				}

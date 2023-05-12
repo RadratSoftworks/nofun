@@ -20,8 +20,8 @@ namespace Nofun.Loader.MFXM
     {
         public byte note;
         public byte ins;
-        public byte vol;
         public byte eff;
         public byte dat;
+        public byte vol;
     };
 }

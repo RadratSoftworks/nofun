@@ -17,19 +17,19 @@ namespace SharpMik.Drivers
 
 		}
 
-
-
-		public override bool Init()
+		public override bool Init(ModPlayer hlPlayer)
 		{
+			base.Init(hlPlayer);
+
 			SetupMixer();
-			return m_SoftwareMixer.Init();
+			return m_SoftwareMixer.Init(hlPlayer);
 		}
 
 		private void SetupMixer()
 		{
 			if (m_SoftwareMixer != null)
 			{
-				if ((ModDriver.Mode & SharpMikCommon.DMODE_HQMIXER) != 0)
+				if ((Driver.Mode & SharpMikCommon.DMODE_HQMIXER) != 0)
 				{
 					if (m_SoftwareMixer is HQSoftwareMixer)
 					{
@@ -48,7 +48,7 @@ namespace SharpMik.Drivers
 				m_SoftwareMixer = null;
 			}
 
-			if ((ModDriver.Mode & SharpMikCommon.DMODE_HQMIXER) != 0)
+			if ((Driver.Mode & SharpMikCommon.DMODE_HQMIXER) != 0)
 			{
 				m_SoftwareMixer = new HQSoftwareMixer();
 			}

@@ -43,11 +43,11 @@ namespace SharpMik.Drivers
 			return true;
 		}
 
-		public override bool Init()
+		public override bool Init(Player.ModPlayer hlPlayer)
 		{			
 			m_Audiobuffer = new sbyte[BUFFERSIZE];
 
-			return base.Init();
+			return base.Init(hlPlayer);
 		}
 
 		public override void PlayStop()

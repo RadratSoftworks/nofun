@@ -8,13 +8,13 @@ using System.Diagnostics;
 
 namespace SharpMik.Player
 {
-	class SampleLoader
+	public class SampleLoader
 	{
-		static	int sl_rlength;
-		static short sl_old;
-		static	short []sl_buffer=null;
-		static	SAMPLOAD musiclist=null;
-		static	SAMPLOAD sndfxlist=null;
+		private	int sl_rlength;
+		private short sl_old;
+		private	short []sl_buffer=null;
+		private	SAMPLOAD musiclist=null;
+		private	SAMPLOAD sndfxlist=null;
 
 		/* size of the loader buffer in words */
 		const uint SLBUFSIZE = 2048;
@@ -28,7 +28,14 @@ namespace SharpMik.Player
 			public byte buf;     /* bit buffer */
 		};
 
-		public static bool SL_Init(SAMPLOAD s)
+		private ModDriver m_Driver;
+
+		public SampleLoader(ModDriver driver)
+		{
+			m_Driver = driver;
+		}
+
+		public bool SL_Init(SAMPLOAD s)
 		{
 			if (sl_buffer == null)
 			{
@@ -46,7 +53,7 @@ namespace SharpMik.Player
 			return true;
 		}
 
-		public static void SL_Exit(SAMPLOAD s)
+		public void SL_Exit(SAMPLOAD s)
 		{
 			if (sl_rlength > 0)
 			{
@@ -61,13 +68,13 @@ namespace SharpMik.Player
 
 
 
-		public static bool SL_Load(short[] buffer, SAMPLOAD smp, uint length)
+		public bool SL_Load(short[] buffer, SAMPLOAD smp, uint length)
 		{
 			return SL_LoadInternal(buffer, smp.infmt, smp.outfmt, smp.scalefactor,length, smp.reader, false);
 		}
 
 
-		static bool SL_LoadInternal(short[] buffer, uint infmt, uint outfmt, int scalefactor, uint length, ModuleReader reader, bool dither)
+		private bool SL_LoadInternal(short[] buffer, uint infmt, uint outfmt, int scalefactor, uint length, ModuleReader reader, bool dither)
 		{
 			//SBYTE *bptr = (SBYTE*)buffer;
 			//SWORD *wptr = (SWORD*)buffer;
@@ -271,7 +278,7 @@ namespace SharpMik.Player
 
 
 
-		static int read_itcompr8(ITPACK status,ModuleReader reader,short[] buffer,ushort count,ref ushort incnt)
+		private int read_itcompr8(ITPACK status,ModuleReader reader,short[] buffer,ushort count,ref ushort incnt)
 		{
 			ushort x;
 			int y, needbits, havebits, new_count = 0;
@@ -366,7 +373,7 @@ namespace SharpMik.Player
 			return place;
 		}
 
-		static int read_itcompr16(ITPACK status,ModuleReader reader,short[] buffer,ushort count,ref ushort incnt)
+		private int read_itcompr16(ITPACK status,ModuleReader reader,short[] buffer,ushort count,ref ushort incnt)
 		{
 			int x,y,needbits,havebits,new_count=0;
 			ushort bits = status.bits;
@@ -475,19 +482,19 @@ namespace SharpMik.Player
 		}
 
 
-		public static void SL_SampleSigned(SAMPLOAD s)
+		public void SL_SampleSigned(SAMPLOAD s)
 		{
 			s.outfmt |= SharpMikCommon.SF_SIGNED;
 			s.sample.flags =(ushort)(((ushort)(s.sample.flags & ~SharpMikCommon.SF_FORMATMASK)) | s.outfmt);
 		}
 
-		public static void SL_Sample8to16(SAMPLOAD s)
+		public void SL_Sample8to16(SAMPLOAD s)
 		{
 			s.outfmt |= SharpMikCommon.SF_16BITS;
 			s.sample.flags = (ushort)(((ushort)(s.sample.flags & ~SharpMikCommon.SF_FORMATMASK)) | s.outfmt);
 		}
 
-		public static bool SL_LoadSamples()
+		public bool SL_LoadSamples()
 		{
 			bool ok = true;
 
@@ -508,7 +515,7 @@ namespace SharpMik.Player
 
 
 
-		static bool DitherSamples(SAMPLOAD samplist, int type)
+		private bool DitherSamples(SAMPLOAD samplist, int type)
 		{
 			SAMPLOAD s;
 
@@ -570,7 +577,7 @@ namespace SharpMik.Player
 
 					/* Call the sample load routine of the driver module. It has to
 					   return a 'handle' (>=0) that identifies the sample. */
-					s.sample.handle = ModDriver.MD_SampleLoad(s, type);
+					s.sample.handle = m_Driver.MD_SampleLoad(s, type);
 					s.sample.flags =(ushort)((ushort)(s.sample.flags & ~SharpMikCommon.SF_FORMATMASK) | s.outfmt);
 					
 					if (s.sample.handle < 0)
@@ -586,13 +593,13 @@ namespace SharpMik.Player
 		}
 
 
-		static void FreeSampleList(SAMPLOAD s)
+		private void FreeSampleList(SAMPLOAD s)
 		{
 
 		}
 
 
-		public static SAMPLOAD SL_RegisterSample(SAMPLE s,int type,ModuleReader reader)
+		public SAMPLOAD SL_RegisterSample(SAMPLE s,int type,ModuleReader reader)
 		{
 			SAMPLOAD news;
 			SAMPLOAD cruise = null;

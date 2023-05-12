@@ -273,15 +273,15 @@ namespace SharpMik.Loaders
 				{
 					MFXMNote[] xmpat = new MFXMNote[rowCount * m_Module.numchn];
 
-                    for (int u = 0; u < rowCount; u++) 
-                    {
                         for(int v = 0; v < m_Module.numchn; v++) 
                         {
-                            // Can't cast directly due to how these notes are laid out (plane channel, not interleaved)
-                            xmpat[v * rowCount + u] = MemoryMarshal.Cast<byte, MFXMNote>(destPatternData.AsSpan(offset, noteSize))[0];
-                            offset += noteSize;
-                        }
-                    }
+							for (int u = 0; u < rowCount; u++) 
+							{
+                            	// Can't cast directly due to how these notes are laid out (plane channel, not interleaved)
+								xmpat[v * rowCount + u] = MemoryMarshal.Cast<byte, MFXMNote>(destPatternData.AsSpan(offset, noteSize))[0];
+								offset += noteSize;
+							}
+						}
 
 					if (m_Reader.isEOF()) 
 					{
@@ -358,7 +358,7 @@ namespace SharpMik.Loaders
                 sample.seekpos = (uint)m_Reader.Tell();
 				sample.volume = header.volume;
                 sample.panning = header.panning;
-				sample.speed = (uint)(((float)fineTune / short.MaxValue) * 128 + 128);
+				sample.speed = 1;
 
 				// Put it temporarily in here
                 sample.handle = header.relativeNoteNumber;
@@ -531,10 +531,11 @@ namespace SharpMik.Loaders
 					if (sampleOrders[i] > m_Module.numsmp)
 					{
                         d.samplenote[i] = 255;
+						d.samplenumber[i] = 255;
                     }
 					else
 					{
-						d.samplenote[i] = (byte)m_Module.samples[sampleOrders[i]].handle;
+						d.samplenote[i] = (byte)(m_Module.samples[sampleOrders[i]].handle + i);
 						m_Module.samples[sampleOrders[i]].handle = 0;
 					}
                 }
@@ -553,7 +554,7 @@ namespace SharpMik.Loaders
 
                         referredSample.vibflags = vibFlag;
                         referredSample.vibsweep = vibSweep;
-                        referredSample.vibdepth = vibDepth;
+                        referredSample.vibdepth = (byte)(4 * vibDepth);
                         referredSample.vibrate = vibRate;
                     }
                 }
@@ -654,7 +655,7 @@ namespace SharpMik.Loaders
 			m_Module.numins = mh.instrumentCount;
             m_Module.numsmp = mh.sampleCount;
             m_Module.flags |= SharpMikCommon.UF_XMPERIODS | SharpMikCommon.UF_INST | SharpMikCommon.UF_NOWRAP | SharpMikCommon.UF_FT2QUIRKS | SharpMikCommon.UF_PANNING;
-			if((mh.flags & 1)!= 0)
+			if((mh.flags & 1) != 0)
 				m_Module.flags |= SharpMikCommon.UF_LINEAR;
 
 			m_Module.bpmlimit = 32;

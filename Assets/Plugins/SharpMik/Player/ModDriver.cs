@@ -17,112 +17,113 @@ namespace SharpMik.Player
 	 */
 	public class ModDriver
 	{
-		#region private (static) variables
-		private static IModDriver m_Driver;
+		#region private variables
+		private IModDriver m_Driver;
+		private SampleLoader m_sampleLoader;
 
-		static ushort md_mode = SharpMikCommon.DMODE_STEREO | SharpMikCommon.DMODE_16BITS |
+		private ushort md_mode = SharpMikCommon.DMODE_STEREO | SharpMikCommon.DMODE_16BITS |
 						SharpMikCommon.DMODE_SURROUND | SharpMikCommon.DMODE_SOFT_MUSIC |
 						SharpMikCommon.DMODE_SOFT_SNDFX;
 
 
-        internal static byte md_numchn = 0;
-        internal static byte md_sngchn = 0;
-        internal static byte md_sfxchn = 0;
+        internal byte md_numchn = 0;
+        internal byte md_sngchn = 0;
+        internal byte md_sfxchn = 0;
 
-        static byte md_hardchn = 0;
-        static byte md_softchn = 0;
-		static ushort md_mixfreq = 44100;
-		static ushort md_bpm = 125;
-		static byte md_reverb = 0;
-		static byte[] sfxinfo;
+        private byte md_hardchn = 0;
+        private byte md_softchn = 0;
+		private ushort md_mixfreq = 44100;
+		private ushort md_bpm = 125;
+		private byte md_reverb = 0;
+		private byte[] sfxinfo;
 
-		static byte md_pansep         = 128;	/* 128 == 100% (full left/right) */
-		static byte md_volume         = 128;	/* global sound volume (0-128) */
-		static byte md_musicvolume    = 128;	/* volume of song */
-		static byte md_sndfxvolume = 128;	/* volume of sound effects */
+		private byte md_pansep         = 128;	/* 128 == 100% (full left/right) */
+		private byte md_volume         = 128;	/* global sound volume (0-128) */
+		private byte md_musicvolume    = 128;	/* volume of song */
+		private byte md_sndfxvolume = 128;	/* volume of sound effects */
 
-		static SAMPLE[] md_sample;
+		private SAMPLE[] md_sample;
 		#endregion
         
 
 		#region Accessors
-		public static byte PanSeperation
+		public byte PanSeperation
 		{
 			get { return md_pansep; }
 			set { md_pansep = value < 129 ? value: (byte)128; }
 		}
 
-		public static byte SoftwareChannel
+		public byte SoftwareChannel
 		{
 			get { return md_softchn; }
 		}
 
 
-		public static int ChannelCount
+		public int ChannelCount
 		{
 			get { return md_numchn; }
 			set { md_numchn = (byte)value; }
 		}
 
-		public static ushort Mode
+		public ushort Mode
 		{
 			get { return md_mode; }
 			set { md_mode = value; }
 		}
 
-		public static ushort MixFrequency
+		public ushort MixFrequency
 		{
 			get { return md_mixfreq; }
 			set { md_mixfreq = value; }
 		}
-		public static ushort Bpm
+		public ushort Bpm
 		{
 			get { return md_bpm; }
 			set { md_bpm = value; }
 		}
 
-		public static byte Reverb
+		public byte Reverb
 		{
 			get { return md_reverb; }
 			set { md_reverb = value; }
 		}
 
-		public static byte SoundFXChannel
+		public byte SoundFXChannel
 		{
 			get { return md_sfxchn; }
 			set { md_sfxchn = value; }
 		}
 
-		public static byte GlobalVolume
+		public byte GlobalVolume
 		{
 			get { return md_volume; }
 			set { md_volume = value < 129 ? value : (byte)128; }
 		}
 
-		public static byte MusicVolume
+		public byte MusicVolume
 		{
 			get { return md_musicvolume; }
 			set { md_musicvolume = value < 129 ? value : (byte)128; }
 		}
 
-		public static IModDriver Driver
+		public IModDriver Driver
 		{
 			get { return m_Driver; }
 		}
 
-
-
+		public SampleLoader SampleLoader
+		{
+			get { return m_sampleLoader; }
+		}
 		#endregion
 
-
-		public static T LoadDriver<T>() where T : IModDriver, new()
+		public ModDriver(IModDriver driver)
 		{
-			m_Driver = new T();
-			return (T)m_Driver;
+			m_Driver = driver;
+			m_sampleLoader = new SampleLoader(this);
 		}
 
-
-		internal static short MD_SampleLoad(SAMPLOAD s, int type)
+		internal short MD_SampleLoad(SAMPLOAD s, int type)
 		{
 			short result = -1;
 
@@ -137,15 +138,15 @@ namespace SharpMik.Player
 					type = (int)((md_mode & SharpMikCommon.DMODE_SOFT_SNDFX) == SharpMikCommon.DMODE_SOFT_SNDFX ? SharpMikCommon.MDDecodeTypes.MD_SOFTWARE : SharpMikCommon.MDDecodeTypes.MD_HARDWARE);
 				}
 
-				SampleLoader.SL_Init(s);
+				m_sampleLoader.SL_Init(s);
 				result = m_Driver.SampleLoad(s, type);
-				SampleLoader.SL_Exit(s);
+				m_sampleLoader.SL_Exit(s);
 			}
 
 			return result;
 		}
 
-		internal static short[] MD_GetSample(short handle)
+		internal short[] MD_GetSample(short handle)
 		{
 			if (m_Driver != null)
 			{
@@ -155,7 +156,7 @@ namespace SharpMik.Player
 			return null;
 		}
 
-		internal static short MD_SetSample(short[] sample)
+		internal short MD_SetSample(short[] sample)
 		{
 			if (m_Driver != null)
 			{
@@ -167,7 +168,7 @@ namespace SharpMik.Player
 
 
 		/* Note: 'type' indicates whether the returned value should be for music or for sound effects. */
-		public static uint MD_SampleSpace(int type)
+		public uint MD_SampleSpace(int type)
 		{
 			if (type == (int)SharpMikCommon.MDTypes.MD_MUSIC)
 				type = (int)((md_mode & SharpMikCommon.DMODE_SOFT_MUSIC) != 0 ? SharpMikCommon.MDDecodeTypes.MD_SOFTWARE : SharpMikCommon.MDDecodeTypes.MD_HARDWARE);
@@ -178,7 +179,7 @@ namespace SharpMik.Player
 		}
 
 
-		public static void Voice_Stop_internal(byte voice)
+		public void Voice_Stop_internal(byte voice)
 		{
 			if ((voice < 0) || (voice >= md_numchn)) return;
 			if (voice >= md_sngchn)
@@ -189,7 +190,7 @@ namespace SharpMik.Player
 			m_Driver.VoiceStop(voice);
 		}
 
-		internal static bool Voice_Stopped_internal(sbyte voice)
+		internal bool Voice_Stopped_internal(sbyte voice)
 		{
 			if ((voice < 0) || (voice >= md_numchn)) 
 				return false;
@@ -198,7 +199,7 @@ namespace SharpMik.Player
 		}
 
 
-		internal static void Voice_Play_internal(sbyte voice, SAMPLE s, uint start)
+		internal void Voice_Play_internal(sbyte voice, SAMPLE s, uint start)
 		{
 			uint repend;
 
@@ -217,7 +218,7 @@ namespace SharpMik.Player
 			m_Driver.VoicePlay((byte)voice, s.handle, start, s.length, s.loopstart, repend, s.flags);
 		}
 
-		internal static void Voice_SetVolume_internal(sbyte voice, ushort vol)
+		internal void Voice_SetVolume_internal(sbyte voice, ushort vol)
 		{
 			uint tmp;
 
@@ -237,7 +238,7 @@ namespace SharpMik.Player
 			m_Driver.VoiceSetVolume((byte)voice, (ushort)(tmp / 16384));
 		}
 
-		internal static void Voice_SetPanning_internal(sbyte voice, uint pan)
+		internal void Voice_SetPanning_internal(sbyte voice, uint pan)
 		{
 			if ((voice < 0) || (voice >= md_numchn)) 
 				return;
@@ -252,7 +253,7 @@ namespace SharpMik.Player
 			m_Driver.VoiceSetPanning((byte)voice, pan);
 		}
 
-		internal static void Voice_SetFrequency_internal(sbyte voice, uint frq)
+		internal void Voice_SetFrequency_internal(sbyte voice, uint frq)
 		{
 			if ((voice < 0) || (voice >= md_numchn)) 
 				return;
@@ -265,7 +266,7 @@ namespace SharpMik.Player
 			m_Driver.VoiceSetFrequency((byte)voice, frq);
 		}
 
-		static void LimitHardVoices(int limit)
+		private void LimitHardVoices(int limit)
 		{
 			int t = 0;
 
@@ -327,7 +328,7 @@ namespace SharpMik.Player
 
 
 
-		static void LimitSoftVoices(int limit)
+		private void LimitSoftVoices(int limit)
 		{
 			int t = 0;
 
@@ -377,21 +378,21 @@ namespace SharpMik.Player
 
 		// should be moved into own file..
 		#region milkmod stuff 
-		internal static bool isplaying = false;
-		static bool initialized = false;
+		internal bool isplaying = false;
+		private bool initialized = false;
 
-		static bool MikMod_Active_internal()
+		private bool MikMod_Active_internal()
 		{
 			return isplaying;
 		}
 
-		public static bool MikMod_Active()
+		public bool MikMod_Active()
 		{
 			return MikMod_Active_internal();
 		}
 
 
-		static bool MikMod_EnableOutput_internal()
+		private bool MikMod_EnableOutput_internal()
 		{
 			if(!isplaying) 
 			{
@@ -406,26 +407,23 @@ namespace SharpMik.Player
 			return false;
 		}
 
-		public static bool MikMod_EnableOutput()
+		public bool MikMod_EnableOutput()
 		{
 			return MikMod_EnableOutput_internal();
 		}
 
 
 
-		public static void MikMod_Update()
+		public void MikMod_Update()
 		{
 			if (isplaying)
 			{
-				if (ModPlayer.s_Module != null || (!ModPlayer.s_Module.forbid))
-				{
-					m_Driver.Update();
-				}
+				m_Driver.Update();
 			}
 		}
 
 
-		public static void Driver_Pause(bool pause)
+		public void Driver_Pause(bool pause)
 		{
 			if (isplaying)
 			{
@@ -440,8 +438,7 @@ namespace SharpMik.Player
 			}
 		}
 
-
-		static internal void MikMod_DisableOutput_internal()
+		internal void MikMod_DisableOutput_internal()
 		{
 			if(isplaying && m_Driver != null) 
 			{
@@ -450,7 +447,7 @@ namespace SharpMik.Player
 			}
 		}
 
-		public static bool MikMod_SetNumVoices_internal(int music, int sfx)
+		public bool MikMod_SetNumVoices_internal(int music, int sfx)
 		{
 			bool resume = false;
 			int t, oldchn = 0;
@@ -529,7 +526,7 @@ namespace SharpMik.Player
 		}
 
 
-		static void MikMod_Exit_internal()
+		private void MikMod_Exit_internal()
 		{
 			MikMod_DisableOutput_internal();
 			m_Driver.Exit();
@@ -544,19 +541,19 @@ namespace SharpMik.Player
 			initialized = false;
 		}
 
-		public static void MikMod_Exit()
+		public void MikMod_Exit()
 		{	
 			MikMod_Exit_internal();
 		}
 
 
-		static bool _mm_init(string cmdline)
+		private bool _mm_init(ModPlayer player, string cmdline)
 		{
 			m_Driver.CommandLine(cmdline);
 
 			if (m_Driver.IsPresent())
 			{
-				if (m_Driver.Init())
+				if (m_Driver.Init(player))
 				{
 					MikMod_Exit_internal();
 					m_Driver = null;
@@ -573,22 +570,22 @@ namespace SharpMik.Player
 			return false;
 		}
 
-		public static bool MikMod_Init(string cmdline)
+		public bool MikMod_Init(ModPlayer player, string cmdline)
 		{
-			return _mm_init(cmdline);
+			return _mm_init(player, cmdline);
 		}
 
-		public static bool MikMod_Reset(string cmdline)
+		public bool MikMod_Reset(ModPlayer player, string cmdline)
 		{
-			return _mm_reset(cmdline);
+			return _mm_reset(player, cmdline);
 		}
 
-		static bool _mm_reset(string cmdline)
+		private bool _mm_reset(ModPlayer player, string cmdline)
 		{
 			bool wasplaying = false;
 
 			if (!initialized) 
-				return _mm_init(cmdline);
+				return _mm_init(player, cmdline);
 
 			if (isplaying)
 			{

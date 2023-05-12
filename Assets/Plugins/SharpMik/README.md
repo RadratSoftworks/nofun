@@ -56,4 +56,8 @@ To aid in the goals a unit test like tool has been created that will run over a 
 
 ## Support the developer
 
-Github repostiory is at [here](https://github.com/thegouldfish/SharpMik), support their development! This version embedded in Plugins modify to remove unused classes.
+Github repostiory is at [here](https://github.com/thegouldfish/SharpMik), support their development!
+
+## About this code fork
+
+This version embedded in Plugins modify to remove unused classes. Also, remove all singleton instances, so that multiple instance of mikmod can be spawn for simutanous play (to be fair, I have no knowledge in making single instance play multiple modules, so I will just go with the quickest way)

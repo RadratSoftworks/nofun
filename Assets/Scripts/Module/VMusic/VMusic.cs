@@ -59,9 +59,18 @@ namespace Nofun.Module.VMusic
             }
 
             SharpMik.Player.MikMod mod = new();
-            mod.Init<SharpMik.Drivers.PushStreamDriver>();
+            mod.Init<SharpMik.Drivers.WavDriver>("G:\\test.wav");
             SharpMik.ModuleLoader.RegisterModuleLoader<SharpMik.Loaders.MFXMLoader>();
-            mod.LoadModule(new MemoryStream(d));
+            mod.Play(new MemoryStream(d));
+
+            int frames = 0;
+
+            while (mod.IsPlaying() && frames++ < 200)
+            {
+                mod.Update();
+            }
+
+            mod.Exit();
         }
 
         [ModuleCall]

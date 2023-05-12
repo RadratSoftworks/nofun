@@ -48,10 +48,10 @@ namespace SharpMik.SoftwareMixers
 				{
 					if ((m_VcMode & SharpMikCommon.DMODE_SOFT_MUSIC) == SharpMikCommon.DMODE_SOFT_MUSIC)
 					{
-						ModPlayer.Player_HandleTick();
+						m_modPlayer.Player_HandleTick();
 					}
 
-					m_TickLeft = (ModDriver.MixFrequency * 125) / (ModDriver.Bpm * 50);
+					m_TickLeft = (Driver.MixFrequency * 125) / (Driver.Bpm * 50);
 				}
 
 				left = (int)Math.Min(m_TickLeft, todo);
@@ -86,7 +86,7 @@ namespace SharpMik.SoftwareMixers
 
 						if (m_CurrentVoiceInfo.Active != 0)
 						{
-							m_CurrentVoiceInfo.CurrentIncrement = ((long)(m_CurrentVoiceInfo.Frequency << FRACBITS)) / ModDriver.MixFrequency;
+							m_CurrentVoiceInfo.CurrentIncrement = ((long)(m_CurrentVoiceInfo.Frequency << FRACBITS)) / Driver.MixFrequency;
 
 							if ((m_CurrentVoiceInfo.Flags & SharpMikCommon.SF_REVERSE) != 0)
 							{
@@ -136,7 +136,7 @@ namespace SharpMik.SoftwareMixers
 					}
 
 
-                    if ((ModDriver.Mode & SharpMikCommon.DMODE_NOISEREDUCTION) == SharpMikCommon.DMODE_NOISEREDUCTION)
+                    if ((Driver.Mode & SharpMikCommon.DMODE_NOISEREDUCTION) == SharpMikCommon.DMODE_NOISEREDUCTION)
                     {
                         if (m_IsStereo)
                         {
@@ -149,7 +149,7 @@ namespace SharpMik.SoftwareMixers
                     }
 
 
-                    if (ModDriver.Reverb != 0)
+                    if (Driver.Reverb != 0)
 					{
 						if (m_IsStereo)
 						{
@@ -286,7 +286,7 @@ namespace SharpMik.SoftwareMixers
 			int ReverbPct;
 			uint[] loc = new uint[8];
 
-			ReverbPct = 92 + (ModDriver.Reverb << 1);
+			ReverbPct = 92 + (Driver.Reverb << 1);
 
 			for (int i = 0; i < 8; i++)
 			{
@@ -329,7 +329,7 @@ namespace SharpMik.SoftwareMixers
 			int ReverbPct;
 			uint[] loc = new uint[8];
 
-			ReverbPct = 92 + (ModDriver.Reverb << 1);
+			ReverbPct = 92 + (Driver.Reverb << 1);
 
 			for (int i = 0; i < 8; i++)
 			{
@@ -527,11 +527,11 @@ namespace SharpMik.SoftwareMixers
 					/* use the 32 bit mixers as often as we can (they're much faster) */
 					if ((m_CurrentVoiceInfo.CurrentSampleIndex < 0x7fffffff) && (endpos < 0x7fffffff))
 					{
-						if ((ModDriver.Mode & SharpMikCommon.DMODE_INTERP) == SharpMikCommon.DMODE_INTERP)
+						if ((Driver.Mode & SharpMikCommon.DMODE_INTERP) == SharpMikCommon.DMODE_INTERP)
 						{
 							if (m_IsStereo)
 							{
-								if ((m_CurrentVoiceInfo.Panning == SharpMikCommon.PAN_SURROUND) && (ModDriver.Mode & SharpMikCommon.DMODE_SURROUND) == SharpMikCommon.DMODE_SURROUND)
+								if ((m_CurrentVoiceInfo.Panning == SharpMikCommon.PAN_SURROUND) && (Driver.Mode & SharpMikCommon.DMODE_SURROUND) == SharpMikCommon.DMODE_SURROUND)
 								{
 									m_CurrentVoiceInfo.CurrentSampleIndex = (long)Mix32SurroundInterp(s, buff, (int)m_CurrentVoiceInfo.CurrentSampleIndex, (int)m_CurrentVoiceInfo.CurrentIncrement, (int)done, place);
 								}
@@ -547,7 +547,7 @@ namespace SharpMik.SoftwareMixers
 						}
 						else if (m_IsStereo)
 						{
-							if ((m_CurrentVoiceInfo.Panning == SharpMikCommon.PAN_SURROUND) && (ModDriver.Mode & SharpMikCommon.DMODE_SURROUND) == SharpMikCommon.DMODE_SURROUND)
+							if ((m_CurrentVoiceInfo.Panning == SharpMikCommon.PAN_SURROUND) && (Driver.Mode & SharpMikCommon.DMODE_SURROUND) == SharpMikCommon.DMODE_SURROUND)
 							{
 								m_CurrentVoiceInfo.CurrentSampleIndex = Mix32SurroundNormal(s, buff, (int)m_CurrentVoiceInfo.CurrentSampleIndex, (int)m_CurrentVoiceInfo.CurrentIncrement, (int)done, place);
 							}

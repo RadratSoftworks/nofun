@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SharpMik.Interfaces;
 using SharpMik.Player;
 
 namespace SharpMik.SoftwareMixers
@@ -69,6 +66,7 @@ namespace SharpMik.SoftwareMixers
 		protected int m_FracBits;
 		protected int m_ClickBuffer;
 		protected int m_ReverbMultipler;
+		protected ModPlayer m_modPlayer;
 
 		
 		protected abstract bool MixerInit();
@@ -79,26 +77,30 @@ namespace SharpMik.SoftwareMixers
 
         public event VC_CallbackDelegate VC_Callback;
 
-        public bool Init()
+		protected ModDriver Driver => m_modPlayer.Driver;
+
+        public bool Init(ModPlayer modPlayer)
 		{
+			m_modPlayer = modPlayer;
+
 			MixerInit();
 
             m_Samples = new List<short[]>();
 
 			m_VcTickBuf = new int[TICKLSIZE];
 
-			m_VcMode = ModDriver.Mode;
+			m_VcMode = Driver.Mode;
 
 			m_Rvc = new int[8];
 
-			m_Rvc[0] = (5000 * ModDriver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
-			m_Rvc[1] = (5078 * ModDriver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
-			m_Rvc[2] = (5313 * ModDriver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
-			m_Rvc[3] = (5703 * ModDriver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
-			m_Rvc[4] = (6250 * ModDriver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
-			m_Rvc[5] = (6953 * ModDriver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
-			m_Rvc[6] = (7813 * ModDriver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
-			m_Rvc[7] = (8828 * ModDriver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
+			m_Rvc[0] = (5000 * Driver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
+			m_Rvc[1] = (5078 * Driver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
+			m_Rvc[2] = (5313 * Driver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
+			m_Rvc[3] = (5703 * Driver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
+			m_Rvc[4] = (6250 * Driver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
+			m_Rvc[5] = (6953 * Driver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
+			m_Rvc[6] = (7813 * Driver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
+			m_Rvc[7] = (8828 * Driver.MixFrequency) / (REVERBERATION * m_ReverbMultipler);
 
 
 			m_RvBuf = new int[2][][];
@@ -181,7 +183,7 @@ namespace SharpMik.SoftwareMixers
 		{
 			int t;
 
-			if ((m_VcSoftChannel = ModDriver.SoftwareChannel) == 0)
+			if ((m_VcSoftChannel = Driver.SoftwareChannel) == 0)
 			{
 				return true;
 			}
@@ -352,14 +354,14 @@ namespace SharpMik.SoftwareMixers
 			loopstart = s.loopstart;
 			loopend = s.loopend;
 
-			SampleLoader.SL_SampleSigned(sload);
-			SampleLoader.SL_Sample8to16(sload);
+			Driver.SampleLoader.SL_SampleSigned(sload);
+			Driver.SampleLoader.SL_Sample8to16(sload);
 
 			uint len = ((length + 20) << 1);
 			m_Samples[handle] = new short[len];
 
 			/* read sample into buffer */
-			if (SampleLoader.SL_Load(m_Samples[handle], sload, length))
+			if (Driver.SampleLoader.SL_Load(m_Samples[handle], sload, length))
 				return -1;
 
 			/* Unclick sample */

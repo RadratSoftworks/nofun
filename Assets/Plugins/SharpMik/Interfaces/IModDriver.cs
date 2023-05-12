@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using SharpMik.DSP;
+using SharpMik.Player;
 
 namespace SharpMik.Interfaces
 {
@@ -12,6 +10,7 @@ namespace SharpMik.Interfaces
 		protected IModDriver m_Next;
 		protected String m_Name;
 		protected String m_Version;
+		protected ModPlayer m_hlPlayer;
 
 		protected byte m_HardVoiceLimit;
 		protected byte m_SoftVoiceLimit;
@@ -58,8 +57,9 @@ namespace SharpMik.Interfaces
 			get { return m_DspProcessor; }
 			set { m_DspProcessor = value; }
 		}
-		#endregion
 
+		public ModDriver Driver => m_hlPlayer.Driver;
+		#endregion
 
 		#region abstract functions
 		public abstract void CommandLine (string command);
@@ -72,7 +72,6 @@ namespace SharpMik.Interfaces
 
 		public abstract uint FreeSampleSpace (int value);
 		public abstract uint RealSampleLength (int value,SAMPLE sample);
-		public abstract bool Init ();
 		public abstract void Exit ();
 		public abstract bool Reset ();
 		public abstract bool SetNumVoices ();
@@ -95,5 +94,11 @@ namespace SharpMik.Interfaces
 		public abstract int VoiceGetPosition (byte voice);
 		public abstract uint VoiceRealVolume (byte voice);
 		#endregion
+
+		public virtual bool Init (ModPlayer hlPlayer)
+		{
+			m_hlPlayer = hlPlayer;
+			return true;
+		}
 	}
 }

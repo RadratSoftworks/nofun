@@ -43,19 +43,23 @@ namespace SharpMik.Drivers
 			return true;
 		}
 
-		public override bool Init()
+		public override bool Init(ModPlayer player)
 		{
 			try
 			{
+				if (base.Init(player))
+				{
+					return false;
+				}
+
 				FileStream stream = new FileStream(m_FileName,FileMode.Create);
 				m_FileStream = new BinaryWriter(stream);
 				m_Audiobuffer = new sbyte[BUFFERSIZE];
 
-				ModDriver.Mode = (ushort)( ModDriver.Mode | SharpMikCommon.DMODE_SOFT_MUSIC | SharpMikCommon.DMODE_SOFT_SNDFX);
+				Driver.Mode = (ushort)( Driver.Mode | SharpMikCommon.DMODE_SOFT_MUSIC | SharpMikCommon.DMODE_SOFT_SNDFX);
 
 				putheader();
-
-				return base.Init();
+				return false;
 			}
 			catch (System.Exception ex)
 			{
@@ -99,15 +103,15 @@ namespace SharpMik.Drivers
 			m_FileStream.Write("WAVEfmt ".ToCharArray());
 			m_FileStream.Write((uint)16);
 			m_FileStream.Write((ushort)1);
-			ushort channelCount = (ushort)((ModDriver.Mode & SharpMikCommon.DMODE_STEREO) == SharpMikCommon.DMODE_STEREO ? 2 : 1);
-			ushort numberOfBytes = (ushort)((ModDriver.Mode & SharpMikCommon.DMODE_16BITS) == SharpMikCommon.DMODE_16BITS ? 2 : 1 );
+			ushort channelCount = (ushort)((Driver.Mode & SharpMikCommon.DMODE_STEREO) == SharpMikCommon.DMODE_STEREO ? 2 : 1);
+			ushort numberOfBytes = (ushort)((Driver.Mode & SharpMikCommon.DMODE_16BITS) == SharpMikCommon.DMODE_16BITS ? 2 : 1 );
 
 			m_FileStream.Write(channelCount);
-			m_FileStream.Write((uint)ModDriver.MixFrequency);
-			int blah = ModDriver.MixFrequency * channelCount * numberOfBytes;
+			m_FileStream.Write((uint)Driver.MixFrequency);
+			int blah = Driver.MixFrequency * channelCount * numberOfBytes;
 			m_FileStream.Write((uint)(blah));
 			m_FileStream.Write((ushort)(channelCount * numberOfBytes));
-			m_FileStream.Write((ushort)((ModDriver.Mode & SharpMikCommon.DMODE_16BITS) == SharpMikCommon.DMODE_16BITS ? 16 : 8));
+			m_FileStream.Write((ushort)((Driver.Mode & SharpMikCommon.DMODE_16BITS) == SharpMikCommon.DMODE_16BITS ? 16 : 8));
 			m_FileStream.Write("data".ToCharArray());
 			m_FileStream.Write((uint)dumpsize);			
 		}
