@@ -28,7 +28,7 @@ using System.Runtime.InteropServices;
 
 using NoAlloq;
 using System.Linq;
-using System.Buffers.Binary;
+using System.Collections.Generic;
 
 namespace SharpMik.Loaders
 {
@@ -81,7 +81,7 @@ namespace SharpMik.Loaders
 			int t;
 			byte note,ins,vol,eff,dat;
 
-			UniReset();
+            UniReset();
 			for(t=0;t<rows;t++) 
 			{
 				MFXMNote xmtrack = xmtracks[place++];
@@ -142,83 +142,48 @@ namespace SharpMik.Loaders
 						break;
 				}
 
-				switch(eff) {
-					case 0x4:
-						UniEffect(SharpMikCommon.Commands.UNI_XMEFFECT4,dat);
-						break;
-					case 0x6:
-						UniEffect(SharpMikCommon.Commands.UNI_XMEFFECT6,dat);
-						break;
-					case 0xa:
-						UniEffect(SharpMikCommon.Commands.UNI_XMEFFECTA,dat);
-						break;
-					case 0xe: /* Extended effects */
-						switch(dat>>4) {
-							case 0x1: /* XM fine porta up */
-								UniEffect(SharpMikCommon.Commands.UNI_XMEFFECTE1,dat&0xf);
-								break;
-							case 0x2: /* XM fine porta down */
-								UniEffect(SharpMikCommon.Commands.UNI_XMEFFECTE2,dat&0xf);
-								break;
-							case 0xa: /* XM fine volume up */
-								UniEffect(SharpMikCommon.Commands.UNI_XMEFFECTEA,dat&0xf);
-								break;
-							case 0xb: /* XM fine volume down */
-								UniEffect(SharpMikCommon.Commands.UNI_XMEFFECTEB,dat&0xf);
-								break;
-							default:
-								UniPTEffect(eff,dat);
-								break;
-						}
-						break;
-					case 'G'-55: /* G - set global volume */
-						UniEffect(SharpMikCommon.Commands.UNI_XMEFFECTG,dat>64?128:dat<<1);
-						break;
-					case 'H'-55: /* H - global volume slide */
-						UniEffect(SharpMikCommon.Commands.UNI_XMEFFECTH,dat);
-						break;
-					case 'K'-55: /* K - keyOff and KeyFade */
-						UniEffect(SharpMikCommon.Commands.UNI_KEYFADE,dat);
-						break;
-					case 'L'-55: /* L - set envelope position */
-						UniEffect(SharpMikCommon.Commands.UNI_XMEFFECTL,dat);
-						break;
-					case 'P'-55: /* P - panning slide */
-						UniEffect(SharpMikCommon.Commands.UNI_XMEFFECTP,dat);
-						break;
-					case 'R'-55: /* R - multi retrig note */
-						UniEffect(SharpMikCommon.Commands.UNI_S3MEFFECTQ,dat);
-						break;
-					case 'T'-55: /* T - Tremor */
-						UniEffect(SharpMikCommon.Commands.UNI_S3MEFFECTI,dat);
-						break;
-					case 'X'-55:
-						switch(dat>>4) {
-							case 1: /* X1 - Extra Fine Porta up */
-								UniEffect(SharpMikCommon.Commands.UNI_XMEFFECTX1,dat&0xf);
-								break;
-							case 2: /* X2 - Extra Fine Porta down */
-								UniEffect(SharpMikCommon.Commands.UNI_XMEFFECTX2,dat&0xf);
-								break;
-						}
-						break;
-					default:
-						if(eff<=0xf) {
+				if (eff != 0xFF)
+				{
+					switch(eff) {
+						// These are same
+						case 0x0:
+						case 0x1:
+						case 0x2:
+						case 0x3:
+						case 0x5:
+						case 0x7:
+							UniPTEffect(eff,dat);
+							break;
+
+						case 0x4:
+							UniEffect(SharpMikCommon.Commands.UNI_XMEFFECT4,dat);
+							break;
+						case 0x6:
+							UniEffect(SharpMikCommon.Commands.UNI_XMEFFECT6,dat);
+							break;
+
+						// Panning is dropped, and extensions are flatten into effect number
+						default:
 							/* the pattern jump destination is written in decimal,
-							   but it seems some poor tracker software writes them
-							   in hexadecimal... (sigh) */
-							if (eff==0xd)
+								but it seems some poor tracker software writes them
+								in hexadecimal... (sigh) */
+							if (eff==0xc) {
 								/* don't change anything if we're sure it's in hexa */
 								if ((((dat&0xf0)>>4)<=9)&&((dat&0xf)<=9))
 									/* otherwise, convert from dec to hex */
 									dat=(byte)((((dat&0xf0)>>4)*10)+(dat&0xf));
-							UniPTEffect(eff,dat);
-						}
-						break;
+							}
+							if ((eff == 0x14) || (eff > 0x16))
+							{
+								throw new Exception($"Unimplemented effect {eff}");
+							}
+							UniMFXMEffect(eff, dat);
+							break;
+					}
 				}
 				UniNewline();				
 			}
-			return UniDup();
+            return UniDup();
 		}
 
 		bool LoadPatterns(bool dummypat)
@@ -273,15 +238,15 @@ namespace SharpMik.Loaders
 				{
 					MFXMNote[] xmpat = new MFXMNote[rowCount * m_Module.numchn];
 
-                        for(int v = 0; v < m_Module.numchn; v++) 
-                        {
-							for (int u = 0; u < rowCount; u++) 
-							{
-                            	// Can't cast directly due to how these notes are laid out (plane channel, not interleaved)
-								xmpat[v * rowCount + u] = MemoryMarshal.Cast<byte, MFXMNote>(destPatternData.AsSpan(offset, noteSize))[0];
-								offset += noteSize;
-							}
+					for (int u = 0; u < rowCount; u++) 
+					{
+						for(int v = 0; v < m_Module.numchn; v++) 
+						{
+							// Can't cast directly due to how these notes are laid out (plane channel, not interleaved)
+							xmpat[v * rowCount + u] = MemoryMarshal.Cast<byte, MFXMNote>(destPatternData.AsSpan(offset, noteSize))[0];
+							offset += noteSize;
 						}
+					}
 
 					if (m_Reader.isEOF()) 
 					{
@@ -358,7 +323,7 @@ namespace SharpMik.Loaders
                 sample.seekpos = (uint)m_Reader.Tell();
 				sample.volume = header.volume;
                 sample.panning = header.panning;
-				sample.speed = 1;
+				sample.speed = (uint)(((float)fineTune / short.MaxValue) * 128.0f + 128.0f);
 
 				// Put it temporarily in here
                 sample.handle = header.relativeNoteNumber;
@@ -535,8 +500,12 @@ namespace SharpMik.Loaders
                     }
 					else
 					{
-						d.samplenote[i] = (byte)(m_Module.samples[sampleOrders[i]].handle + i);
-						m_Module.samples[sampleOrders[i]].handle = 0;
+						int realNote = m_Module.samples[sampleOrders[i]].handle + i;
+
+                        realNote = Math.Clamp(realNote, 0, 255);
+                        d.samplenote[i] = (byte)realNote;
+
+                        m_Module.samples[sampleOrders[i]].handle = 0;
 					}
                 }
 
@@ -642,8 +611,9 @@ namespace SharpMik.Loaders
             }
 
 			/* set module variables */
-			m_Module.initspeed = (byte)mh.defaultTempo;         
-			m_Module.inittempo = (ushort)mh.defaultBPM;
+			m_Module.initspeed = (byte)5;
+            m_Module.sngspd = mh.defaultSongSpeed;
+            m_Module.inittempo = (ushort)mh.defaultBPM;
 
 			m_Module.modtype = "Mophun tracker (probably from MPC2)";
 			m_Module.numchn = (byte)mh.channelCount;

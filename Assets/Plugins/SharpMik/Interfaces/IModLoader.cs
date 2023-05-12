@@ -415,6 +415,23 @@ namespace SharpMik.Interfaces
 			}
 		}
 
+		public void UniMFXMEffect(int eff, int dat)
+		{
+			if (eff < 8)
+			{
+				Console.WriteLine("UniMFXMEffect called with incorrect eff value {0}", eff);
+			}
+			else
+			{
+				if ((eff == 0xE) || (eff == 0xF) || (eff == 0x15) || (eff == 0x16))
+				{
+					// Extension method, flatten, only take lower half.
+                    dat &= 0xF;
+                }
+
+				UniEffect((ushort)(SharpMikCommon.Commands.UNI_MFXMEFFECT8 - 8 + eff), (byte)dat);
+			}
+		}
 
 		public void UniEffect(SharpMikCommon.Commands command, int dat)
 		{

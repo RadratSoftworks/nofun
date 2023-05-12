@@ -298,6 +298,22 @@ namespace SharpMik.Player
                 DoMEDEffectF2,	/* UNI_MEDEFFECTF2 */
                 DoMEDEffectF3,	/* UNI_MEDEFFECTF3 */
                 DoOktArp,		/* UNI_OKTARP */
+                // NOTE: The panning effect is dropped in Mophun implementation
+                DoPTEffect9,    /* UNI_MFXMEFFECT8 */
+                DoPTEffectA,    /* UNI_MFXMEFFECT9 */
+                DoPTEffectB,    /* UNI_MFXMEFFECTA */
+                DoPTEffectC,    /* UNI_MFXMEFFECTB */
+                DoPTEffectD,    /* UNI_MFXMEFFECTC */
+                DoPTEffectF,    /* UNI_MFMXEFFECTD */
+                DoXMEffectE1,   /* UNI_MFMXEFFECTE */
+                DoXMEffectE2,   /* UNI_MFMXEFFECTF */
+                DoMFXMEffect10, /* UNI_MFXMEFFECT10 */
+                DoMFXMEffect11, /* UNI_MFXMEFFECT11 */
+                DoMFXMEffect12, /* UNI_MFXMEFFECT12 */
+                DoMFXMEffect13, /* UNI_MFXMEFFECT13 */
+                DoNothing,      /* UNI_MFXMEFFECT14 */
+                DoXMEffectEA,   /* UNI_MFXMEFFECT15 */
+                DoXMEffectEB,   /* UNI_MFXMEFFECT16 */
             };
         }
 
@@ -2258,6 +2274,48 @@ namespace SharpMik.Player
                 break;
             }
         }
+
+        #region MFXM effects
+        private int DoMFXMEffect10(ushort tick, ushort flags, MP_CONTROL a, Module mod, short channel)
+        {
+            byte dat = s_UniTrack.UniGetByte();
+            byte inf = (byte)(dat & 0xf);
+
+            // Vibrato waveform set
+            DoEEffects(tick, flags, a, mod, channel, (byte)(0x40 | inf));
+            return 0;
+        }
+
+        private int DoMFXMEffect11(ushort tick, ushort flags, MP_CONTROL a, Module mod, short channel)
+        {
+            byte dat = s_UniTrack.UniGetByte();
+            byte inf = (byte)(dat & 0xf);
+
+            // Finetune set
+            DoEEffects(tick, flags, a, mod, channel, (byte)(0x50 | inf));
+            return 0;
+        }
+
+        private int DoMFXMEffect12(ushort tick, ushort flags, MP_CONTROL a, Module mod, short channel)
+        {
+            byte dat = s_UniTrack.UniGetByte();
+            byte inf = (byte)(dat & 0xf);
+
+            // Pattern loop set
+            DoEEffects(tick, flags, a, mod, channel, (byte)(0x60 | inf));
+            return 0;
+        }
+
+        private int DoMFXMEffect13(ushort tick, ushort flags, MP_CONTROL a, Module mod, short channel)
+        {
+            byte dat = s_UniTrack.UniGetByte();
+            byte inf = (byte)(dat & 0xf);
+
+            // Tremolo waveform set
+            DoEEffects(tick, flags, a, mod, channel, (byte)(0x70 | inf));
+            return 0;
+        }
+        #endregion
 
         private effectDelegate[] effects;
 

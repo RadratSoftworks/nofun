@@ -30,7 +30,7 @@ namespace Nofun.Loader.MFXM
         // Bit 2 set: 16-bit
         public byte flags;
         public byte volume;
-        public byte relativeNoteNumber;
         public byte panning;
+        public sbyte relativeNoteNumber;
     }
 }

@@ -101,6 +101,21 @@ namespace SharpMik
 			0, /* UNI_MEDEFFECTF2 */
 			0, /* UNI_MEDEFFECTF3 */
 			2, /* UNI_OKTARP */
+			1, /* UNI_MFXMEFFECT8 */
+			1, /* UNI_MFXMEFFECT9 */
+			1, /* UNI_MFXMEFFECTA */
+			1, /* UNI_MFXMEFFECTB */
+			1, /* UNI_MFXMEFFECTC */
+			1, /* UNI_MFXMEFFECTD */
+			1, /* UNI_MFXMEFFECTE */
+			1, /* UNI_MFXMEFFECTF */
+			1, /* UNI_MFXMEFFECT10 */
+			1, /* UNI_MFXMEFFECT11 */
+			1, /* UNI_MFXMEFFECT12 */
+			1, /* UNI_MFXMEFFECT13 */
+			1, /* UNI_MFXMEFFECT14 */
+			1, /* UNI_MFXMEFFECT15 */
+			1 /* UNI_MFXMEFFECT16 */
 		};
 		#endregion
 

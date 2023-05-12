@@ -30,7 +30,7 @@ namespace Nofun.Loader.MFXM
         public byte sampleCount;
         public byte instrumentCount;
         public byte unk0D;
-        public byte defaultTempo;
+        public byte defaultSongSpeed;
         public byte defaultBPM;
         public byte unk10;
         public byte songLength;
