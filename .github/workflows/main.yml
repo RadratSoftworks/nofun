@@ -5,15 +5,17 @@ on: [push, pull_request]
 jobs:
   buildForAllSupportedPlatforms:
     name: Build for ${{ matrix.target.platform }}
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         target:
           - platform: StandaloneWindows64
             image: "unityci/editor:windows-2021.3.20f1-windows-il2cpp-1.1.2"
+            os: windows-latest
           - platform: Android
             image: "unityci/editor:ubuntu-2021.3.20f1-android-1.1.2"
+            os: ubuntu-latest      
+      runs-on: ${{ matrix.target.os }}
     steps:
       - uses: actions/checkout@v2
         with:
