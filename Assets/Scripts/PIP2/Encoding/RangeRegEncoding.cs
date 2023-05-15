@@ -16,7 +16,7 @@
 
 namespace Nofun.PIP2.Encoding
 {
-    public struct RangeRegEncoding : IEncoding
+    public struct RangeRegEncoding
     {
         public byte opcode;
         public byte start;

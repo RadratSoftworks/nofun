@@ -18,7 +18,7 @@ using System;
 
 namespace Nofun.PIP2.Encoding
 {
-    public struct WordEncoding : IEncoding
+    public struct WordEncoding
     {
         public byte opcode;
         public byte d;

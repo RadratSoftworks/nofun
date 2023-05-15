@@ -72,6 +72,8 @@ namespace Nofun
 
         private void Start()
         {
+            Application.targetFrameRate = 60;
+
             SetupLogger();
 
             Stream gameStream = null;
@@ -100,7 +102,7 @@ namespace Nofun
 #endif
 #endif
 
-#if UNITY_EDITOR
+#if !UNITY_ANDROID 
             gameStream = new FileStream(targetExecutable, FileMode.Open, FileAccess.ReadWrite,
                 FileShare.Read);
 #endif

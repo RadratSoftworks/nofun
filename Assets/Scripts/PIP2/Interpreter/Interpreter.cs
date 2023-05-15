@@ -52,36 +52,44 @@ namespace Nofun.PIP2.Interpreter
         }
 
         #region Instruction Handler Wrapper
-        private Action<UInt32> InstructionWrapper<T>(Action<T> handler) where T : IEncoding, new()
+        private Action<UInt32> I(Action<TwoSourcesEncoding> handler)
         {
-            return value => handler(new T()
+            return value => handler(new TwoSourcesEncoding()
             {
                 Instruction = value
             });
         }
 
-        private Action<UInt32> I(Action<TwoSourcesEncoding> handler)
-        {
-            return InstructionWrapper<TwoSourcesEncoding>(handler);
-        }
-
         private Action<UInt32> I(Action<UndefinedEncoding> handler)
         {
-            return InstructionWrapper<UndefinedEncoding>(handler);
+            return value => handler(new UndefinedEncoding()
+            {
+                Instruction = value
+            });
         }
 
         private Action<UInt32> I(Action<DestOnlyEncoding> handler)
         {
-            return InstructionWrapper<DestOnlyEncoding>(handler);
+            return value => handler(new DestOnlyEncoding()
+            {
+                Instruction = value
+            });
         }
 
         private Action<UInt32> I(Action<WordEncoding> handler)
         {
-            return InstructionWrapper<WordEncoding>(handler);
+            return value => handler(new WordEncoding()
+            {
+                Instruction = value
+            });
         }
+
         private Action<UInt32> I(Action<RangeRegEncoding> handler)
         {
-            return InstructionWrapper<RangeRegEncoding>(handler);
+            return value => handler(new RangeRegEncoding()
+            {
+                Instruction = value
+            });
         }
         #endregion
 

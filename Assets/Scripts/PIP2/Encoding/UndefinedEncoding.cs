@@ -18,7 +18,7 @@ using System;
 
 namespace Nofun.PIP2.Encoding
 {
-    public struct UndefinedEncoding : IEncoding
+    public struct UndefinedEncoding
     {
         public UInt32 value;
 

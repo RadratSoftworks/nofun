@@ -16,7 +16,7 @@
 
 namespace Nofun.PIP2.Encoding
 {
-    public struct DestOnlyEncoding : IEncoding
+    public struct DestOnlyEncoding
     {
         public byte opcode;
         public byte d;

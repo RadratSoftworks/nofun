@@ -16,7 +16,7 @@
 
 namespace Nofun.PIP2.Encoding
 {
-    public struct TwoSourcesEncoding : IEncoding
+    public struct TwoSourcesEncoding
     {
         public byte opcode;
         public byte d;
