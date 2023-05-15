@@ -41,8 +41,8 @@ namespace SharpMik.Loaders
 		/*========== Loader variables */
 		private MFXMHeader mh;
         private ushort[] patternRowCount = null;
-		static	int sampHeader=0;
-
+        private sbyte[] relativeNoteNumbers = null;
+        static	int sampHeader=0;
 
 		public MFXMLoader()
 			: base()
@@ -287,6 +287,7 @@ namespace SharpMik.Loaders
         bool LoadSamples()
         {
             m_Module.AllocSamples();
+            relativeNoteNumbers = new sbyte[mh.sampleCount];
 
             for (int i = 0; i < mh.sampleCount; i++)
             {
@@ -297,19 +298,20 @@ namespace SharpMik.Loaders
                     throw new InvalidDataException("Failed to read sample header!");
                 }
 
-                short fineTune = 0;
+                byte relativeNoteNumber = 0;
 
 				if (header.headerSize > 18)
 				{
 					int left = header.headerSize - 18;
-					if (left >= 2)
+					// Usually they pad one more byte for alignment, we dont need 2
+					if (left >= 1)
 					{
-						if (m_Reader.Read(MemoryMarshal.Cast<short, byte>(MemoryMarshal.CreateSpan(ref fineTune, 1))) != 2)
+						if (m_Reader.Read(MemoryMarshal.CreateSpan(ref relativeNoteNumber, 1)) != 1)
 						{
 							m_LoadError = MMERR_LOADING_SAMPLEINFO;
 							throw new InvalidDataException("Failed to read unknown word!");
 						}
-						left -= 2;
+						left -= 1;
 					}
 					m_Reader.Seek(left, SeekOrigin.Current);
 				}
@@ -322,11 +324,13 @@ namespace SharpMik.Loaders
                 sample.samplename = $"Sample {i}";
                 sample.seekpos = (uint)m_Reader.Tell();
 				sample.volume = header.volume;
-                sample.panning = header.panning;
-				sample.speed = (uint)(((float)fineTune / short.MaxValue) * 128.0f + 128.0f);
+				sample.speed = (uint)(header.finetune + 128);
+
+				// No panning on where technically mono is used on phones
+                sample.panning = 127;
 
 				// Put it temporarily in here
-                sample.handle = header.relativeNoteNumber;
+                relativeNoteNumbers[i] = (sbyte)relativeNoteNumber;
 
                 if (sample.length > 0)
 				{
@@ -336,7 +340,7 @@ namespace SharpMik.Loaders
 					if (is16bit)
 					{
 						sample.flags |= SharpMikCommon.SF_16BITS;
-					}
+                    }
 
 					if ((header.flags & 0x3) != 0)
 					{
@@ -351,9 +355,15 @@ namespace SharpMik.Loaders
 					if ((header.flags & 8) != 0)
 					{
 						sample.flags |= SharpMikCommon.SF_ADPCM;
+                        sample.length <<= 1;
+                    }
+					else if (is16bit)
+					{
+						// If not ADPCM, we will sort out the length (for reading)
+                        sample.length >>= 1;
 					}
 
-                    m_Reader.Seek((int)sample.length, SeekOrigin.Current);
+                    m_Reader.Seek((int)header.sampleLengthInBytes, SeekOrigin.Current);
                 }
             }
 
@@ -408,13 +418,14 @@ namespace SharpMik.Loaders
 				d.volenv[u].pos = envelopes[u << 1];		
 				d.volenv[u].val = envelopes[(u << 1)+ 1];	
 			}
-											
+
+			// 0x80 type is filter envelope. From IT probably
 			if ((header.type & 1) != 0) d.volflg|=SharpMikCommon.EF_ON;				
 			if ((header.type & 2) != 0) d.volflg|=SharpMikCommon.EF_SUSTAIN;		
-			if ((header.type & 4) != 0) d.volflg|=SharpMikCommon.EF_LOOP;		
-	
-			d.volsusbeg = d.volsusend = header.sustainPoint;		
-			d.volbeg = header.loopStart;							
+			if ((header.type & 4) != 0) d.volflg|=SharpMikCommon.EF_LOOP;
+
+            d.volsusbeg = d.volsusend = header.sustainPoint;
+            d.volbeg = header.loopStart;							
 			d.volend = header.loopEnd;							
 			d.volpts = header.pointCount;							
 																				
@@ -436,11 +447,13 @@ namespace SharpMik.Loaders
 			{					
 				d. panenv[u].pos = envelopes[u << 1];		
 				d. panenv[u].val = envelopes[(u << 1)+ 1];	
-			}														
+			}								
+						
 			if ((header.type&1) != 0) d. panflg|=SharpMikCommon.EF_ON;				
 			if ((header.type&2) != 0) d. panflg|=SharpMikCommon.EF_SUSTAIN;		
-			if ((header.type&4) != 0) d. panflg|=SharpMikCommon.EF_LOOP;			
-			d.pansusbeg=d. pansusend=header.sustainPoint;		
+			if ((header.type&4) != 0) d. panflg|=SharpMikCommon.EF_LOOP;
+	
+			d.pansusbeg=d.pansusend=header.sustainPoint;		
 			d.panbeg=header.loopStart;							
 			d.panend=header.loopEnd;							
 			d.panpts=header.pointCount;							
@@ -500,12 +513,10 @@ namespace SharpMik.Loaders
                     }
 					else
 					{
-						int realNote = m_Module.samples[sampleOrders[i]].handle + i;
+						int realNote = relativeNoteNumbers[sampleOrders[i]] + i;
 
                         realNote = Math.Clamp(realNote, 0, 255);
                         d.samplenote[i] = (byte)realNote;
-
-                        m_Module.samples[sampleOrders[i]].handle = 0;
 					}
                 }
 
@@ -523,7 +534,7 @@ namespace SharpMik.Loaders
 
                         referredSample.vibflags = vibFlag;
                         referredSample.vibsweep = vibSweep;
-                        referredSample.vibdepth = (byte)(4 * vibDepth);
+                        referredSample.vibdepth = vibDepth;
                         referredSample.vibrate = vibRate;
                     }
                 }
@@ -537,8 +548,8 @@ namespace SharpMik.Loaders
                         return false;
                     }
 
-                    short[] envelopes = new short[pointsHeader.pointCount];
-                    if (m_Reader.Read(MemoryMarshal.Cast<short, byte>(envelopes)) != pointsHeader.pointCount * 2)
+                    short[] envelopes = new short[2 * pointsHeader.pointCount];
+                    if (m_Reader.Read(MemoryMarshal.Cast<short, byte>(envelopes)) != pointsHeader.pointCount * 4)
                     {
                         m_LoadError = MMERR_LOADING_HEADER;
                         return false;
@@ -556,8 +567,8 @@ namespace SharpMik.Loaders
                         return false;
                     }
 
-                    short[] envelopes = new short[pointsHeader.pointCount];
-                    if (m_Reader.Read(MemoryMarshal.Cast<short, byte>(envelopes)) != pointsHeader.pointCount * 2)
+                    short[] envelopes = new short[2 * pointsHeader.pointCount];
+                    if (m_Reader.Read(MemoryMarshal.Cast<short, byte>(envelopes)) != pointsHeader.pointCount * 4)
                     {
                         m_LoadError = MMERR_LOADING_HEADER;
                         return false;
@@ -668,7 +679,7 @@ namespace SharpMik.Loaders
 			}
 
 			return true;
-		}
+        }
 
 		public override string LoadTitle()
 		{

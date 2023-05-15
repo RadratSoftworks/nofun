@@ -717,8 +717,9 @@ namespace SharpMik
 		public const int  SF_BIG_ENDIAN		=	0x0008;
 		public const int  SF_DELTA			=	0x0010;
 		public const int  SF_ITPACKED		=	0x0020;
+		public const int  SF_ADPCM			=	0x0040;
 
-		public const int 	SF_FORMATMASK	=	0x003F;
+		public const int 	SF_FORMATMASK	=	0x007F;
 
 		/* General Playback flags */
 
@@ -783,11 +784,6 @@ namespace SharpMik
 		public const int SF_UST_LOOP    = 0x2000;
 
         public const int SF_EXTRAPLAYBACKMASK = 0x3000;
-		
-		/// <summary>
-        /// Samples are encoded using ADPCM.
-        /// </summary>
-        public const int SF_ADPCM = 0x4000;
 
         public static short[] Npertab = 
 		{

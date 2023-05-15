@@ -19,10 +19,10 @@ namespace Nofun.Loader.MFXM
     public struct MFXMPointsHeader
     {
         public byte pointCount;
-        public byte sustainPoint;
-        public byte loopStart;
-        public byte loopEnd;
         public byte type;
         public byte reserved;
+        public byte loopStart;
+        public byte loopEnd;
+        public byte sustainPoint;
     }
 }

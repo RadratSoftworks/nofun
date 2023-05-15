@@ -17,11 +17,8 @@
 using Nofun.Driver.Audio;
 using Nofun.Module.VMStream;
 using Nofun.Util.Logging;
-using Nofun.Util;
 using Nofun.VM;
 using System;
-using System.IO;
-using System.Runtime.InteropServices;
 
 namespace Nofun.Module.VMusic
 {
@@ -31,6 +28,9 @@ namespace Nofun.Module.VMusic
         private const int MUSIC_OK = 0;
         private const int MUSIC_ERR = -1;
 
+        private const int MUSIC_MAXVOLUME = 127;
+        private const int MUSIC_MINVOLUME = 0;
+
         private enum LoadType: uint
         {
             Stream = 0,
@@ -39,78 +39,101 @@ namespace Nofun.Module.VMusic
         }
 
         private VMSystem system;
+        private SimpleObjectManager<IMusic> musicContainer;
 
         public VMusic(VMSystem system)
         {
             this.system = system;
-        }
-
-        private void ParseMusicStream(IVMHostStream stream)
-        {
-            long size = stream.Seek(0, StreamSeekMode.End);
-            stream.Seek(0, StreamSeekMode.Set);
-
-            byte[] d = new byte[size];
-            stream.Read(d, null);
-
-            using (FileStream t = File.OpenWrite("E:\\testraw.mad"))
-            {
-                t.Write(d);
-            }
-
-            SharpMik.Player.MikMod mod = new();
-            mod.Init<SharpMik.Drivers.WavDriver>("E:\\test.wav");
-            SharpMik.ModuleLoader.RegisterModuleLoader<SharpMik.Loaders.MFXMLoader>();
-            mod.Play(new MemoryStream(d));
-
-            int frames = 0;
-
-            while (mod.IsPlaying() && frames++ < 500)
-            {
-                mod.Update();
-            }
-
-            mod.Exit();
+            this.musicContainer = new();
         }
 
         [ModuleCall]
         private int vMusicLoad(int handle, int type)
         {
-            switch ((LoadType)type)
+            try
             {
-                case LoadType.Resource:
+                switch ((LoadType)type)
                 {
-                    IVMHostStream stream = system.VMStreamModule.Open("", (uint)StreamFlags.Read | (uint)StreamType.Resource | (uint)(handle << 16));
-                    if (stream != null)
+                    case LoadType.Resource:
                     {
-                        ParseMusicStream(stream);
+                        IVMHostStream stream = system.VMStreamModule.Open("", (uint)StreamFlags.Read | (uint)StreamType.Resource | (uint)(handle << 16));
+                        if (stream != null)
+                        {
+                            return musicContainer.Add(system.AudioDriver.LoadMusic(new StandardStreamVM(stream)));
+                        }
+
+                        break;
                     }
-                    break;
+
+                    default:
+                    {
+                        throw new NotImplementedException($"Unsupported music load type {type}");
+                    }
                 }
             }
-            Logger.Trace(LogClass.VMusic, "Music load stubbed");
+            catch (Exception ex)
+            {
+                Logger.Error(LogClass.VMusic, $"Failed to load music (err={ex.ToString()}");    
+            }
+            
             return MUSIC_ERR;
         }
 
         [ModuleCall]
-        private int vMusicCtrlEx(int handle)
+        private int vMusicCtrlEx(int handle, NativeMusicControlCode control, int parameters)
         {
-            Logger.Trace(LogClass.VMusic, "Music control extended stubbed");
-            return MUSIC_ERR;
+            IMusic musicPiece = musicContainer.Get(handle);
+            if (musicPiece == null)
+            {
+                Logger.Error(LogClass.VSound, $"Music handle={handle} is invalid! Control failed!");
+                return MUSIC_ERR;
+            }
+
+            switch (control)
+            {
+                case NativeMusicControlCode.Play:
+                    musicPiece.Play();
+                    break;
+
+                case NativeMusicControlCode.Stop:
+                    musicPiece.Stop();
+                    break;
+
+                case NativeMusicControlCode.Volume:
+                    if (parameters == -1)
+                    {
+                        return (int)(musicPiece.Volume * MUSIC_MAXVOLUME);
+                    }
+                    else
+                    {
+                        musicPiece.Volume = parameters / MUSIC_MAXVOLUME;
+                        break;
+                    }
+
+                default:
+                    Logger.Error(LogClass.VSound, $"Unimplemented sound control command: {control}");
+                    return MUSIC_ERR;
+            }
+
+            return MUSIC_OK;
+        }
+
+        [ModuleCall]
+        private int vMusicCtrl(int handle, NativeMusicControlCode control)
+        {
+            return vMusicCtrlEx(handle, control, 0);
         }
 
         [ModuleCall]
         private int vMusicDisposeHandle(int handle)
         {
-            Logger.Trace(LogClass.VMusic, "Music dispose handle stubbed");
-            return MUSIC_OK;
-        }
+            if (handle == 0)
+            {
+                return MUSIC_OK;
+            }
 
-        [ModuleCall]
-        private int vMusicCtrl(int handle)
-        {
-            Logger.Trace(LogClass.VMusic, "Music control stubbed");
-            return MUSIC_ERR;
+            musicContainer.Remove(handle);
+            return MUSIC_OK;
         }
 
         [ModuleCall]
@@ -122,7 +145,6 @@ namespace Nofun.Module.VMusic
         [ModuleCall]
         int vMusicInit()
         {
-            Logger.Trace(LogClass.VMusic, "Music initialization stubbed");
             return MUSIC_OK;
         }
     }

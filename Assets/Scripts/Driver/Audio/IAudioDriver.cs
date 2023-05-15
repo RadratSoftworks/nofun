@@ -15,6 +15,7 @@
  */
 
 using System;
+using System.IO;
 
 namespace Nofun.Driver.Audio
 {
@@ -30,5 +31,7 @@ namespace Nofun.Driver.Audio
 
         public IPcmSound LoadPCMSound(Span<byte> data, int priority, int frequency, int channelCount,
             int bitsPerSample, bool isAdpcm);
+
+        public IMusic LoadMusic(Stream musicData);
     }
 }

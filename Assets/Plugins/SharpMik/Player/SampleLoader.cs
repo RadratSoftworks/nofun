@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
 using SharpMik.IO;
-using System.Diagnostics;
 
 namespace SharpMik.Player
 {
@@ -94,7 +90,7 @@ namespace SharpMik.Player
 
 			int index = 0;
 
-			while(length != 0) 
+			while(length != 0)
 			{
 				stodo=(int)((length<SLBUFSIZE) ? length:SLBUFSIZE);
 
@@ -140,12 +136,24 @@ namespace SharpMik.Player
 				} 
 				else 
 				{
-					if ((infmt & SharpMikCommon.SF_16BITS) == SharpMikCommon.SF_16BITS)
+                    bool isAdpcm = (infmt & SharpMikCommon.SF_ADPCM) == SharpMikCommon.SF_ADPCM;
+
+                    if ((infmt & SharpMikCommon.SF_16BITS) == SharpMikCommon.SF_16BITS || isAdpcm)
 					{
-						if ((infmt & SharpMikCommon.SF_BIG_ENDIAN) == SharpMikCommon.SF_BIG_ENDIAN)
-							reader.read_Motorola_shorts(sl_buffer, stodo);
+						if (isAdpcm)
+						{
+							byte[] tempBytes = new byte[stodo >> 1];
+							reader.Read_bytes(tempBytes, stodo >> 1);
+
+                            ADPCMToPcm.Convert(tempBytes, sl_buffer);
+                        }
 						else
-							reader.read_Intel_shorts(sl_buffer, stodo);
+						{
+							if ((infmt & SharpMikCommon.SF_BIG_ENDIAN) == SharpMikCommon.SF_BIG_ENDIAN)
+								reader.read_Motorola_shorts(sl_buffer, stodo);
+							else
+								reader.read_Intel_shorts(sl_buffer, stodo);
+						}
 					} 
 					else 
 					{

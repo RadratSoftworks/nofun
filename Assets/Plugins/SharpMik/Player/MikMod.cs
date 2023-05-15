@@ -29,7 +29,9 @@ namespace SharpMik.Player
 		private ModDriver m_Driver;
 		private ModPlayer m_Player;
 
-		public MikMod()
+        public ModDriver Driver => m_Driver;
+
+        public MikMod()
 		{
 		}
 

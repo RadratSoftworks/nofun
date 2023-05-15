@@ -292,6 +292,8 @@ namespace Nofun.Driver.Unity.Graphics
             SetupQuadMesh();
 
             displayImage.texture = screenTextureBackBuffer;
+            displayImage.gameObject.SetActive(false);
+
             textRenderInternals = new(textRenders);
 
             this.screenSize = size;
@@ -320,7 +322,7 @@ namespace Nofun.Driver.Unity.Graphics
             }
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(transform);
-            Initialize(coverScreen ? transform.rect.size : presetSize);
+            Initialize(coverScreen ? transform.rect.size * displayImage.canvas.scaleFactor : presetSize);
         }
 
         private Rect GetUnityScreenRect(Rect curRect)
@@ -619,6 +621,11 @@ namespace Nofun.Driver.Unity.Graphics
 
                     fontMeshUsed = 0;
                     meshBatcher.Reset();
+
+                    if (!displayImage.gameObject.activeSelf)
+                    {            
+                        displayImage.gameObject.SetActive(true);
+                    }
 
                     began = false;
                 }

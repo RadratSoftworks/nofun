@@ -19,6 +19,7 @@ using UnityEngine;
 
 using Nofun.Driver.Audio;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Nofun.Driver.Unity.Audio
 {
@@ -26,8 +27,12 @@ namespace Nofun.Driver.Unity.Audio
     {
         private const string DefaultSoundFontResourceName = "DefaultSfBank";
         private List<TSFMidiSound> activeMidiSounds = new();
+        private List<TrackerMusic> activeTrackerMusics = new();
         private Queue<AudioSource> freeAudioSources;
         private int systemFrequencyRate;
+
+        private float[] currentDest = null;
+        private int currentChannelCount = 0;
 
         [SerializeField]
         private GameObject audioPlayerPrefab;
@@ -57,6 +62,7 @@ namespace Nofun.Driver.Unity.Audio
             {
                 throw new MissingComponentException("Default SoundFont bank is missing!");
             }
+
             LoadBank(asset.bytes);
             freeAudioSources = new();
             systemFrequencyRate = AudioSettings.outputSampleRate;
@@ -96,8 +102,19 @@ namespace Nofun.Driver.Unity.Audio
             }
         }
 
+        public void Mix(Span<short> source, int sampleCounts)
+        {
+            for (int i = 0; i < Math.Min(sampleCounts, currentDest.Length); i++)
+            {
+                currentDest[i] += (source[i] < 0 ? source[i] / 32768.0f : source[i] / 32767.0f);
+            }
+        }
+
         private void OnAudioFilterRead(float[] data, int channels)
         {
+            currentDest = data;
+            currentChannelCount = channels;
+
             unsafe
             {
                 // Assume this as audio update function
@@ -123,6 +140,14 @@ namespace Nofun.Driver.Unity.Audio
                 fixed (float* dataPtr = data)
                 {
                     TSFMidiRenderer.GetBuffer((IntPtr)dataPtr, data.Length / channels);
+                }
+            }
+
+            lock (activeTrackerMusics)
+            {
+                foreach (TrackerMusic sound in activeTrackerMusics)
+                {
+                    sound.Update();
                 }
             }
         }
@@ -176,6 +201,18 @@ namespace Nofun.Driver.Unity.Audio
             return result;
         }
 
+        public IMusic LoadMusic(Stream musicData)
+        {
+            if (TrackerMusic.IsTrackerSound(musicData))
+            {
+                return new TrackerMusic(this, musicData);
+            }
+            else
+            {
+                throw new InvalidOperationException("Unsupported music format!");
+            }
+        }
+
         public void ReturnAudioSourceToFreePool(AudioSource source)
         {
             lock (freeAudioSources)
@@ -183,5 +220,24 @@ namespace Nofun.Driver.Unity.Audio
                 freeAudioSources.Enqueue(source);
             }
         }
+
+        public void AddActiveTrackerSound(TrackerMusic sound)
+        {
+            lock (activeTrackerMusics)
+            {
+                activeTrackerMusics.Add(sound);
+            }
+        }
+
+        public void RemoveActiveTrackerSound(TrackerMusic sound)
+        {
+            lock (activeTrackerMusics)
+            {
+                activeTrackerMusics.Remove(sound);
+            }
+        }
+
+        public int TotalDestinationSamples => currentDest.Length;
+        public int DestinationChannelCount => currentChannelCount;
     }
 }
