@@ -292,6 +292,8 @@ namespace Nofun.Driver.Unity.Graphics
             SetupQuadMesh();
 
             displayImage.texture = screenTextureBackBuffer;
+            displayImage.gameObject.SetActive(false);
+
             textRenderInternals = new(textRenders);
 
             this.screenSize = size;
@@ -320,7 +322,7 @@ namespace Nofun.Driver.Unity.Graphics
             }
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(transform);
-            Initialize(coverScreen ? transform.rect.size : presetSize);
+            Initialize(coverScreen ? transform.rect.size * displayImage.canvas.scaleFactor : presetSize);
         }
 
         private Rect GetUnityScreenRect(Rect curRect)
@@ -620,6 +622,11 @@ namespace Nofun.Driver.Unity.Graphics
                     fontMeshUsed = 0;
                     meshBatcher.Reset();
 
+                    if (!displayImage.gameObject.activeSelf)
+                    {            
+                        displayImage.gameObject.SetActive(true);
+                    }
+
                     began = false;
                 }
             });
@@ -736,6 +743,7 @@ namespace Nofun.Driver.Unity.Graphics
                 textRender.outlineWidth = selectedOutlineWidth;
                 textRender.fontSize = selectedFontSize;
                 textRender.outlineColor = backColor.ToUnityColor();
+                textRender.isOverlay = true;
 
                 LayoutRebuilder.ForceRebuildLayoutImmediate(textRender.rectTransform);
                 textRender.ForceMeshUpdate();
@@ -795,6 +803,7 @@ namespace Nofun.Driver.Unity.Graphics
                     return new Vector2(1.0f, 1.0f);
 
                 case BillboardPivot.BottomLeft:
+                case BillboardPivot.Bottom:
                     return new Vector2(0.0f, 0.0f);
 
                 case BillboardPivot.BottomRight:
@@ -829,18 +838,18 @@ namespace Nofun.Driver.Unity.Graphics
 
             Vector2[] uvs = new Vector2[]
             {
-                billboard.uv0.ToUnity(),
-                billboard.uv1.ToUnity(),
                 billboard.uv3.ToUnity(),
                 billboard.uv2.ToUnity(),
+                billboard.uv0.ToUnity(),
+                billboard.uv1.ToUnity(),
             };
 
             Color[] colors = new Color[]
             {
-                billboard.color0.ToUnity(),
-                billboard.color1.ToUnity(),
                 billboard.color3.ToUnity(),
-                billboard.color2.ToUnity()
+                billboard.color2.ToUnity(),
+                billboard.color0.ToUnity(),
+                billboard.color1.ToUnity()
             };
 
             Vector2 center = destRect.size;

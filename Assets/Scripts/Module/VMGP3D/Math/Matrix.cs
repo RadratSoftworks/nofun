@@ -31,6 +31,7 @@ namespace Nofun.Module.VMGP3D
         private const int MatrixOrientationRowMajor = 0;
         private const int MatrixOrientationColumnMajor = 0x2000;
         private const int FullCircleDegrees = 360;
+        private const double FullCircleRads = Math.PI * 2;
 
         private int currentMatrixOrientation = MatrixOrientationColumnMajor;
 
@@ -92,7 +93,7 @@ namespace Nofun.Module.VMGP3D
                 matrix[0].m13 = FixedUtil.FloatToFixed(currentMatrix.m13);
 
 
-                matrix[0].m21 = FixedUtil.FloatToFixed(currentMatrix.m20);
+                matrix[0].m20 = FixedUtil.FloatToFixed(currentMatrix.m20);
                 matrix[0].m21 = FixedUtil.FloatToFixed(currentMatrix.m21);
                 matrix[0].m22 = FixedUtil.FloatToFixed(currentMatrix.m22);
                 matrix[0].m23 = FixedUtil.FloatToFixed(currentMatrix.m23);
@@ -196,6 +197,15 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
+        private void vMatrixOrtho(int widthFixed, int heightFixed, int zNearFixed, int zFarFixed)
+        {
+            // Matrix column 2 in Unity already flipping Z, because of reversing view matrix flip
+            // But we don't need that, so reverse it
+            currentMatrix = Matrix4x4.Ortho(0, FixedUtil.FixedToFloat(widthFixed), 0, FixedUtil.FixedToFloat(heightFixed), FixedUtil.FixedToFloat(zFarFixed), FixedUtil.FixedToFloat(zNearFixed));
+            currentMatrix.SetColumn(2, -currentMatrix.GetColumn(2));
+        }
+
+        [ModuleCall]
         private void vMatrixLookAt(VMPtr<NativeVector3D> vEyePtr, VMPtr<NativeVector3D> vAtptr, VMPtr<NativeVector3D> vUpPtr)
         {
             Vector3 eye = vEyePtr.Read(system.Memory).ToUnity();
@@ -216,6 +226,11 @@ namespace Nofun.Module.VMGP3D
         private void vMatrixSetLight(VMPtr<V3DMatrix> matrixPtr)
         {
             lightMatrix = ReadMatrix(matrixPtr);
+        }
+
+        public void Insane()
+        {
+            currentMatrix = Matrix4x4.identity;
         }
     }
 }

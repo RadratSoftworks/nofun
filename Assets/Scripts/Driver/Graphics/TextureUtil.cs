@@ -20,6 +20,11 @@ namespace Nofun.Driver.Graphics
 {
     public static class TextureUtil
     {
+        public static bool IsPaletteARGB8(TextureFormat format)
+        {
+            return (format == TextureFormat.Palette16_ARGB) || (format == TextureFormat.Palette256_ARGB);
+        }
+
         public static int GetPixelSizeInBits(TextureFormat format)
         {
             switch (format)
@@ -71,11 +76,17 @@ namespace Nofun.Driver.Graphics
             return GetPixelSizeInBits(format) * width * height;
         }
 
+        public static long GetTextureSizeInBytes(int width, int height, TextureFormat format)
+        {
+            return ((GetTextureSizeInBits(width, height, format) + 7) / 8) * 8;
+        }
+
         public static bool IsPaletteFormat(TextureFormat format)
         {
             return (format == TextureFormat.Palette2) || (format == TextureFormat.Palette4) ||
                 (format == TextureFormat.Palette16_Alt) || (format == TextureFormat.Palette256_Alt) ||
-                (format == TextureFormat.Palette16) || (format == TextureFormat.Palette256);
+                (format == TextureFormat.Palette16) || (format == TextureFormat.Palette256) ||
+                (format == TextureFormat.Palette16_ARGB) || (format == TextureFormat.Palette256_ARGB);
         }
     }
 }

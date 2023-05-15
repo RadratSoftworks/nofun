@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+using NoAlloq;
 using Nofun.Driver.Graphics;
 using Nofun.Util;
 using Nofun.Util.Logging;
 using Nofun.VM;
+using System;
 
 namespace Nofun.Module.VMGP3D
 {
@@ -38,13 +40,7 @@ namespace Nofun.Module.VMGP3D
         /// </summary>
         private ITexture activeTexture;
 
-        /// <summary>
-        /// Handle of the active texture in the permanent texture manager.
-        /// If this equals to zero, it means current texture, if not null, comes from texture cache.
-        /// </summary>
-        private uint activeTextureHandle;
-
-        private bool perspectiveEnable = true;
+        private SimpleObjectManager<ITexture> managedTextures;
 
         private MpCompareFunc previousCompareFunc = MpCompareFunc.Less;
 
@@ -55,6 +51,7 @@ namespace Nofun.Module.VMGP3D
         {
             this.system = system;
             this.textureCache = new();
+            this.managedTextures = new();
 
             material = new();
         }
@@ -123,8 +120,13 @@ namespace Nofun.Module.VMGP3D
                     system.GraphicDriver.TextureBlendMode = (MpTextureBlendMode)value;
                     break;
 
+                case RenderState.LightingEnable:
+                    break;
+
+                // These are ignorable
                 case RenderState.PerspectiveEnable:
-                    perspectiveEnable = (value != 0);
+                case RenderState.TransparentEnable:
+                case RenderState.AlphaEnable:
                     break;
 
                 default:
@@ -147,8 +149,6 @@ namespace Nofun.Module.VMGP3D
                 activeTexture = textureCache.Get(system.GraphicDriver, textureData, system.Memory, (TextureFormat)format,
                     lods, mipCount, system.VMGPModule.ScreenPalette);
 
-                activeTextureHandle = 0;
-
                 system.GraphicDriver.MainTexture = activeTexture;
                 return 1;
             }
@@ -156,6 +156,54 @@ namespace Nofun.Module.VMGP3D
             {
                 Logger.Error(LogClass.VMGP3D, $"Set texture failed with exception: {ex}");
                 return 0;
+            }
+        }
+
+        [ModuleCall]
+        private int vCreateTexture(VMPtr<NativeTexture> tex)
+        {
+            NativeTexture texValue = tex.Read(system.Memory);
+            
+            int textureWidth = 1 << (int)texValue.lodX;
+            int textureHeight = 1 << (int)texValue.lodY;
+            TextureFormat format = (TextureFormat)texValue.textureFormat;
+
+            long texSize = TextureUtil.GetTextureSizeInBytes(textureWidth, textureHeight, format);
+            SColor[] palettes = null;
+            
+            if (TextureUtil.IsPaletteFormat(format))
+            {
+                bool argb = TextureUtil.IsPaletteARGB8(format);
+
+                palettes = texValue.palette.AsSpan(system.Memory, (int)texValue.paletteCount).Select(
+                    color => argb ? SColor.FromArgb8888(color) : SColor.FromRgb555(color)).ToArray();
+            }
+
+            Span<byte> data = texValue.textureData.AsSpan(system.Memory, (int)texSize);
+            ITexture texDriver = system.GraphicDriver.CreateTexture(data.ToArray(), textureWidth, textureHeight,
+                (int)texValue.mipmapCount + 1, format, palettes, true);
+
+            return managedTextures.Add(texDriver);
+        }
+
+        [ModuleCall]
+        private void vDeleteTexture(int handle)
+        {
+            managedTextures.Remove(handle);
+        }
+
+        [ModuleCall]
+        private void vSetActiveTexture(int index)
+        {
+            ITexture refer = managedTextures.Get(index);
+            if (refer == null)
+            {
+                Logger.Error(LogClass.VMGP3D, $"Setting a null texture with handle {index}");
+            }
+            else
+            {
+                activeTexture = refer;
+                system.GraphicDriver.MainTexture = activeTexture;
             }
         }
 
@@ -282,6 +330,67 @@ namespace Nofun.Module.VMGP3D
                 b = 0,
                 a = 0
             };
+        }
+
+        [ModuleCall]
+        private void vResetLights()
+        {
+
+        }
+
+        [ModuleCall]
+        private void vSetFogColor()
+        {
+
+        }
+
+        [ModuleCall]
+        private void vSetLight()
+        {
+
+        }
+
+        [ModuleCall]
+        private void vDrawPolygon(VMPtr<NativeVertexGST> v1Ptr, VMPtr<NativeVertexGST> v2Ptr, VMPtr<NativeVertexGST> v3Ptr)
+        {
+            NativeVertexGST v1 = v1Ptr.Read(system.Memory);
+            NativeVertexGST v2 = v2Ptr.Read(system.Memory);
+            NativeVertexGST v3 = v3Ptr.Read(system.Memory);
+
+            MpMesh meshMp = new MpMesh();
+
+            meshMp.vertices = new NativeVector3D[]
+            {
+                new NativeVector3D(v1.position.fixedX, v1.position.fixedY, v1.position.fixedZ),
+                new NativeVector3D(v2.position.fixedX, v2.position.fixedY, v2.position.fixedZ),
+                new NativeVector3D(v3.position.fixedX, v3.position.fixedY, v3.position.fixedZ),
+            };
+
+            meshMp.uvs = new NativeUV[]
+            {
+                v1.uv,
+                v2.uv,
+                v3.uv
+            };
+
+            meshMp.diffuses = new NativeDiffuseColor[]
+            {
+                v1.diffuse,
+                v2.diffuse,
+                v3.diffuse
+            };
+
+            meshMp.speculars = new NativeSpecularColor[]
+            {
+                v1.specular,
+                v2.specular,
+                v3.specular
+            };
+
+            meshMp.topology = PrimitiveTopology.TriangleList;
+
+            system.GraphicDriver.ViewMatrix3D = currentMatrix;
+            system.GraphicDriver.DrawPrimitives(meshMp);
         }
 
         [ModuleCall]

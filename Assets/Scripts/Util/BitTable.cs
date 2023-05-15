@@ -23,6 +23,8 @@ namespace Nofun.Util
         private uint[] values;
         private uint maxCount;
 
+        public uint Capacity => maxCount;
+
         public BitTable(uint maxCount)
         {
             this.maxCount = maxCount;

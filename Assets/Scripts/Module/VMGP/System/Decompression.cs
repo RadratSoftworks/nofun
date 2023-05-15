@@ -25,68 +25,6 @@ namespace Nofun.Module.VMGP
     [Module]
     public partial class VMGP
     {
-        private int TryLZDecompressContent(BitStream source, Span<byte> dest, byte extendedOffsetBits,
-            byte maxOffsetBits)
-        {
-            uint destPointer = 0;
-
-            while (true)
-            {
-                ulong flags = source.ReadBits(1);
-
-                if (flags == 1)
-                {
-                    int v2 = 0;
-                    while (v2 < maxOffsetBits && (source.ReadBits(1) == 1))
-                    {
-                        v2++;
-                    }
-
-                    uint copyLength = 2;
-
-                    if (v2 != 0)
-                    {
-                        copyLength = ((uint)source.ReadBits(v2) | (1u << v2)) + 1;
-                    }
-
-                    uint backOffset = 0;
-
-                    if (copyLength == 2)
-                    {
-                        backOffset = (uint)source.ReadBits(8) + 2;
-                    }
-                    else
-                    {
-                        backOffset = (uint)source.ReadBits(extendedOffsetBits) + copyLength;
-                    }
-
-                    copyLength = Math.Min(copyLength, (uint)(dest.Length - destPointer));
-
-                    dest.Slice((int)(destPointer - backOffset), (int)copyLength).CopyTo(
-                        dest.Slice((int)destPointer, (int)copyLength));
-
-                    destPointer += copyLength;
-                }
-                else
-                {
-                    ulong result = source.ReadBits(8);
-                    dest[(int)destPointer++] = (byte)(result & 0xFF);
-                }
-
-                if (destPointer >= dest.Length)
-                {
-                    break;
-                }
-
-                if (!source.Valid)
-                {
-                    break;
-                }
-            }
-
-            return (int)destPointer;
-        }
-
         private void GetLZCompressInfo(ref VMPtr<byte> source, VMMemory memory, out byte extendedOffsetBits, out byte maxOffsetBits,
             out uint uncompressedSize, out uint compressedSize)
         {
@@ -121,7 +59,7 @@ namespace Nofun.Module.VMGP
             GetLZCompressInfo(ref source, memory, out byte extendedOffsetBits, out byte maxOffsetBits,
                 out uint uncompressedLength, out uint compressedLength);
 
-            return TryLZDecompressContent(new MemoryBitStream(source.AsRawMemory(memory, (int)compressedLength)),
+            return CompressionUtil.TryLZDecompressContent(new MemoryBitStream(source.AsRawMemory(memory, (int)compressedLength)),
                 dest.AsSpan(memory, (int)uncompressedLength), extendedOffsetBits, maxOffsetBits);
         }
 
@@ -162,7 +100,7 @@ namespace Nofun.Module.VMGP
             // Skip the rest, and get to the data decompress
             stream.Seek(10, StreamSeekMode.Cur);
 
-            return TryLZDecompressContent(new VMStreamBitStream(stream), dest.AsSpan(memory, (int)uncompressedLength), offsetBitsInfo[1], offsetBitsInfo[0]);
+            return CompressionUtil.TryLZDecompressContent(new VMStreamBitStream(stream), dest.AsSpan(memory, (int)uncompressedLength), offsetBitsInfo[1], offsetBitsInfo[0]);
         }
 
         [ModuleCall]

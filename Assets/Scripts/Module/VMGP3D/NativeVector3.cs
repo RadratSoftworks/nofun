@@ -21,5 +21,23 @@ namespace Nofun.Module.VMGP3D
         public int fixedX;
         public int fixedY;
         public int fixedZ;
+
+        public NativeVector3D(int fixedX, int fixedY, int fixedZ)
+        {
+            this.fixedX = fixedX;
+            this.fixedY = fixedY;
+            this.fixedZ = fixedZ;
+        }
+
+        public static bool operator <= (NativeVector3D lhs, NativeVector3D rhs)
+        {
+            return (lhs.fixedX <= rhs.fixedX) && (lhs.fixedY <= rhs.fixedY) && (lhs.fixedZ <= rhs.fixedZ);
+        }
+
+
+        public static bool operator >=(NativeVector3D lhs, NativeVector3D rhs)
+        {
+            return (lhs.fixedX >= rhs.fixedX) && (lhs.fixedY >= rhs.fixedY) && (lhs.fixedZ >= rhs.fixedZ);
+        }
     }
 }

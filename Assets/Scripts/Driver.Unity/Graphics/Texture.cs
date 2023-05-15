@@ -97,12 +97,14 @@ namespace Nofun.Driver.Unity.Graphics
 
                     case Driver.Graphics.TextureFormat.Palette16:
                     case Driver.Graphics.TextureFormat.Palette16_Alt:
-                        finalConverData = DataConvertor.PaletteToARGB8888(dataSpan, width, height, 4, palettes, zeroAsTransparent);
+                    case Driver.Graphics.TextureFormat.Palette16_ARGB:
+                        finalConverData = DataConvertor.PaletteToARGB8888(dataSpan, width, height, 4, palettes, zeroAsTransparent, format == Driver.Graphics.TextureFormat.Palette16_ARGB);
                         break;
 
                     case Driver.Graphics.TextureFormat.Palette256:
                     case Driver.Graphics.TextureFormat.Palette256_Alt:
-                        finalConverData = DataConvertor.PaletteToARGB8888(dataSpan, width, height, 8, palettes, zeroAsTransparent);
+                    case Driver.Graphics.TextureFormat.Palette256_ARGB:
+                        finalConverData = DataConvertor.PaletteToARGB8888(dataSpan, width, height, 8, palettes, zeroAsTransparent, format == Driver.Graphics.TextureFormat.Palette256_ARGB);
                         break;
 
                     default:

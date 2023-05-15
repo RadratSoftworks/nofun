@@ -28,10 +28,10 @@ namespace Nofun.Module.VMGP3D
     public partial class VMGP3D
     {
         [ModuleCall]
-        private void vVectorTransformV3(VMPtr<NativeVector3D> source, VMPtr<NativeVector3D> destination, int count)
+        private void vVectorTransformV3(VMPtr<NativeVector3D> destination, VMPtr<NativeVector3D> source, int count)
         {
             Span<NativeVector3D> sourceSpan = source.AsSpan(system.Memory, count);
-            Span<NativeVector3D> destSpan = source.AsSpan(system.Memory, count);
+            Span<NativeVector3D> destSpan = destination.AsSpan(system.Memory, count);
         
             for (int i = 0; i < count; i++)
             {
@@ -139,7 +139,35 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
-        [UncertainImplementation("It outputs a Vector4, while viewport scale only affect x and y. Need to verify with original implementation.")]
+        private void vVectorArrayAdd(VMPtr<NativeVector3D> destPtr, VMPtr<NativeVector3D> source1Ptr, VMPtr<NativeVector3D> source2Ptr, int count)
+        {
+            Span<NativeVector3D> source1 = source1Ptr.AsSpan(system.Memory, count);
+            Span<NativeVector3D> source2 = source2Ptr.AsSpan(system.Memory, count);
+            Span<NativeVector3D> dest = destPtr.AsSpan(system.Memory, count);
+
+            for (int i = 0; i < count; i++)
+            {
+                dest[i] = (source2[i].ToUnity() + source1[i].ToUnity()).ToMophun();
+            }
+        }
+
+        [ModuleCall]
+        private void vVectorArrayDelta(VMPtr<NativeVector3D> destPtr, VMPtr<NativeVector3D> source1Ptr, VMPtr<NativeVector3D> source2Ptr, uint param)
+        {
+            int numVec = (int)(param & 0xFFFF);
+            uint step = param >> 16;
+
+            Span<NativeVector3D> source1 = source1Ptr.AsSpan(system.Memory, numVec);
+            Span<NativeVector3D> source2 = source2Ptr.AsSpan(system.Memory, numVec);
+            Span<NativeVector3D> dest = destPtr.AsSpan(system.Memory, numVec);
+
+            for (int i = 0; i < numVec; i++)
+            {
+                dest[i] = ((source2[i].ToUnity() - source1[i].ToUnity()) / step).ToMophun();
+            }
+        }
+
+        [ModuleCall]
         private void vVectorProjectV3(VMPtr<NativeVector4D> destPtr, VMPtr<NativeVector3D> sourcePtr, int count)
         {
             Span<NativeVector3D> source = sourcePtr.AsSpan(system.Memory, count);
@@ -153,9 +181,20 @@ namespace Nofun.Module.VMGP3D
                 Vector4 projected = projectionMatrix * new Vector4(sourceV3.x, sourceV3.y, sourceV3.z, 1.0f);
 
                 // Map to 0..1
-                projected /= projected.w;
-                projected += Vector4.one;
-                projected.Scale(new Vector4(viewportRect.width * 0.5f, viewportRect.height * 0.5f, 1.0f, 1.0f));
+                if (projected.w == 0.0f)
+                {
+                    // Z is 65535 in this case
+                    dest[i] = new Vector4(projected.x, projected.y, 4, 0).ToMophun();
+                }
+                else
+                {
+                    projected.x /= projected.w;
+                    projected.y /= projected.w;
+                    projected.z /= projected.w;
+
+                    projected += new Vector4(1.0f, 1.0f, 1.0f, 0.0f);
+                    projected.Scale(new Vector4(viewportRect.width * 0.5f, viewportRect.height * 0.5f, 0.5f, 1.0f));
+                }
 
                 dest[i] = (projected + new Vector4(viewportRect.x, viewportRect.y, 0.0f, 0.0f)).ToMophun();
             }

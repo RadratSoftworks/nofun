@@ -19,6 +19,9 @@ using Nofun.Util;
 using Nofun.Util.Logging;
 using Nofun.VM;
 using System;
+using System.IO.Hashing;
+using System.Runtime.InteropServices;
+using UnityEditor;
 
 namespace Nofun.Module.VMGP
 {
@@ -38,6 +41,7 @@ namespace Nofun.Module.VMGP
         private ITexture mapAtlas;
         private int framePassed;
         private int frameAnimate;
+        private uint currentPaletteHash;
 
         private TilemapCache tilemapCache;
 
@@ -51,10 +55,36 @@ namespace Nofun.Module.VMGP
             return (format == TextureFormat.RGB332) || (format == TextureFormat.Palette256);
         }
 
-        [ModuleCall]
-        private uint vMapInit(VMPtr<NativeMapHeader> header)
+        private void RefreshMapAtlasValidStatus(bool setStaus = false)
         {
-            NativeMapHeader headerData = header.Read(system.Memory);
+            NativeMapHeader header = mapHeaderPtr.Read(system.Memory);
+            TextureFormat format = (TextureFormat)header.format;
+
+            if (format == TextureFormat.Palette256)
+            {
+                XxHash32 hasher = new();
+                hasher.Append(MemoryMarshal.Cast<SColor, byte>(ScreenPalette));
+
+                uint newHash = BitConverter.ToUInt32(hasher.GetCurrentHash());
+                if (setStaus)
+                {
+                    currentPaletteHash = newHash;
+                }
+                else
+                {
+                    if (currentPaletteHash != newHash)
+                    {
+                        tilemapCache.Invalidate(header.tileSpriteData.Value);
+                        UpdateMapAtlas(header);
+
+                        currentPaletteHash = newHash;
+                    }
+                }
+            }
+        }
+
+        private int UpdateMapAtlas(NativeMapHeader headerData)
+        {
             TextureFormat format = (TextureFormat)headerData.format;
 
             if (!IsTilemapFormatSupported(format))
@@ -109,9 +139,23 @@ namespace Nofun.Module.VMGP
             mapAtlas = tilemapCache.Retrive(system.GraphicDriver, headerData, headerData.tileSpriteData.Value, tileData, maxIndex,
                 ScreenPalette, false);
 
+            return 1;
+        }
+
+        [ModuleCall]
+        private uint vMapInit(VMPtr<NativeMapHeader> header)
+        {
+            NativeMapHeader headerData = header.Read(system.Memory);
+            if (UpdateMapAtlas(headerData) == 0)
+            {
+                return 0;
+            }
+
             mapHeaderPtr = header;
             frameAnimate = 0;
             framePassed = 0;
+
+            RefreshMapAtlasValidStatus(true);
 
             return 1;
         }
@@ -195,6 +239,8 @@ namespace Nofun.Module.VMGP
             system.GraphicDriver.ClipRect = new NRectangle(Math.Max(screenPosX, currentClip.x), Math.Max(screenPosY, currentClip.y),
                 Math.Min(mapDrawWidth, currentClip.width),
                 Math.Min(mapDrawHeight, currentClip.height));
+
+            RefreshMapAtlasValidStatus();
 
             // Handle negative tile (they want to draw the screen up a bit)
             for (int y = Math.Abs(Math.Min(tileStartDrawY, 0)); y < tileYCount; y++)

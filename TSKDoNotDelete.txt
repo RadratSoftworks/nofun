@@ -1,0 +1,1 @@
+﻿This file is used by the TSK VSCode Editor package. Deleting it will cause your configuration to be overwritten.

@@ -64,6 +64,11 @@ extern "C" TMR_EXPORT int nofunTSFStartup(const char *soundFontData, const uint3
 	tsf_set_output(g_base_tsf, TSF_STEREO_INTERLEAVED, outputSampleRate, 0.0f);
 
     g_freq = outputSampleRate;
+    g_resourceList = PlayResource();
+    g_lastResource = nullptr;
+    g_donePlayingSaw = false;
+    g_donePlaying.clear();
+
     return 0;
 }
 

@@ -141,5 +141,11 @@ namespace Nofun.Module.VMGP
         {
             Logger.Trace(LogClass.VMGPGraphic, $"Set display window stubbed (width={width}, height={height})");
         }
+
+        [ModuleCall]
+        private void vPlot(short x, short y)
+        {
+
+        }
     }
 }

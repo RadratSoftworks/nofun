@@ -19,16 +19,17 @@ using Nofun.Module.VMStream;
 using Nofun.Util.Logging;
 using Nofun.VM;
 using System;
-using System.IO;
-using System.Runtime.InteropServices;
 
-namespace Nofun.Module.VSound
+namespace Nofun.Module.VMusic
 {
     [Module]
     public partial class VMusic
     {
         private const int MUSIC_OK = 0;
         private const int MUSIC_ERR = -1;
+
+        private const int MUSIC_MAXVOLUME = 127;
+        private const int MUSIC_MINVOLUME = 0;
 
         private enum LoadType: uint
         {
@@ -38,31 +39,113 @@ namespace Nofun.Module.VSound
         }
 
         private VMSystem system;
+        private SimpleObjectManager<IMusic> musicContainer;
 
         public VMusic(VMSystem system)
         {
             this.system = system;
+            this.musicContainer = new();
         }
 
         [ModuleCall]
         private int vMusicLoad(int handle, int type)
         {
-            Logger.Trace(LogClass.VMusic, "Music load stubbed");
+            try
+            {
+                switch ((LoadType)type)
+                {
+                    case LoadType.Resource:
+                    {
+                        IVMHostStream stream = system.VMStreamModule.Open("", (uint)StreamFlags.Read | (uint)StreamType.Resource | (uint)(handle << 16));
+                        if (stream != null)
+                        {
+                            return musicContainer.Add(system.AudioDriver.LoadMusic(new StandardStreamVM(stream)));
+                        }
+
+                        break;
+                    }
+
+                    default:
+                    {
+                        throw new NotImplementedException($"Unsupported music load type {type}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(LogClass.VMusic, $"Failed to load music (err={ex.ToString()}");    
+            }
+            
             return MUSIC_ERR;
         }
 
         [ModuleCall]
-        private int vMusicGetHandle(VMPtr<byte> soundData)
+        private int vMusicCtrlEx(int handle, NativeMusicControlCode control, int parameters)
         {
-            Logger.Trace(LogClass.VMusic, "Music get handle stubbed");
+            IMusic musicPiece = musicContainer.Get(handle);
+            if (musicPiece == null)
+            {
+                Logger.Error(LogClass.VSound, $"Music handle={handle} is invalid! Control failed!");
+                return MUSIC_ERR;
+            }
+
+            switch (control)
+            {
+                case NativeMusicControlCode.Play:
+                    musicPiece.Play();
+                    break;
+
+                case NativeMusicControlCode.Stop:
+                    musicPiece.Stop();
+                    break;
+
+                case NativeMusicControlCode.Volume:
+                    if (parameters == -1)
+                    {
+                        return (int)(musicPiece.Volume * MUSIC_MAXVOLUME);
+                    }
+                    else
+                    {
+                        musicPiece.Volume = parameters / MUSIC_MAXVOLUME;
+                        break;
+                    }
+
+                default:
+                    Logger.Error(LogClass.VSound, $"Unimplemented sound control command: {control}");
+                    return MUSIC_ERR;
+            }
+
+            return MUSIC_OK;
+        }
+
+        [ModuleCall]
+        private int vMusicCtrl(int handle, NativeMusicControlCode control)
+        {
+            return vMusicCtrlEx(handle, control, 0);
+        }
+
+        [ModuleCall]
+        private int vMusicDisposeHandle(int handle)
+        {
+            if (handle == 0)
+            {
+                return MUSIC_OK;
+            }
+
+            musicContainer.Remove(handle);
+            return MUSIC_OK;
+        }
+
+        [ModuleCall]
+        private int vMusicGetHandle(VMPtr<byte> musicData)
+        {
             return MUSIC_ERR;
         }
 
         [ModuleCall]
         int vMusicInit()
         {
-            Logger.Trace(LogClass.VMusic, "Music initialization stubbed");
-            return MUSIC_ERR;
+            return MUSIC_OK;
         }
     }
 }

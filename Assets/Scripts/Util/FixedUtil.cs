@@ -9,7 +9,7 @@ namespace Nofun.Util
 
         public static float Fixed11PointToFloat(short num)
         {
-            return num / 4096.0f;
+            return (num & 0xFFF) / 4095.0f;
         }
 
         public static float FixedToFloat(int num)

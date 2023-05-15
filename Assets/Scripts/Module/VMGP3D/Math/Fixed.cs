@@ -25,13 +25,20 @@ namespace Nofun.Module.VMGP3D
         [ModuleCall]
         private int vMul(int fixedA, int fixedB)
         {
-            return FixedUtil.FloatToFixed(FixedUtil.FixedToFloat(fixedA) * FixedUtil.FixedToFloat(fixedB));
+            return (int)(fixedA * (long)fixedB >> 14);
         }
 
         [ModuleCall]
         private int vDiv(int fixedA, int fixedB)
         {
-            return FixedUtil.FloatToFixed(FixedUtil.FixedToFloat(fixedA) / FixedUtil.FixedToFloat(fixedB));
+            if (fixedB == 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return (int)(((long)fixedA << 14) / fixedB);
+            }
         }
 
         [ModuleCall]
@@ -43,13 +50,13 @@ namespace Nofun.Module.VMGP3D
         [ModuleCall]
         private int vCos(int fixedV)
         {
-            return FixedUtil.FloatToFixed((float)Math.Cos(FixedUtil.Fixed11PointToFloat((short)fixedV)));
+            return FixedUtil.FloatToFixed((float)Math.Cos(FixedUtil.Fixed11PointToFloat((short)fixedV) * FullCircleRads));
         }
 
         [ModuleCall]
         private int vSin(int fixedV)
         {
-            return FixedUtil.FloatToFixed((float)Math.Sin(FixedUtil.Fixed11PointToFloat((short)fixedV)));
+            return FixedUtil.FloatToFixed((float)Math.Sin(FixedUtil.Fixed11PointToFloat((short)fixedV) * FullCircleRads));
         }
     }
 }

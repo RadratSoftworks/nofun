@@ -21,7 +21,33 @@ namespace Nofun.Module.VMStream
 {
     public static class StreamTranslationUtils
     {
-        public static SeekOrigin ToSeekOrigin(StreamSeekMode seekMode)
+        public static StreamSeekMode ToSeekMode(this SeekOrigin origin)
+        {
+            switch (origin)
+            {
+                case SeekOrigin.Begin:
+                    {
+                        return StreamSeekMode.Set;
+                    }
+
+                case SeekOrigin.Current:
+                    {
+                        return StreamSeekMode.Cur;
+                    }
+
+                case SeekOrigin.End:
+                    {
+                        return StreamSeekMode.End;
+                    }
+
+                default:
+                    {
+                        throw new ArgumentException("Invalid seek origin!");
+                    }
+            }
+        }
+
+        public static SeekOrigin ToSeekOrigin(this StreamSeekMode seekMode)
         {
             switch (seekMode)
             {

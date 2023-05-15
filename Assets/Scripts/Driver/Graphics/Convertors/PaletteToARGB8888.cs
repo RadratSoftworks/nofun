@@ -40,7 +40,7 @@ namespace Nofun.Driver.Graphics
             return highest;
         }
 
-        public static byte[] PaletteToARGB8888(Span<byte> data, int width, int height, byte bits, Memory<SColor> palettes, bool zeroAsTransparent)
+        public static byte[] PaletteToARGB8888(Span<byte> data, int width, int height, byte bits, Memory<SColor> palettes, bool zeroAsTransparent, bool hasAlpha = false)
         {
             if ((bits != 1) && (bits != 2) && (bits != 4) && (bits != 8))
             {
@@ -69,7 +69,7 @@ namespace Nofun.Driver.Graphics
                     {
                         SColor color = palettes.Span[paletteIndex];
 
-                        result[(y * width + x) * 4] = 255;
+                        result[(y * width + x) * 4] = (byte)(hasAlpha ? (color.a * 255) : 255);
                         result[(y * width + x) * 4 + 1] = (byte)(color.r * 255);
                         result[(y * width + x) * 4 + 2] = (byte)(color.g * 255);
                         result[(y * width + x) * 4 + 3] = (byte)(color.b * 255);

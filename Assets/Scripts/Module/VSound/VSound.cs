@@ -73,6 +73,13 @@ namespace Nofun.Module.VSound
         }
 
         [ModuleCall]
+        private int vSoundDispose()
+        {
+            soundManager.Reset();
+            return SND_OK;
+        }
+
+        [ModuleCall]
         private int vSoundDisposeHandle(int handle)
         {
             if (handle == 0)
@@ -87,6 +94,12 @@ namespace Nofun.Module.VSound
         private bool DoesControlRequireInstance(NativeSoundControlCode control)
         {
             return (control != NativeSoundControlCode.MasterVolume) && (control != NativeSoundControlCode.ChannelCount);
+        }
+
+        [ModuleCall]
+        private int vSoundCtrl(int handle, NativeSoundControlCode control)
+        {
+            return vSoundCtrlEx(handle, control, 0);
         }
 
         [ModuleCall]
@@ -133,6 +146,9 @@ namespace Nofun.Module.VSound
                         soundPcm.Frequency = parameters;
                         break;
                     }
+
+                case NativeSoundControlCode.StopLooping:
+                    break;
 
                 default:
                     Logger.Error(LogClass.VSound, $"Unimplemented sound control command: {control}");

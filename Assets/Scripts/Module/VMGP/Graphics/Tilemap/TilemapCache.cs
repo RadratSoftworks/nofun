@@ -91,6 +91,8 @@ namespace Nofun.Module.VMGP
                 }
             }
 
+            tileMaxCount = Math.Max((entry != null) ? (int)entry.tileCount : 0, tileMaxCount);
+
             // Make the atlas
             ITexture resultTexture = entry?.texture;
 
@@ -112,7 +114,7 @@ namespace Nofun.Module.VMGP
 
                 if (resultTexture != null)
                 {
-                    resultTexture.SetData(dataUpload, 0);
+                    resultTexture.SetData(dataUpload, 0, palettes, zeroAsTransparent);
                     resultTexture.Apply();
                 }
                 else
