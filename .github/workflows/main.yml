@@ -15,7 +15,7 @@ jobs:
           - platform: Android
             image: "unityci/editor:ubuntu-2021.3.20f1-android-1.1.2"
             os: ubuntu-latest      
-      runs-on: ${{ matrix.target.os }}
+    runs-on: ${{ matrix.target.os }}
     steps:
       - uses: actions/checkout@v2
         with:
