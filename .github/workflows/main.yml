@@ -35,11 +35,6 @@ jobs:
           targetPlatform: ${{ matrix.target.platform }}
           customImage: ${{ matrix.target.image }}
           buildName: nofun
-      - name: Remove debug information (Linux)
-        run: |
-          rm -rf build/${{ matrix.target.platform }}/nofun_BackUpThisFolder_ButDontShipItWithYourGame
-          rm -rf build/${{ matrix.target.platform }}/nofun_BurstDebugInformation_DoNotShip
-        if: matrix.target.os == 'ubuntu-latest'
       - name: Remove debug information (Windows)
         shell: pwsh
         run: |
@@ -47,6 +42,15 @@ jobs:
           Remove-Item -Recurse -Force build/${{ matrix.target.platform }}/nofun_BurstDebugInformation_DoNotShip
         if: matrix.target.os != 'ubuntu-latest'
       - uses: actions/upload-artifact@v2
+        name: Upload artifacts (Android)
+        with:
+          name: nofun_${{ matrix.target.platform }}
+          path: build/${{ matrix.target.platform }}/nofun.apk
+        if: matrix.target.platform == 'Android'
+      - uses: actions/upload-artifact@v2
+        name: Upload artifacts (Non-Android)
         with:
           name: nofun_${{ matrix.target.platform }}
           path: build/${{ matrix.target.platform }}
+        if: matrix.target.platform != 'Android'
+       
