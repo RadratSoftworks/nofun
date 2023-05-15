@@ -39,13 +39,13 @@ jobs:
         run: |
           rm -rf build/${{ matrix.target.platform }}/nofun_BackUpThisFolder_ButDontShipItWithYourGame
           rm -rf build/${{ matrix.target.platform }}/nofun_BurstDebugInformation_DoNotShip
-        if: ${{ matrix.target.os == "ubuntu-latest" }}
+        if: matrix.target.os == "ubuntu-latest"
       - name: Remove debug information (Windows)
         shell: pwsh
         run: |
           Remove-Item -Recurse -Force build/${{ matrix.target.platform }}/nofun_BackUpThisFolder_ButDontShipItWithYourGame
           Remove-Item -Recurse -Force build/${{ matrix.target.platform }}/nofun_BurstDebugInformation_DoNotShip
-        if: ${{ matrix.target.os != "ubuntu-latest" }}
+        if: matrix.target.os != "ubuntu-latest"
       - uses: actions/upload-artifact@v2
         with:
           name: nofun_${{ matrix.target.platform }}
