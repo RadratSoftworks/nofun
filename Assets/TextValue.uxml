@@ -1,0 +1,3 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:Label text="I am a sample text but I desire to be a human." display-tooltip-when-elided="true" name="TextValue" style="border-top-left-radius: 25px; border-bottom-left-radius: 25px; border-top-right-radius: 25px; border-bottom-right-radius: 25px; -unity-text-align: middle-center; flex-shrink: 12; flex-grow: 12; font-size: 14px;" />
+</ui:UXML>

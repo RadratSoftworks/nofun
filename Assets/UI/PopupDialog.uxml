@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/Stylesheet/PopupDialog.uss?fileID=7433441132597879392&amp;guid=c8a6b37eed7dcac46b9b61af59804288&amp;type=3#PopupDialog" />
+    <ui:VisualElement name="MainBackground" style="max-width: 800px;">
+        <ui:Label text="I want to be human" display-tooltip-when-elided="true" name="TitleValue" style="font-size: 30%;" />
+        <ui:Label text="I am a sample text but I desire to be a human. Do you agree?" display-tooltip-when-elided="true" name="TextValue" style="border-top-left-radius: 25px; border-bottom-left-radius: 25px; border-top-right-radius: 25px; border-bottom-right-radius: 25px; -unity-text-align: middle-center; flex-shrink: 12; flex-grow: 12; font-size: 30%;" />
+        <ui:VisualElement name="Buttons">
+            <ui:Button text="Cancel" display-tooltip-when-elided="true" name="LeftFar" class="PopupButton" style="font-size: 30%;" />
+            <ui:Button text="No" display-tooltip-when-elided="true" name="Left" class="PopupButton" style="font-size: 30%;" />
+            <ui:Button text="Yes" display-tooltip-when-elided="true" name="Right" class="PopupButton" style="font-size: 30%;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

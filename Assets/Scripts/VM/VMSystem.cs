@@ -17,12 +17,13 @@
 using Nofun.Driver.Graphics;
 using Nofun.Driver.Input;
 using Nofun.Driver.Audio;
+using Nofun.Driver.Time;
+using Nofun.Driver.UI;
 using Nofun.Parser;
 using Nofun.PIP2;
 using Nofun.PIP2.Assembler;
 using System;
 using Nofun.Util;
-using Nofun.Driver.Time;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -41,6 +42,7 @@ namespace Nofun.VM
         private IInputDriver inputDriver;
         private IAudioDriver audioDriver;
         private ITimeDriver timeDriver;
+        private IUIDriver uiDriver;
         private VMGPExecutable executable;
         private uint roundedHeapSize;
         private string persistentDataPath;
@@ -59,6 +61,7 @@ namespace Nofun.VM
         public IInputDriver InputDriver => inputDriver;
         public IAudioDriver AudioDriver => audioDriver;
         public ITimeDriver TimeDriver => timeDriver;
+        public IUIDriver UIDriver => uiDriver;
         public VMGPExecutable Executable => executable;
         public uint HeapStart => heapAddress;
         public uint HeapSize => roundedHeapSize;
@@ -160,6 +163,7 @@ namespace Nofun.VM
             this.inputDriver = createParameters.inputDriver;
             this.audioDriver = createParameters.audioDriver;
             this.timeDriver = createParameters.timeDriver;
+            this.uiDriver = createParameters.uiDriver;
             this.persistentDataPath = createParameters.persistentDataPath;
 
             this.executable = executable;

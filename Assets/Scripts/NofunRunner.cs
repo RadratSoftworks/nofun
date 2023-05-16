@@ -18,6 +18,7 @@ using Nofun.Driver.Unity.Audio;
 using Nofun.Driver.Unity.Graphics;
 using Nofun.Driver.Unity.Input;
 using Nofun.Driver.Unity.Time;
+using Nofun.Driver.Unity.UI;
 using Nofun.Parser;
 using Nofun.Util.Unity;
 using Nofun.VM;
@@ -38,6 +39,9 @@ namespace Nofun
 
         [SerializeField]
         private GraphicDriver graphicDriver;
+
+        [SerializeField]
+        private UIDriver uiDriver;
 
         [SerializeField]
         private GameObject buttonControl;
@@ -113,7 +117,7 @@ namespace Nofun
 
             executable = new VMGPExecutable(gameStream);
 
-            system = new VMSystem(executable, new VMSystemCreateParameters(graphicDriver, inputDriver, audioDriver, timeDriver,
+            system = new VMSystem(executable, new VMSystemCreateParameters(graphicDriver, inputDriver, audioDriver, timeDriver, uiDriver,
                 Application.persistentDataPath, targetExecutable));
 
             // Setup graphics driver

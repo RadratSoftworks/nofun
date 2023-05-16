@@ -1,0 +1,62 @@
+#MainBackground
+{
+    width: 75%;
+    height: 75%;
+    max-width: 800px;
+    max-height: 600px;
+    margin-left: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-right: auto;
+    background-color: rgba(115, 114, 112, 0.5);
+    border-radius: 25px;
+
+    display: flex;
+    flex-direction: column;
+
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+#TextValue 
+{
+    -unity-text-align: middle-center;
+
+    flex: 8 8 auto;
+    white-space: normal;
+}
+
+#TitleValue
+{
+    -unity-text-align: middle-center;
+
+    flex: 1 1 auto;
+    white-space: normal;
+    font-size: 30%;
+
+    padding-bottom: 4px;
+
+    border-bottom-width: 2px;
+    border-bottom-color: #ffffff;
+}
+
+#Buttons
+{
+    flex: 2 2 auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-left: 5px;
+}
+
+.PopupButton {
+    flex: 2 2 45%;
+    padding: 0px;
+    margin: 0px;
+    border-radius: 10px;
+    padding: 10px;
+    margin-right: 5px;
+}

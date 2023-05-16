@@ -18,6 +18,7 @@ using Nofun.Driver.Audio;
 using Nofun.Driver.Graphics;
 using Nofun.Driver.Input;
 using Nofun.Driver.Time;
+using Nofun.Driver.UI;
 
 namespace Nofun.VM
 {
@@ -27,16 +28,18 @@ namespace Nofun.VM
         public IInputDriver inputDriver;
         public IAudioDriver audioDriver;
         public ITimeDriver timeDriver;
+        public IUIDriver uiDriver;
         public string persistentDataPath;
         public string inputFileName;
 
         public VMSystemCreateParameters(IGraphicDriver graphicDriver, IInputDriver inputDriver, IAudioDriver audioDriver, ITimeDriver timeDriver,
-            string persistentDataPath, string inputFileName = "")
+            IUIDriver uiDriver, string persistentDataPath, string inputFileName = "")
         {
             this.graphicDriver = graphicDriver;
             this.inputDriver = inputDriver;
             this.audioDriver = audioDriver;
             this.timeDriver = timeDriver;
+            this.uiDriver = uiDriver;
             this.persistentDataPath = persistentDataPath;
             this.inputFileName = inputFileName;
         }
