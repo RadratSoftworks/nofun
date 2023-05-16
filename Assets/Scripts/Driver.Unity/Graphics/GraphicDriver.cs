@@ -297,6 +297,7 @@ namespace Nofun.Driver.Unity.Graphics
             }
 
             screenTextureBackBuffer = new RenderTexture((int)size.x, (int)size.y, 32);
+            screenTextureBackBuffer.filterMode = FilterMode.Point;
 
             if (!fullscreen)
             {

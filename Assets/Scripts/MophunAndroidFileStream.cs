@@ -120,7 +120,7 @@ namespace Nofun
         public override long Position
         {
             get => TellRouter(currentHandle);
-            set => SeekRouter(currentHandle, 0, ToCWhence(SeekOrigin.Begin));
+            set => SeekRouter(currentHandle, (int)value, ToCWhence(SeekOrigin.Begin));
         }
 
         public override void Flush()
