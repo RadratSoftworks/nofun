@@ -25,6 +25,7 @@ using UnityEngine.UI;
 using UnityEngine.Rendering;
 using Nofun.Module.VMGP3D;
 using System.Linq;
+using Unity.VisualScripting;
 
 namespace Nofun.Driver.Unity.Graphics
 {
@@ -90,9 +91,6 @@ namespace Nofun.Driver.Unity.Graphics
         [SerializeField]
         private Camera mophunCamera;
 
-        [SerializeField]
-        private bool coverScreen = false;
-
         private CommandBuffer commandBuffer;
         private Mesh quadMesh;
 
@@ -100,6 +98,7 @@ namespace Nofun.Driver.Unity.Graphics
         private Dictionary<ulong, Material> unlitMaterialCache;
 
         private Material currentMaterial;
+        private bool softwareScissor = false;
 
         private enum BatchingMode
         {
@@ -274,9 +273,39 @@ namespace Nofun.Driver.Unity.Graphics
             quadMesh.uv = uv;
         }
 
-        public void Initialize(Vector2 size)
+        public void Initialize(Vector2 size, bool softwareScissor = false)
         {
+            RectTransform transform = displayImage.GetComponent<RectTransform>();
+
+            transform.anchoredPosition = Vector2.zero;
+            transform.offsetMin = Vector2.zero;
+
+            bool fullscreen = false;
+
+            // Assume that as cover screen
+            if ((size.x <= 0) || (size.y <= 0))
+            {
+                // Fullscreen to get size first
+                transform.anchorMin = Vector2.zero;
+                transform.anchorMax = Vector2.one;
+                transform.offsetMax = Vector2.zero;
+
+                LayoutRebuilder.ForceRebuildLayoutImmediate(transform);
+
+                size = transform.rect.size * displayImage.canvas.scaleFactor;
+                fullscreen = true;
+            }
+
             screenTextureBackBuffer = new RenderTexture((int)size.x, (int)size.y, 32);
+
+            if (!fullscreen)
+            {
+                AspectRatioFitter fitter = displayImage.AddComponent<AspectRatioFitter>();
+                fitter.aspectRatio = size.x / size.y;
+                fitter.aspectMode = AspectRatioFitter.AspectMode.WidthControlsHeight;
+
+                LayoutRebuilder.ForceRebuildLayoutImmediate(transform);
+            }
             
             meshCache = new();
             meshBatcher = new();
@@ -297,32 +326,13 @@ namespace Nofun.Driver.Unity.Graphics
             textRenderInternals = new(textRenders);
 
             this.screenSize = size;
+            this.softwareScissor = softwareScissor;
 
             orthoMatrix = Matrix4x4.Ortho(0, ScreenWidth, 0, ScreenHeight, 1, -100);
         }
 
         private void Start()
         {
-            RectTransform transform = displayImage.GetComponent<RectTransform>();
-            Vector2 presetSize = new Vector2(176, 208);
-
-            transform.anchoredPosition = Vector2.zero;
-            transform.offsetMin = Vector2.zero;
-
-            if (coverScreen)
-            {
-                transform.anchorMin = Vector2.zero;
-                transform.anchorMax = Vector2.one;
-                transform.offsetMax = Vector2.zero;
-            }
-            else
-            {
-                transform.anchorMin = transform.anchorMax = Vector2.one / 2;
-                transform.sizeDelta = presetSize;
-            }
-
-            LayoutRebuilder.ForceRebuildLayoutImmediate(transform);
-            Initialize(coverScreen ? transform.rect.size * displayImage.canvas.scaleFactor : presetSize);
         }
 
         private Rect GetUnityScreenRect(Rect curRect)
@@ -380,24 +390,27 @@ namespace Nofun.Driver.Unity.Graphics
 
         private void DrawRectBoardGeneral2D(Rect destRect, Rect sourceRect, float centerX, float centerY, float rotation, SColor color, bool flipX = false, bool flipY = false, float z = 0.0f)
         {
-            if (!destRect.Intersects(clientSideState.scissorRect, out Rect drawArea))
+            if (softwareScissor)
             {
-                return;
-            }
+                if (!destRect.Intersects(clientSideState.scissorRect, out Rect drawArea))
+                {
+                    return;
+                }
 
-            if (drawArea != destRect)
-            {
-                float xRatio = (drawArea.x - destRect.x) / destRect.width;
-                float yRatio = (drawArea.y - destRect.y) / destRect.height;
-                float widthRatio = drawArea.width / destRect.width;
-                float heightRatio = drawArea.height / destRect.height;
+                if (drawArea != destRect)
+                {
+                    float xRatio = (drawArea.x - destRect.x) / destRect.width;
+                    float yRatio = (drawArea.y - destRect.y) / destRect.height;
+                    float widthRatio = drawArea.width / destRect.width;
+                    float heightRatio = drawArea.height / destRect.height;
 
-                destRect = drawArea;
+                    destRect = drawArea;
 
-                sourceRect.x += xRatio * sourceRect.width;
-                sourceRect.y += yRatio * sourceRect.height;
-                sourceRect.width *= widthRatio;
-                sourceRect.height *= heightRatio;
+                    sourceRect.x += xRatio * sourceRect.width;
+                    sourceRect.y += yRatio * sourceRect.height;
+                    sourceRect.width *= widthRatio;
+                    sourceRect.height *= heightRatio;
+                }
             }
 
             destRect = GetUnityScreenRect(destRect);
@@ -421,17 +434,25 @@ namespace Nofun.Driver.Unity.Graphics
 
         private void UpdateRenderMode()
         {
-            commandBuffer.DisableScissorRect();
-
             if (in3DMode)
             {
                 commandBuffer.SetProjectionMatrix(serverSideState.projectionMatrix3D);
                 commandBuffer.SetViewMatrix(serverSideState.viewMatrix3D);
+
+                if (!softwareScissor)
+                {
+                    commandBuffer.DisableScissorRect();
+                }
             }
             else
             {
                 commandBuffer.SetViewMatrix(Matrix4x4.identity);
                 commandBuffer.SetProjectionMatrix(orthoMatrix);
+
+                if (!softwareScissor)
+                {
+                    commandBuffer.EnableScissorRect(GetUnityScreenRect(serverSideState.scissorRect));
+                }
             }
         }
 
@@ -977,9 +998,19 @@ namespace Nofun.Driver.Unity.Graphics
                 {
                     clientSideState.scissorRect = unityRect;
 
+                    if (!softwareScissor && currentBatching == BatchingMode.Render2D)
+                    {
+                        HandleFixedStateChangedClient();
+                    }
+
                     JobScheduler.Instance.RunOnUnityThread(() =>
                     {
                         serverSideState.scissorRect = unityRect;
+
+                        if (!softwareScissor && began && !in3DMode)
+                        {
+                            commandBuffer.EnableScissorRect(GetUnityScreenRect(unityRect));
+                        }
                     });
                 }
             }

@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/Stylesheet/Vector2Input.uss?fileID=7433441132597879392&amp;guid=56aa81409e4c70b41b0e06d858cb608b&amp;type=3#Vector2Input" />
+    <ui:VisualElement name="ScreenSizeInput" class="Vector2Input">
+        <ui:Label text="Screen size" display-tooltip-when-elided="true" name="Description" class="Vector2Name" />
+        <ui:TextField picking-mode="Ignore" text="240" name="XNumberInput" class="NumberInput" />
+        <ui:TextField picking-mode="Ignore" text="320" name="YNumberInput" class="NumberInput" />
+    </ui:VisualElement>
+</ui:UXML>

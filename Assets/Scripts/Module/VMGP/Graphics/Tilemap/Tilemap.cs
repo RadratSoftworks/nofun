@@ -52,7 +52,7 @@ namespace Nofun.Module.VMGP
 
         private bool IsTilemapFormatCurrentlyImplemented(TextureFormat format)
         {
-            return (format == TextureFormat.RGB332) || (format == TextureFormat.Palette256);
+            return (format >= TextureFormat.Palette2) && (format <= TextureFormat.RGB332);
         }
 
         private void RefreshMapAtlasValidStatus(bool setStaus = false)

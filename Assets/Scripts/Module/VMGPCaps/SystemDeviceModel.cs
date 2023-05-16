@@ -26,6 +26,7 @@ namespace Nofun.Module.VMGPCaps
 
         // For other vendor combination
         SonyEricssonT300 = 0,
+        SonyEricssonT310 = 1,
         SonyEricssonT610 = 2,
         Nokia7650 = 3,
         SonyErricssonP800 = 4,
@@ -33,10 +34,12 @@ namespace Nofun.Module.VMGPCaps
         MotorolaA920 = 6,
         NokiaNgage = 7,
         Nokia3650 = 8,
+        TigerTelematicGametrac = 9,
         SonyErricisonP900 = 10,
         Nokia6600 = 11,
         MotorolaA925 = 12,
         SiemensSX1 = 13,
+        ArchosAV500 = 14,
         SendoX = 15
     }
 }

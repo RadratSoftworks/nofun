@@ -100,12 +100,12 @@ namespace Nofun.PIP2.Interpreter
         #region Divide instructions family
         private void DIV(TwoSourcesEncoding encoding)
         {
-            Reg[encoding.d] = (uint)((int)Reg[encoding.s] / (int)Reg[encoding.t]);
+            Reg[encoding.d] = (Reg[encoding.t] == 0) ? 0 : (uint)((int)Reg[encoding.s] / (int)Reg[encoding.t]);
         }
 
         private void DIVU(TwoSourcesEncoding encoding)
         {
-            Reg[encoding.d] = Reg[encoding.s] / Reg[encoding.t];
+            Reg[encoding.d] = (Reg[encoding.t] == 0) ? 0 : Reg[encoding.s] / Reg[encoding.t];
         }
 
         private void DIVi(TwoSourcesEncoding encoding)

@@ -1,0 +1,17 @@
+.Vector2Input
+{
+    display: flex;
+    flex-direction: row;
+    margin-left: 3px;
+    margin-right: 3px;
+}
+
+.Vector2Input > .NumberInput
+{
+    flex: 2 1 30%;
+}
+
+.Vector2Input > .Vector2Name
+{
+    flex: 0 1 20%;
+}

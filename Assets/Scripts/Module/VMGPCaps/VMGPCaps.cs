@@ -62,9 +62,49 @@ namespace Nofun.Module.VMGPCaps
                 capsAssign.flags |= (ushort)SystemCapsFlags.BigEndian;
             }
 
-            Logger.Trace(LogClass.VMGPCaps, "System capabilities device ID stubbed with Nokia N-Gage");
+            SystemDeviceVendor vendor = SystemDeviceVendor.Unknown;
 
-            capsAssign.deviceId = GetDeviceId(SystemDeviceVendor.Nokia, SystemDeviceModel.NokiaNgage);
+            switch (system.GameSetting.deviceModel)
+            {
+                case SystemDeviceModel.SonyEricssonT300:
+                case SystemDeviceModel.SonyEricssonT310:
+                case SystemDeviceModel.SonyEricssonT610:
+                case SystemDeviceModel.SonyErricssonT226:
+                case SystemDeviceModel.SonyErricssonP800:
+                case SystemDeviceModel.SonyErricisonP900:
+                    vendor = SystemDeviceVendor.SonyEricsson;
+                    break;
+
+                case SystemDeviceModel.Nokia3650:
+                case SystemDeviceModel.Nokia6600:
+                case SystemDeviceModel.Nokia7650:
+                case SystemDeviceModel.NokiaNgage:
+                    vendor = SystemDeviceVendor.Nokia;
+                    break;
+
+                case SystemDeviceModel.SendoX:
+                    vendor = SystemDeviceVendor.Sendo;
+                    break;
+
+                case SystemDeviceModel.MotorolaA920:
+                case SystemDeviceModel.MotorolaA925:
+                    vendor = SystemDeviceVendor.Motorola;
+                    break;
+
+                case SystemDeviceModel.SiemensSX1:
+                    vendor = SystemDeviceVendor.Siemens;
+                    break;
+
+                case SystemDeviceModel.TigerTelematicGametrac:
+                    vendor = SystemDeviceVendor.TTPCom;
+                    break;
+
+                default:
+                    vendor = SystemDeviceVendor.Unknown;
+                    break;
+            }
+
+            capsAssign.deviceId = GetDeviceId(vendor, system.GameSetting.deviceModel);
 
             caps.Write(system.Memory, capsAssign);
             return 1;

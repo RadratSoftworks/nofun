@@ -59,5 +59,11 @@ namespace Nofun.Module.VMGP
         {
             return 0xDEADBEEF;
         }
+
+        [ModuleCall]
+        private void vTerminateVMGP()
+        {
+            system.Stop();
+        }
     }
 }

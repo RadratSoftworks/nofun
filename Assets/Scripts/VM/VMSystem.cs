@@ -26,6 +26,7 @@ using System;
 using Nofun.Util;
 using System.IO;
 using System.Runtime.InteropServices;
+using Nofun.Settings;
 
 namespace Nofun.VM
 {
@@ -54,6 +55,9 @@ namespace Nofun.VM
         private uint heapAddress;
 
         private bool shouldStop = false;
+        private string gameName;
+
+        public GameSetting GameSetting { get; set; }
 
         public VMMemory Memory => memory;
         public Processor Processor => processor;
@@ -67,6 +71,7 @@ namespace Nofun.VM
         public uint HeapSize => roundedHeapSize;
         public uint HeapEnd => HeapStart + HeapSize;
         public string PersistentDataPath => persistentDataPath;
+        public string GameName => gameName;
 
         private void CreateCallListInvokeCode(Span<uint> memorySpan)
         {
@@ -143,15 +148,16 @@ namespace Nofun.VM
                 }
             }
 
-            string gameName = metaInfoReader?.Get("Title");
+            gameName = metaInfoReader?.Get("Title");
 
             if (metaInfoReader == null || gameName == null)
             {
-                persistentDataPath = Path.Join(persistentDataPath, Path.ChangeExtension(Path.GetFileName(inputFileName), ""));
+                gameName = Path.ChangeExtension(Path.GetFileName(inputFileName), "");
+                persistentDataPath = Path.Join(persistentDataPath, gameName);
             }
             else
             {
-                persistentDataPath = Path.Join(persistentDataPath, string.Join('_', gameName.Replace(" ", "").Split(Path.GetInvalidFileNameChars())));
+                persistentDataPath = Path.Join(persistentDataPath, gameName.ToValidFileName());
             }
 
             Directory.CreateDirectory(persistentDataPath);

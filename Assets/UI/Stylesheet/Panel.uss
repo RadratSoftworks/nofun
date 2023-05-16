@@ -1,0 +1,10 @@
+.unity-text-element
+{
+    font-size: 22px;
+    color: white;
+}
+
+.unity-button, .unity-base-popup-field__text, .unity-base-dropdown__label
+{
+    color: black;
+}

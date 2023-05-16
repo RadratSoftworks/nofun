@@ -20,12 +20,14 @@ namespace Nofun
         };
 
         public static JobScheduler Instance { get; private set; }
+        public static bool Paused { get; set; }
         private Thread unityThread;
         private Queue<Job> jobs;
 
         private void Start()
         {
             unityThread = Thread.CurrentThread;
+            Paused = false;
             jobs = new();
 
             Instance = this;
@@ -33,6 +35,11 @@ namespace Nofun
 
         private void Update()
         {
+            if (Paused)
+            {
+                return;
+            }
+
             lock (jobs)
             {
                 while (jobs.Count != 0)

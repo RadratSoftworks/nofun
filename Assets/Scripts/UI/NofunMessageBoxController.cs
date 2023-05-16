@@ -67,10 +67,10 @@ namespace Nofun.UI
                 .SetEase(Ease.InOutBack)
                 .OnComplete(() =>
             {
-                pendingAction = null;
                 root.style.display = DisplayStyle.None;
 
                 pendingAction?.Invoke(value);
+                pendingAction = null;
             });
         }
 

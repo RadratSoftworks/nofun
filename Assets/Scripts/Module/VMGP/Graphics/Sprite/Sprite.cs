@@ -113,6 +113,38 @@ namespace Nofun.Module.VMGP
         }
 
         [ModuleCall]
+        private short vSpriteCollision(byte slotCheck, byte from, byte to)
+        {
+            if ((slotCheck >= spriteSlots.Length) || (spriteSlots[slotCheck].sprite.IsNull))
+            {
+                return -1;
+            }
+
+            NativeSprite checkSprite = spriteSlots[slotCheck].sprite.Read(system.Memory);
+            NRectangle checkCollider = new NRectangle(spriteSlots[slotCheck].x, spriteSlots[slotCheck].y,
+                    checkSprite.width, checkSprite.height);
+
+            for (int i = from; i <= Math.Min((int)to, spriteSlots.Length - 1); i++)
+            {
+                if ((spriteSlots[i] == null) || (spriteSlots[i].sprite.IsNull))
+                {
+                    continue;
+                }
+
+                NativeSprite sprite = spriteSlots[i].sprite.Read(system.Memory);
+                NRectangle colliderSprite = new NRectangle(spriteSlots[i].x, spriteSlots[i].y,
+                    sprite.width, sprite.height);
+
+                if (checkCollider.Collide(colliderSprite))
+                {
+                    return (short)i;
+                }
+            }
+
+            return -1;
+        }
+
+        [ModuleCall]
         private short vSpriteBoxCollision(VMPtr<VMGPRect> boxPtr, byte from, byte to)
         {
             VMGPRect box = boxPtr.Read(system.Memory);

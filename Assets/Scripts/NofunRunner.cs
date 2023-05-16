@@ -26,6 +26,8 @@ using System.IO;
 using UnityEngine;
 
 using System.Threading;
+using Nofun.UI;
+using Nofun.Settings;
 
 namespace Nofun
 {
@@ -49,6 +51,9 @@ namespace Nofun
         [SerializeField]
         private GameObject failedLaunchDialog;
 
+        [SerializeField]
+        private SettingDocumentController settingDocument;
+
         private TimeDriver timeDriver;
 
         [Range(1, 60)]
@@ -57,9 +62,11 @@ namespace Nofun
 
         private VMGPExecutable executable;
         private VMSystem system;
+        private GameSettingsManager settingManager;
         private Thread systemThread;
         private bool started = false;
         private bool failed = false;
+        private bool settingActive = false;
 
         [SerializeField]
         private string executableFilePath = "E:\\spacebox.mpn";
@@ -72,6 +79,30 @@ namespace Nofun
         private void OnDestroy()
         {
             system.Stop();
+        }
+
+        private void OpenGameSetting()
+        {
+            settingDocument.Show();
+            settingDocument.Finished += () =>
+            {
+                GameSetting? setting = settingManager.Get(system.GameName);
+                if (setting != null)
+                {
+                    graphicDriver.FpsLimit = setting.Value.fps;
+                }
+
+                settingActive = false;
+                JobScheduler.Paused = false;
+            };
+
+            settingActive = true;
+            JobScheduler.Paused = true;
+        }
+
+        public void OnGameScreenCogButtonPressed()
+        {
+            OpenGameSetting();
         }
 
         private void Start()
@@ -112,16 +143,19 @@ namespace Nofun
 #endif
 
             buttonControl.SetActive(Application.isMobilePlatform);
-
+            settingManager = new(Application.persistentDataPath);
             timeDriver = new TimeDriver();
 
             executable = new VMGPExecutable(gameStream);
-
             system = new VMSystem(executable, new VMSystemCreateParameters(graphicDriver, inputDriver, audioDriver, timeDriver, uiDriver,
                 Application.persistentDataPath, targetExecutable));
 
-            // Setup graphics driver
-            graphicDriver.StopProcessorAction = () => system.Processor.Stop();
+            settingDocument.Setup(settingManager, system.GameName);
+
+            if (settingManager.Get(system.GameName) == null)
+            {
+                OpenGameSetting();
+            }
 
             systemThread = new Thread(new ThreadStart(() =>
             {
@@ -132,19 +166,50 @@ namespace Nofun
             }));
         }
 
+        private void InitializeGameRun()
+        {
+            GameSetting? setting = settingManager.Get(system.GameName);
+            setting = setting ?? new GameSetting()
+            {
+                screenSizeX = 101,
+                screenSizeY = 80,
+                fps = 30,
+                screenMode = ScreenMode.CustomSize,
+                deviceModel = Module.VMGPCaps.SystemDeviceModel.SonyEricssonT300,
+                enableSoftwareScissor = false
+            };
+
+            system.GameSetting = setting.Value;
+
+            graphicDriver.Initialize((setting.Value.screenMode == ScreenMode.CustomSize) ?
+                new Vector2(setting.Value.screenSizeX, setting.Value.screenSizeY) :
+                Vector2.zero, setting.Value.enableSoftwareScissor);
+            graphicDriver.FpsLimit = Mathf.Clamp(setting.Value.fps, 1, 120);
+
+            systemThread.Start();
+
+            started = true;
+        }
+
         private void Update()
         {
-            if (failed)
+            if (settingActive || failed)
             {
                 return;
             }
 
+#if UNITY_EDITOR
             graphicDriver.FpsLimit = fpsLimit;
-            
+#endif
+
             if (!started)
             {
-                systemThread.Start();
-                started = true;
+                InitializeGameRun();
+            }
+
+            if (system.ShouldStop)
+            {
+                Application.Quit();
             }
 
             timeDriver.Update();

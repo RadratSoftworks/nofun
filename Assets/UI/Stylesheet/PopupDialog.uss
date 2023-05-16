@@ -8,7 +8,7 @@
     margin-top: auto;
     margin-bottom: auto;
     margin-right: auto;
-    background-color: rgba(115, 114, 112, 0.5);
+    background-color: rgba(115, 114, 112, 0.9);
     border-radius: 25px;
 
     display: flex;

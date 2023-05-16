@@ -154,12 +154,12 @@ namespace Nofun.Driver.Unity.Graphics
             this.cachedSize = new Vector2(width, height);
 
             uTexture = new Texture2D(width, height, needTransform ? UnityEngine.TextureFormat.ARGB32 : MapMophunFormatToUnity(format), true);
-            uTexture.filterMode = FilterMode.Trilinear;
+            uTexture.filterMode = FilterMode.Point;
 
             UploadData(data, width, height, mipCount, palettes, zeroAsTransparent);
 
-            cachedUnityFilter = FilterMode.Trilinear;
-            cachedFilter = MpFilterMode.MipLinear;
+            cachedUnityFilter = FilterMode.Point;
+            cachedFilter = MpFilterMode.MipNearest;
         }
 
         public void SetData(byte[] data, int mipLevel, Memory<SColor> palettes, bool zeroAsTransparent = false)

@@ -46,7 +46,8 @@ namespace Nofun.Module.VMGP
 
         private bool IsTilemapDataSupported(TextureFormat format)
         {
-            return (format == TextureFormat.RGB332) || (format == TextureFormat.Palette256);
+            return (format == TextureFormat.RGB332) || (format == TextureFormat.Palette256) || (format == TextureFormat.Palette16) ||
+                (format == TextureFormat.Palette4) || (format == TextureFormat.Palette2);
         }
 
         public static void GetTilePositionInAtlas(int tileIndex, out int x, out int y)
@@ -96,31 +97,32 @@ namespace Nofun.Module.VMGP
             // Make the atlas
             ITexture resultTexture = entry?.texture;
 
+            int bitsPP = TextureUtil.GetPixelSizeInBits(tileMapFormat);
+            byte[] dataUpload = new byte[256 * 8 * 8 / (8 / bitsPP)];
+
             // Byte-streamable, copy by byte-row
             // Tile should be in 8x8 dimension. This is hardcoded
-            if ((tileMapFormat == TextureFormat.Palette256) || (tileMapFormat == TextureFormat.RGB332))
+            // Divide the tile into rows
+            // Each row can only contain 32 tile (= 32x8 = 256 pixels)
+            int lineWidthOneTile = (8 / (8 / bitsPP));
+            int oneTileSize = lineWidthOneTile * 8;
+
+            for (int i = 0; i < tileMaxCount; i++)
             {
-                byte[] dataUpload = new byte[256 * 8 * 8];
+                for (int y = 0; y < 8; y++)
+                {
+                    tileSpriteData.Slice(i * oneTileSize + y * lineWidthOneTile, lineWidthOneTile).CopyTo(new Span<byte>(dataUpload, ((i >> 5) * 32 * lineWidthOneTile * 8) + y * 32 * lineWidthOneTile + (i & 31) * lineWidthOneTile, lineWidthOneTile));
+                }
+            }
 
-                // Divide the tile into rows
-                // Each row can only contain 32 tile (= 32x8 = 256 pixels)
-                for (int i = 0; i < tileMaxCount; i++)
-                {
-                    for (int y = 0; y < 8; y++)
-                    {
-                        tileSpriteData.Slice(i * 64 + y * 8, 8).CopyTo(new Span<byte>(dataUpload, ((i >> 5) * 256 * 8) + y * 256 + (i & 31) * 8, 8));
-                    }
-                }
-
-                if (resultTexture != null)
-                {
-                    resultTexture.SetData(dataUpload, 0, palettes, zeroAsTransparent);
-                    resultTexture.Apply();
-                }
-                else
-                {
-                    resultTexture = driver.CreateTexture(dataUpload, 256, 64, 1, tileMapFormat, palettes, zeroAsTransparent);
-                }
+            if (resultTexture != null)
+            {
+                resultTexture.SetData(dataUpload, 0, palettes, zeroAsTransparent);
+                resultTexture.Apply();
+            }
+            else
+            {
+                resultTexture = driver.CreateTexture(dataUpload, 256, 64, 1, tileMapFormat, palettes, zeroAsTransparent);
             }
 
             if (entry != null)

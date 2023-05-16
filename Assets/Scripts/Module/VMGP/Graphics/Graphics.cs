@@ -98,6 +98,12 @@ namespace Nofun.Module.VMGP
         }
 
         [ModuleCall]
+        private int vWaitVBL(int block)
+        {
+            return 0;
+        }
+
+        [ModuleCall]
         private void vSetClipWindow(short x0, short y0, short x1, short y1)
         {
             system.GraphicDriver.ClipRect = new NRectangle(x0, y0, x1 - x0, y1 - y0);
