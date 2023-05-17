@@ -35,6 +35,11 @@ jobs:
           targetPlatform: ${{ matrix.target.platform }}
           customImage: ${{ matrix.target.image }}
           buildName: nofun
+          androidKeystoreName: user.keystore
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
       - name: Remove debug information (Windows)
         shell: pwsh
         run: |
