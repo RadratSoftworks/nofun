@@ -40,6 +40,9 @@ namespace Nofun
         [DllImport("SAFFileRouter", EntryPoint = "saf_router_seek")]
         public static extern Int64 SeekRouter(IntPtr handle, int offset, int whence);
         
+        [DllImport("SAFFileRouter", EntryPoint = "saf_router_flush")]
+        public static extern void FlushRouter(IntPtr handle);
+
         [DllImport("SAFFileRouter", EntryPoint = "saf_router_close")]
         public static extern Int64 CloseRouter(IntPtr handle);
 
@@ -125,7 +128,7 @@ namespace Nofun
 
         public override void Flush()
         {
-            // Nothing for now, not needed
+            FlushRouter(currentHandle);
         }
 
         public override int Read(byte[] buffer, int offset, int count)

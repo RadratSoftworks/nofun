@@ -135,5 +135,10 @@ namespace Nofun.Module.VMGP
                 return -1;
             }
         }
+
+        public void OnClose()
+        {
+            stream.Close();
+        }
     }
 }

@@ -124,7 +124,12 @@ namespace Nofun.Module.VMStream
         [ModuleCall]
         private void vStreamClose(int handle)
         {
-            streams.Remove(handle);
+            IVMHostStream stream = streams.Get(handle);
+            if (stream != null)
+            {
+                stream.OnClose();
+                streams.Remove(handle);
+            }
         }
     };
 }

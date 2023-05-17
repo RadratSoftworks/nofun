@@ -109,5 +109,10 @@ namespace Nofun.Module.VMStream
 
             return (int)countWrite;
         }
+
+        public void OnClose()
+        {
+            executable.FlushResourceModification();
+        }
     }
 }

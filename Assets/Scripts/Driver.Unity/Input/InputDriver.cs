@@ -108,6 +108,18 @@ namespace Nofun.Driver.Unity.Input
             }
         }
 
+        public void OnSEJoystickPush(InputValue value)
+        {
+            if (value.isPressed)
+            {
+                buttonData |= (uint)Driver.Input.KeyCode.SEJoystickPush;
+            }
+            else
+            {
+                buttonData &= ~(uint)Driver.Input.KeyCode.SEJoystickPush;
+            }
+        }
+
         public uint GetButtonData()
         {
             return buttonData;

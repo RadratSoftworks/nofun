@@ -137,7 +137,7 @@ namespace Nofun
 #endif
 #endif
 
-#if !UNITY_ANDROID 
+#if UNITY_EDITOR
             gameStream = new FileStream(targetExecutable, FileMode.Open, FileAccess.ReadWrite,
                 FileShare.Read);
 #endif

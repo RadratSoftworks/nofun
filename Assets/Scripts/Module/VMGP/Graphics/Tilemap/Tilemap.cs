@@ -161,6 +161,44 @@ namespace Nofun.Module.VMGP
         }
 
         [ModuleCall]
+        private byte vMapGetTile(byte x, byte y)
+        {
+            if (mapHeaderPtr.IsNull)
+            {
+                return 0;
+            }
+
+            NativeMapHeader mapHeader = mapHeaderPtr.Read(system.Memory);
+
+            if ((x >= mapHeader.mapWidth) || (y >= mapHeader.mapHeight))
+            {
+                return 0;
+            }
+
+            int tileStride = (mapHeader.flag == 0) ? 1 : 2;
+            return mapHeader.mapData[(y * mapHeader.mapWidth + x) * tileStride].Read(system.Memory);
+        }
+
+        [ModuleCall]
+        private void vMapSetTile(byte x, byte y, byte tile)
+        {
+            if (mapHeaderPtr.IsNull)
+            {
+                return;
+            }
+
+            NativeMapHeader mapHeader = mapHeaderPtr.Read(system.Memory);
+
+            if ((x >= mapHeader.mapWidth) || (y >= mapHeader.mapHeight))
+            {
+                return;
+            }
+
+            int tileStride = (mapHeader.flag == 0) ? 1 : 2;
+            mapHeader.mapData[(y * mapHeader.mapWidth + x) * tileStride].Write(system.Memory, tile);
+        }
+
+        [ModuleCall]
         private byte vMapGetAttribute(byte x, byte y)
         {
             if (mapHeaderPtr.IsNull)
@@ -181,6 +219,29 @@ namespace Nofun.Module.VMGP
             }
 
             return mapHeader.mapData[(y * mapHeader.mapWidth + x) * 2 + 1].Read(system.Memory);
+        }
+
+        [ModuleCall]
+        private void vMapSetAttribute(byte x, byte y, byte attribute)
+        {
+            if (mapHeaderPtr.IsNull)
+            {
+                return;
+            }
+
+            NativeMapHeader mapHeader = mapHeaderPtr.Read(system.Memory);
+
+            if ((x >= mapHeader.mapWidth) || (y >= mapHeader.mapHeight))
+            {
+                return;
+            }
+
+            if (mapHeader.flag == 0)
+            {
+                return;
+            }
+
+            mapHeader.mapData[(y * mapHeader.mapWidth + x) * 2 + 1].Write(system.Memory, attribute);
         }
 
         [ModuleCall]

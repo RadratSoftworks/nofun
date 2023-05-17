@@ -26,6 +26,8 @@ namespace Nofun.Driver.Input
         Select = 0x20,
         PointerDown = 0x40,
         PointerAltDown = 0x80,
-        Fire2 = 0x100
+        Fire2 = 0x100,
+
+        SEJoystickPush = 0xD6
     }
 }

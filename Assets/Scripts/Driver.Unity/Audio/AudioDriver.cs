@@ -90,7 +90,7 @@ namespace Nofun.Driver.Unity.Audio
                         throw new Exception("Failed to load the MIDI sound resource!");
                     }
 
-                    TSFMidiSound sound = new TSFMidiSound(handle);
+                    TSFMidiSound sound = new TSFMidiSound(this, handle);
 
                     lock (activeMidiSounds)
                     {
@@ -99,6 +99,14 @@ namespace Nofun.Driver.Unity.Audio
 
                     return sound;
                 }
+            }
+        }
+
+        public void RemoveMidiSound(TSFMidiSound sound)
+        {
+            lock (activeMidiSounds)
+            {
+                activeMidiSounds.Remove(sound);
             }
         }
 

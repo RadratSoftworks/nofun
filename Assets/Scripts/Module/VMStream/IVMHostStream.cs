@@ -29,5 +29,7 @@ namespace Nofun.Module.VMStream
         int Tell();
 
         int Ready();
+
+        void OnClose();
     };
 }

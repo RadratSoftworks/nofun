@@ -35,6 +35,12 @@ namespace Nofun.Module.VMGP
                 return 1;
             }
 
+            if (currentSound != null)
+            {
+                currentSound.Stop();
+                currentSound = null;
+            }
+
             SoundType soundType = (SoundType)(flags & 0xF);
             bool loop = (((flags & (uint)SoundFlag.Loop) != 0) ? true : false);
 

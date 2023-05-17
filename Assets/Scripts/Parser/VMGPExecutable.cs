@@ -142,6 +142,11 @@ namespace Nofun.Parser
             writer.Write(data);
         }
 
+        public void FlushResourceModification()
+        {
+            writer.Flush();
+        }
+
         void IDisposable.Dispose()
         {
             reader.Dispose();

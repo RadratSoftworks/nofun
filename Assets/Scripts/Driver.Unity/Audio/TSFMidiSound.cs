@@ -23,12 +23,14 @@ namespace Nofun.Driver.Unity.Audio
     {
         private IntPtr nativeHandle;
         private bool needManualFree = true;
+        private AudioDriver audioDriver;
 
         public IntPtr NativeHandle => nativeHandle;
 
-        public TSFMidiSound(IntPtr nativeHandle)
+        public TSFMidiSound(AudioDriver driver, IntPtr nativeHandle)
         {
             this.nativeHandle = nativeHandle;
+            this.audioDriver = driver;
         }
 
         public void OnDonePlaying()
@@ -40,7 +42,11 @@ namespace Nofun.Driver.Unity.Audio
         {
             if (needManualFree)
             {
-                TSFMidiRenderer.Free(nativeHandle);
+                JobScheduler.Instance.RunOnUnityThread(() =>
+                {
+                    audioDriver.RemoveMidiSound(this);
+                    TSFMidiRenderer.Free(nativeHandle);
+                });
             }
         }
     }
