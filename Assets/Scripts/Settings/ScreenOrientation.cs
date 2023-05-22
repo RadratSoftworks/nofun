@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-using UnityEngine;
-
-namespace Nofun
+namespace Nofun.Settings
 {
-    public class UnlaunchableOKButtonController : MonoBehaviour
+    public enum ScreenOrientation
     {
-        public void OnClick()
-        {
-            Application.Quit();
-        }
+        Potrait,
+        Landscape
     }
 }

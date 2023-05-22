@@ -47,7 +47,7 @@ namespace Nofun.Module.VMStream
             {
                 case StreamType.Resource:
                     {
-                        targetedStream = VMResourceStream.Create(system.Executable, mode);
+                        targetedStream = VMResourceStream.Create(system.Executable, system.PersistentDataPath, mode);
                         break;
                     }
                 case StreamType.File:

@@ -28,5 +28,7 @@ namespace Nofun.Settings
         public SystemDeviceModel deviceModel;
         public bool enableSoftwareScissor;
         public int fps;
+        public ScreenOrientation orientation;
+        public SystemVersion systemVersion;
     }
 }

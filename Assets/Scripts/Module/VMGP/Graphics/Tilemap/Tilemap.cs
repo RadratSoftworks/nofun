@@ -37,11 +37,12 @@ namespace Nofun.Module.VMGP
 
         private const int AnimationMaxFrameCount = 4;
 
-        private VMPtr<NativeMapHeader> mapHeaderPtr;
+        private NativeMapHeader mapHeader;
         private ITexture mapAtlas;
         private int framePassed;
         private int frameAnimate;
         private uint currentPaletteHash;
+        private bool mapExisting = false;
 
         private TilemapCache tilemapCache;
 
@@ -57,10 +58,9 @@ namespace Nofun.Module.VMGP
 
         private void RefreshMapAtlasValidStatus(bool setStaus = false)
         {
-            NativeMapHeader header = mapHeaderPtr.Read(system.Memory);
-            TextureFormat format = (TextureFormat)header.format;
+            TextureFormat format = (TextureFormat)mapHeader.format;
 
-            if (format == TextureFormat.Palette256)
+            if (TextureUtil.IsPaletteFormat(format))
             {
                 XxHash32 hasher = new();
                 hasher.Append(MemoryMarshal.Cast<SColor, byte>(ScreenPalette));
@@ -74,13 +74,13 @@ namespace Nofun.Module.VMGP
                 {
                     if (currentPaletteHash != newHash)
                     {
-                        tilemapCache.Invalidate(header.tileSpriteData.Value);
-                        UpdateMapAtlas(header);
-
+                        tilemapCache.Invalidate(mapHeader.tileSpriteData.Value);
                         currentPaletteHash = newHash;
                     }
                 }
             }
+
+            UpdateMapAtlas(mapHeader);
         }
 
         private int UpdateMapAtlas(NativeMapHeader headerData)
@@ -151,24 +151,30 @@ namespace Nofun.Module.VMGP
                 return 0;
             }
 
-            mapHeaderPtr = header;
+            mapHeader = headerData;
             frameAnimate = 0;
             framePassed = 0;
 
             RefreshMapAtlasValidStatus(true);
+            mapExisting = true;
 
             return 1;
         }
 
         [ModuleCall]
+        private void vMapDispose()
+        {
+            mapExisting = false;
+            mapAtlas = null;
+        }
+
+        [ModuleCall]
         private byte vMapGetTile(byte x, byte y)
         {
-            if (mapHeaderPtr.IsNull)
+            if (!mapExisting)
             {
                 return 0;
             }
-
-            NativeMapHeader mapHeader = mapHeaderPtr.Read(system.Memory);
 
             if ((x >= mapHeader.mapWidth) || (y >= mapHeader.mapHeight))
             {
@@ -182,12 +188,10 @@ namespace Nofun.Module.VMGP
         [ModuleCall]
         private void vMapSetTile(byte x, byte y, byte tile)
         {
-            if (mapHeaderPtr.IsNull)
+            if (!mapExisting)
             {
                 return;
             }
-
-            NativeMapHeader mapHeader = mapHeaderPtr.Read(system.Memory);
 
             if ((x >= mapHeader.mapWidth) || (y >= mapHeader.mapHeight))
             {
@@ -201,12 +205,10 @@ namespace Nofun.Module.VMGP
         [ModuleCall]
         private byte vMapGetAttribute(byte x, byte y)
         {
-            if (mapHeaderPtr.IsNull)
+            if (!mapExisting)
             {
                 return 0;
             }
-
-            NativeMapHeader mapHeader = mapHeaderPtr.Read(system.Memory);
 
             if ((x >= mapHeader.mapWidth) || (y >= mapHeader.mapHeight))
             {
@@ -224,12 +226,10 @@ namespace Nofun.Module.VMGP
         [ModuleCall]
         private void vMapSetAttribute(byte x, byte y, byte attribute)
         {
-            if (mapHeaderPtr.IsNull)
+            if (!mapExisting)
             {
                 return;
             }
-
-            NativeMapHeader mapHeader = mapHeaderPtr.Read(system.Memory);
 
             if ((x >= mapHeader.mapWidth) || (y >= mapHeader.mapHeight))
             {
@@ -247,21 +247,23 @@ namespace Nofun.Module.VMGP
         [ModuleCall]
         private void vMapSetXY(short x, short y)
         {
-            if (mapHeaderPtr.IsNull)
+            if (!mapExisting)
             {
                 return;
             }
 
-            Span<NativeMapHeader> mapHeader = mapHeaderPtr.AsSpan(system.Memory);
-
-            mapHeader[0].xPos = x;
-            mapHeader[0].yPos = y;
+            mapHeader.xPos = x;
+            mapHeader.yPos = y;
         }
 
         [ModuleCall]
         private void vUpdateMap()
         {
-            NativeMapHeader mapHeader = mapHeaderPtr.Read(system.Memory);
+            if (!mapExisting || (mapHeader.mapWidth == 0) || (mapHeader.mapHeight == 0))
+            {
+                return;
+            }
+
             bool blackAsTransparentGlobal = BitUtil.FlagSet(mapHeader.flag, TilemapFlags.Transparent);
 
             NRectangle currentClip = system.GraphicDriver.ClipRect;

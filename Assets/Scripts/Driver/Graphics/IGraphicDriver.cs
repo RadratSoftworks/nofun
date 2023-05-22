@@ -46,6 +46,7 @@ namespace Nofun.Driver.Graphics
 
         #region 2D general draw
         void DrawLine(int x0, int y0, int x1, int y1, SColor lineColor);
+        void DrawTriangle(int x0, int y0, int x1, int y1, int x2, int y2, SColor fillColor);
         void DrawTexture(int posX, int posY, int centerX, int centerY, int rotation, ITexture texture,
             int sourceX = -1, int sourceY = -1, int width = -1, int height = -1, bool blackAsTransparent = false,
             bool flipX = false, bool flipY = false);

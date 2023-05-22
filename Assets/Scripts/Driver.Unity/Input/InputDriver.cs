@@ -15,6 +15,7 @@
  */
 
 using Nofun.Driver.Input;
+using Nofun.Util;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -127,7 +128,127 @@ namespace Nofun.Driver.Unity.Input
 
         public bool KeyPressed(uint keyCodeAsciiOrImplDefined)
         {
-            return false;
+            switch (keyCodeAsciiOrImplDefined)
+            {
+                case '1':
+                    {
+                        return ((buttonData & (uint)(Driver.Input.KeyCode.Up | Driver.Input.KeyCode.Left)) != 0);
+                    }
+
+                case '2':
+                    {
+                        return BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Up);
+                    }
+
+                case '3':
+                    {
+                        return ((buttonData & (uint)(Driver.Input.KeyCode.Up | Driver.Input.KeyCode.Right)) != 0);
+                    }
+
+                case '4':
+                    {
+                        return BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Left);
+                    }
+
+                case '5':
+                case '*':
+                    {
+                        return BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Fire);
+                    }
+
+                case '#':
+                    {
+                        return BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Fire2);
+                    }
+
+                case '0':
+                case (uint)SystemAsciiCode.SEOption:
+                    {
+                        return BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Select);
+                    }
+
+                case '6':
+                    {
+                        return BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Right);
+                    }
+
+                case '7':
+                    {
+                        return ((buttonData & (uint)(Driver.Input.KeyCode.Down | Driver.Input.KeyCode.Left)) != 0);
+                    }
+
+                case '8':
+                    {
+                        return BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Down);
+                    }
+
+                case '9':
+                    {
+                        return ((buttonData & (uint)(Driver.Input.KeyCode.Down | Driver.Input.KeyCode.Right)) != 0);
+                    }
+
+                default:
+                    return false;
+            }
+        }
+
+        public uint KeyScan
+        {
+            get
+            {
+                if (BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Up))
+                {
+                    if (BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Left))
+                    {
+                        return '1';
+                    }
+
+                    if (BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Right))
+                    {
+                        return '3';
+                    }
+
+                    return '2';
+                }
+                else if (BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Down))
+                {
+                    if (BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Left))
+                    {
+                        return '7';
+                    }
+
+                    if (BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Right))
+                    {
+                        return '9';
+                    }
+
+                    return '8';
+                }
+                else if (BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Left))
+                {
+                    return '4';
+                }
+                else if (BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Right))
+                {
+                    return '6';
+                }
+                else if (BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Fire))
+                {
+                    return '5';
+                }
+                else if (BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Fire2))
+                {
+                    return '*';
+                }
+                else if (BitUtil.FlagSet(buttonData, Driver.Input.KeyCode.Select))
+                {
+                    return (uint)SystemAsciiCode.SEOption;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
         }
 
         public void EndFrame()

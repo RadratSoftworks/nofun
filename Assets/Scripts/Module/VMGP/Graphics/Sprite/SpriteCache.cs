@@ -47,7 +47,7 @@ namespace Nofun.Module.VMGP
 
             if (!IsSpriteFormatSupported(format))
             {
-                throw new UnimplementedFeatureException("Sprite other than RGB332 is not yet implemented!");
+                throw new UnimplementedFeatureException("Sprite other than Palette and RGB332 is not supported!");
             }
 
             bool isPalette = (format >= TextureFormat.Palette2) && (format <= TextureFormat.Palette256);

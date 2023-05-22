@@ -16,7 +16,7 @@
 
 namespace Nofun.Driver.Input
 {
-    public enum KeyCode
+    public enum KeyCode : uint
     {
         Up = 0x1,
         Down = 0x2,

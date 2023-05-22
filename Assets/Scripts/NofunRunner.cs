@@ -28,6 +28,7 @@ using UnityEngine;
 using System.Threading;
 using Nofun.UI;
 using Nofun.Settings;
+using System.Collections;
 
 namespace Nofun
 {
@@ -46,10 +47,10 @@ namespace Nofun
         private UIDriver uiDriver;
 
         [SerializeField]
-        private GameObject buttonControl;
+        private GameObject messageBoxPrefab;
 
         [SerializeField]
-        private GameObject failedLaunchDialog;
+        private AudioSource messageBoxSfx;
 
         [SerializeField]
         private SettingDocumentController settingDocument;
@@ -90,6 +91,11 @@ namespace Nofun
                 if (setting != null)
                 {
                     graphicDriver.FpsLimit = setting.Value.fps;
+
+                    if (setting.Value.screenMode != ScreenMode.Fullscreen)
+                    {
+                        ScreenManager.Instance.ScreenOrientation = setting.Value.orientation;
+                    }
                 }
 
                 settingActive = false;
@@ -122,7 +128,10 @@ namespace Nofun
             }
             catch (System.Exception ex)
             {
-                failedLaunchDialog.SetActive(true);
+                NofunMessageBoxController.Show(messageBoxPrefab, Driver.UI.IUIDriver.Severity.Info, Driver.UI.IUIDriver.ButtonType.OK,
+                    null, "Please open the .mpn file in a file explorer for now!", value => Application.Quit());
+
+                messageBoxSfx.Play();
                 failed = true;
 
                 return;
@@ -142,13 +151,25 @@ namespace Nofun
                 FileShare.Read);
 #endif
 
-            buttonControl.SetActive(Application.isMobilePlatform);
             settingManager = new(Application.persistentDataPath);
             timeDriver = new TimeDriver();
 
-            executable = new VMGPExecutable(gameStream);
-            system = new VMSystem(executable, new VMSystemCreateParameters(graphicDriver, inputDriver, audioDriver, timeDriver, uiDriver,
-                Application.persistentDataPath, targetExecutable));
+            try
+            {
+                executable = new VMGPExecutable(gameStream);
+                system = new VMSystem(executable, new VMSystemCreateParameters(graphicDriver, inputDriver, audioDriver, timeDriver, uiDriver,
+                    Application.persistentDataPath, targetExecutable));
+            }
+            catch (System.Exception _)
+            {
+                NofunMessageBoxController.Show(messageBoxPrefab, Driver.UI.IUIDriver.Severity.Info, Driver.UI.IUIDriver.ButtonType.OK,
+                    null, "The game is not compatible with the emulator! Make sure it is decrypted & decompressed!", value => Application.Quit());
+
+                messageBoxSfx.Play();
+                failed = true;
+
+                return;
+            }
 
             settingDocument.Setup(settingManager, system.GameName);
 
@@ -166,7 +187,7 @@ namespace Nofun
             }));
         }
 
-        private void InitializeGameRun()
+        private IEnumerator InitializeGameRun()
         {
             GameSetting? setting = settingManager.Get(system.GameName);
             setting = setting ?? new GameSetting()
@@ -176,19 +197,23 @@ namespace Nofun
                 fps = 30,
                 screenMode = ScreenMode.CustomSize,
                 deviceModel = Module.VMGPCaps.SystemDeviceModel.SonyEricssonT300,
+                systemVersion = SystemVersion.Version150,
                 enableSoftwareScissor = false
             };
 
             system.GameSetting = setting.Value;
 
+            // Change orientation first
+            ScreenManager.Instance.ScreenOrientation = setting.Value.orientation;
+
             graphicDriver.Initialize((setting.Value.screenMode == ScreenMode.CustomSize) ?
                 new Vector2(setting.Value.screenSizeX, setting.Value.screenSizeY) :
                 Vector2.zero, setting.Value.enableSoftwareScissor);
-            graphicDriver.FpsLimit = Mathf.Clamp(setting.Value.fps, 1, 120);
 
+            graphicDriver.FpsLimit = Mathf.Clamp(setting.Value.fps, 1, 120);
             systemThread.Start();
 
-            started = true;
+            yield break;
         }
 
         private void Update()
@@ -198,13 +223,10 @@ namespace Nofun
                 return;
             }
 
-#if UNITY_EDITOR
-            graphicDriver.FpsLimit = fpsLimit;
-#endif
-
             if (!started)
             {
-                InitializeGameRun();
+                StartCoroutine(InitializeGameRun());
+                started = true;
             }
 
             if (system.ShouldStop)

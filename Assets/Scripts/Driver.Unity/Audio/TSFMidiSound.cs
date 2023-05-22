@@ -40,14 +40,21 @@ namespace Nofun.Driver.Unity.Audio
 
         public void Stop()
         {
-            if (needManualFree)
+            JobScheduler.Instance.RunOnUnityThread(() =>
             {
-                JobScheduler.Instance.RunOnUnityThread(() =>
+                if (nativeHandle == IntPtr.Zero)
+                {
+                    return;
+                }
+
+                if (needManualFree)
                 {
                     audioDriver.RemoveMidiSound(this);
                     TSFMidiRenderer.Free(nativeHandle);
-                });
-            }
+
+                    nativeHandle = IntPtr.Zero;
+                }
+            });
         }
     }
 }

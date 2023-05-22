@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-using Nofun.Util.Logging;
 using Nofun.VM;
 using System;
 using System.Runtime.InteropServices;
@@ -112,14 +111,28 @@ namespace Nofun.Module.VMGPCaps
 
         private int GetCapsSound(VMPtr<SoundCaps> capsPtr)
         {
-            SoundCaps caps = new SoundCaps()
+            if (system.Version >= Settings.SystemVersion.Version150)
             {
-                size = (ushort)Marshal.SizeOf<SoundCaps>(),
-                flags = (ushort)system.AudioDriver.Capabilities,
-                config = system.AudioDriver.SoundConfig
-            };
+                SoundCaps caps = new SoundCaps()
+                {
+                    size = (ushort)Marshal.SizeOf<SoundCaps>(),
+                    flags = (ushort)system.AudioDriver.Capabilities,
+                    config = system.AudioDriver.SoundConfig
+                };
 
-            capsPtr.Write(system.Memory, caps);
+                capsPtr.Write(system.Memory, caps);
+            }
+            else
+            {
+                SoundCapsLegacy caps = new SoundCapsLegacy()
+                {
+                    size = (ushort)Marshal.SizeOf<SoundCaps>(),
+                    flags = (ushort)system.AudioDriver.Capabilities
+                };
+
+                capsPtr.Cast<SoundCapsLegacy>().Write(system.Memory, caps);
+            }
+
             return 1;
         }
 

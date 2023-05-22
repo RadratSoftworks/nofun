@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 19101, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: PanelSettings
+  m_Name: PanelSettingsLandscape
   m_EditorClassIdentifier: 
   themeUss: {fileID: -4733365628477956816, guid: 86f12ad31cf74734ead40c198cfc28c1, type: 3}
   m_TargetTexture: {fileID: 0}
@@ -18,7 +18,7 @@ MonoBehaviour:
   m_Scale: 1
   m_ReferenceDpi: 96
   m_FallbackDpi: 96
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1360, y: 2400}
   m_ScreenMatchMode: 0
   m_Match: 0
   m_SortingOrder: 2

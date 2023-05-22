@@ -164,7 +164,7 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void SetData(byte[] data, int mipLevel, Memory<SColor> palettes, bool zeroAsTransparent = false)
         {
-            JobScheduler.Instance.RunOnUnityThread(() =>
+            JobScheduler.Instance.PostponeToUnityThread(() =>
             {
                 UploadSingleMip(data, uTexture.width >> mipLevel, uTexture.height >> mipLevel, 0, data.Length * 8, mipLevel, palettes, zeroAsTransparent);
             });
@@ -172,7 +172,7 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void Apply()
         {
-            JobScheduler.Instance.RunOnUnityThread(() =>
+            JobScheduler.Instance.PostponeToUnityThread(() =>
             {
                 uTexture.Apply();
             });
@@ -180,7 +180,7 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void SaveToPng(string path)
         {
-            JobScheduler.Instance.RunOnUnityThread(() =>
+            JobScheduler.Instance.PostponeToUnityThread(() =>
             {
                 using (FileStream stream = File.OpenWrite(path))
                 {
@@ -201,7 +201,7 @@ namespace Nofun.Driver.Unity.Graphics
                 if (cachedUnityFilter != unityFilter)
                 {
                     cachedUnityFilter = unityFilter;
-                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         uTexture.filterMode = unityFilter;
                     });

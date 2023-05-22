@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-using UnityEngine;
+using Nofun.Driver.Audio;
 
-namespace Nofun
+namespace Nofun.Module.VMGPCaps
 {
-    public class UnlaunchableDialogController : MonoBehaviour
+    public struct SoundCapsLegacy
     {
-        [SerializeField]
-        private AudioSource sfxSource;
-
-        public void Start()
-        {
-            sfxSource.Play();
-        }
+        public ushort size;
+        public ushort flags;
     }
 }

@@ -23,12 +23,10 @@ using DG.Tweening;
 
 namespace Nofun.UI
 {
-    public class NofunMessageBoxController : MonoBehaviour
+    public class NofunMessageBoxController : FlexibleUIDocumentController
     {
         [SerializeField]
         private float popInOutDuration = 0.7f;
-
-        private UIDocument document;
 
         private Button leftButton;
         private Button rightButton;
@@ -39,9 +37,22 @@ namespace Nofun.UI
 
         private Action<int> pendingAction;
 
-        public void Awake()
+        public static void Show(GameObject boxPrefab, IUIDriver.Severity severity, IUIDriver.ButtonType buttonType, string title, string content, Action<int> buttonSubmitAct)
         {
-            document = GetComponent<UIDocument>();
+            GameObject messageBox = Instantiate(boxPrefab);
+            NofunMessageBoxController messageBoxController = messageBox.GetComponent<NofunMessageBoxController>();
+
+            messageBoxController.Show(severity, title, content, buttonType,
+                value => {
+                    Destroy(messageBox);
+                    buttonSubmitAct?.Invoke(value);
+                });
+        }
+
+        public override void Awake()
+        {
+            base.Awake();
+
             root = document.rootVisualElement;
             
             titleLabel = root.Q<Label>("TitleValue");

@@ -45,6 +45,12 @@ namespace Nofun.Parser
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
                 int keyLength = reader.ReadUInt16();
+
+                if (keyLength == 0)
+                {
+                    break;
+                }
+
                 int valueLength = reader.ReadUInt16();
 
                 if (reader.BaseStream.Position == reader.BaseStream.Length)

@@ -24,12 +24,16 @@ namespace Nofun
         private Thread unityThread;
         private Queue<Job> jobs;
 
+        private List<Job> postponedJobs;
+        private bool flushablePostponed = false;
+
         private void Start()
         {
             unityThread = Thread.CurrentThread;
             Paused = false;
             jobs = new();
 
+            postponedJobs = new();
             Instance = this;
         }
 
@@ -52,7 +56,50 @@ namespace Nofun
                         job.evt.Set();
                     }
                 }
-            }   
+            }
+
+            if (flushablePostponed)
+            {
+                lock (postponedJobs)
+                {
+                    postponedJobs.ForEach(job =>
+                    {
+                        job.caller();
+                        job.evt?.Set();
+                    });
+
+                    postponedJobs.Clear();
+                    flushablePostponed = false;
+                }
+            }
+        }
+
+        public void PostponeToUnityThread(Action act, bool toBeginning = false)
+        {
+            lock (postponedJobs)
+            {
+                if (toBeginning)
+                {
+                    postponedJobs.Insert(0, new Job(act));
+                }
+                else
+                {
+                    postponedJobs.Add(new Job(act));
+                }
+            }
+        }
+
+        public void FlushPostponed()
+        {
+            AutoResetEvent evt = new AutoResetEvent(false);
+
+            lock (postponedJobs)
+            {
+                postponedJobs.Add(new Job(() => { }, evt));
+                flushablePostponed = true;
+            }
+
+            evt.WaitOne();
         }
 
         public void RunOnUnityThread(Action act)

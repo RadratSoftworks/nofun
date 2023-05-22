@@ -24,7 +24,7 @@ using System.Collections.Generic;
 
 namespace Nofun.UI
 {
-    public class SettingDocumentController : MonoBehaviour
+    public class SettingDocumentController : FlexibleUIDocumentController
     {
         private static Dictionary<SystemDeviceModel, Tuple<int, int>> DeviceModelToScreenSizes = new()
         {
@@ -46,14 +46,16 @@ namespace Nofun.UI
             { SystemDeviceModel.TigerTelematicGametrac, new Tuple<int, int>(480, 272) }
         };
 
-        private UIDocument document;
+        private const string SourceCodeURL = "https://github.com/RadratSoftworks/nofun";
 
         private TextField sizeXText;
         private TextField sizeYText;
         private TextField fpsField;
 
         private DropdownField screenModeDropdown;
+        private DropdownField orientationDropdown;
         private DropdownField deviceDropdown;
+        private DropdownField systemVersionDropdown;
 
         private Toggle softwareScissorCheck;
 
@@ -71,11 +73,11 @@ namespace Nofun.UI
 
         public event Action Finished;
 
-        public void Awake()
+        public override void Awake()
         {
-            DOTween.Init();
+            base.Awake();
 
-            document = GetComponent<UIDocument>();
+            DOTween.Init();
 
             VisualElement root = document.rootVisualElement;
             root.style.display = DisplayStyle.None;
@@ -85,17 +87,31 @@ namespace Nofun.UI
             sizeYText = screenSizeElem.Q<TextField>("YNumberInput");
 
             screenModeDropdown = root.Q<DropdownField>("ScreenModeCombo");
+            orientationDropdown = root.Q<DropdownField>("OrientationCombo");
             deviceDropdown = root.Q<DropdownField>("DeviceCombo");
+            systemVersionDropdown = root.Q<DropdownField>("VersionCombo");
             softwareScissorCheck = root.Q<Toggle>("SoftwareScissorToggle");
             fpsField = root.Q<TextField>("FPSField");
 
             confirmButton = root.Q<Button>("ConfirmButton");
             Button cancelButton = root.Q<Button>("CancelButton");
             Button syncSizeButton = root.Q<Button>("SyncSizeButton");
+            Button sourceCodeButton = root.Q<Button>("SourceCodeButton");
 
             confirmButton.clicked += OnOKButtonClicked;
             cancelButton.clicked += OnCancelButtonClicked;
             syncSizeButton.clicked += OnSyncSizeButtonClicked;
+
+            sourceCodeButton.clicked += () =>
+            {
+                Application.OpenURL(SourceCodeURL);
+            };
+
+            if (!Application.isMobilePlatform)
+            {
+                // Hide it if not on mobile platform
+                orientationDropdown.style.display = DisplayStyle.None;
+            }
         }
 
         public void Setup(GameSettingsManager manager, string gameName)
@@ -131,6 +147,8 @@ namespace Nofun.UI
 
                 screenModeDropdown.index = (int)ScreenMode.CustomSize;
                 deviceDropdown.index = (int)SystemDeviceModel.SonyEricssonT310;
+                orientationDropdown.index = (int)Settings.ScreenOrientation.Potrait;
+                systemVersionDropdown.index = (int)SystemVersion.Version150;
 
                 softwareScissorCheck.value = false;
 
@@ -146,6 +164,8 @@ namespace Nofun.UI
                 // Most of them are straight-forward map
                 screenModeDropdown.index = (int)setting.Value.screenMode;
                 deviceDropdown.index = (int)setting.Value.deviceModel;
+                orientationDropdown.index = (int)setting.Value.orientation;
+                systemVersionDropdown.index = (int)setting.Value.systemVersion;
 
                 softwareScissorCheck.value = setting.Value.enableSoftwareScissor;
 
@@ -162,6 +182,8 @@ namespace Nofun.UI
             newSetting.screenSizeY = int.Parse(sizeYText.value);
             newSetting.deviceModel = (SystemDeviceModel)deviceDropdown.index;
             newSetting.screenMode = (ScreenMode)screenModeDropdown.index;
+            newSetting.orientation = (Settings.ScreenOrientation)orientationDropdown.index;
+            newSetting.systemVersion = (SystemVersion)systemVersionDropdown.index;
             newSetting.enableSoftwareScissor = softwareScissorCheck.value;
             newSetting.fps = int.Parse(fpsField.value);
 
@@ -180,12 +202,8 @@ namespace Nofun.UI
 
                     if (saveAgain)
                     {
-                        GameObject messageBox = Instantiate(messageBoxPrefab);
-                        NofunMessageBoxController messageBoxController = messageBox.GetComponent<NofunMessageBoxController>();
-
-                        messageBoxController.Show(Driver.UI.IUIDriver.Severity.Info, "Settings saved", "New setting will be effective on next launch.", Driver.UI.IUIDriver.ButtonType.OK,
+                        NofunMessageBoxController.Show(messageBoxPrefab, Driver.UI.IUIDriver.Severity.Info, Driver.UI.IUIDriver.ButtonType.OK, "Settings saved", "New setting will be effective on next launch.",
                             value => {
-                                Destroy(messageBox);
                                 Finished?.Invoke();
                             });
                     }

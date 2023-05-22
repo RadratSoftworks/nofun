@@ -16,6 +16,7 @@
 
 using Nofun.Util.Logging;
 using Nofun.Util.Allocator;
+using Nofun.Settings;
 using Nofun.VM;
 
 namespace Nofun.Module.VMGP
@@ -24,7 +25,8 @@ namespace Nofun.Module.VMGP
     public partial class VMGP
     {
         private const ushort MajorAPIVersion = 2;
-        private const ushort MinorAPIVersion = 50;
+        private const ushort MinorAPIVersion50 = 50;
+        private const ushort MinorAPIVersion30 = 30;
 
         private VM.VMSystem system;
 
@@ -51,7 +53,7 @@ namespace Nofun.Module.VMGP
         [ModuleCall]
         private uint vGetVMGPInfo()
         {
-            return ((uint)MajorAPIVersion << 16) | MinorAPIVersion;
+            return ((uint)MajorAPIVersion << 16) | ((system.Version == SystemVersion.Version150) ? MinorAPIVersion50 : MinorAPIVersion30);
         }
 
         [ModuleCall]

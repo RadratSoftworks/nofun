@@ -63,7 +63,7 @@ namespace Nofun.Module.VMGP
                 }
             }
 
-            return new VMWrapperIStream(new FileStream(filePath, openMode, access));
+            return new VMWrapperIStream(new FileStream(filePath, openMode, access, FileShare.ReadWrite));
         }
 
         public VMWrapperIStream(Stream baseStream)

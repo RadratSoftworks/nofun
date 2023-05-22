@@ -27,6 +27,7 @@ namespace Nofun.Module.VMGP
     {
         private int foregroundColor;
         private int backgroundColor;
+        private uint flipCount;
         private uint currentTransferMode = (uint)TransferMode.Transparent;
 
         [ModuleCall]
@@ -95,6 +96,13 @@ namespace Nofun.Module.VMGP
         {
             // This should always block
             system.GraphicDriver.FlipScreen();
+            flipCount++;
+        }
+
+        [ModuleCall]
+        private uint vFrameTickCount()
+        {
+            return flipCount;
         }
 
         [ModuleCall]
@@ -133,6 +141,13 @@ namespace Nofun.Module.VMGP
         private void vDrawLine(short x0, short y0, short x1, short y1)
         {
             system.GraphicDriver.DrawLine(x0, y0, x1, y1, GetColor(foregroundColor));
+        }
+
+        [ModuleCall]
+        private void vDrawFlatPolygon(VMPtr<Triangle> triPtr)
+        {
+            Triangle tri = triPtr.Read(system.Memory);
+            system.GraphicDriver.DrawTriangle(tri.x0, tri.y0, tri.x1, tri.y1, tri.x2, tri.y2, GetColor(foregroundColor));
         }
 
         [ModuleCall]

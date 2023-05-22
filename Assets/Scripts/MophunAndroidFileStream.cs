@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#if UNITY_ANDROID && !UNITY_EDITOR
+#if UNITY_ANDROID
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -31,17 +31,11 @@ namespace Nofun
         [DllImport("SAFFileRouter", EntryPoint = "saf_router_read")]
         public static extern Int64 ReadRouter(IntPtr handle, IntPtr buffer, int count);
         
-        [DllImport("SAFFileRouter", EntryPoint = "saf_router_write")]
-        public static extern Int64 WriteRouter(IntPtr handle, IntPtr buffer, int count);
-        
         [DllImport("SAFFileRouter", EntryPoint = "saf_router_tell")]
         public static extern Int64 TellRouter(IntPtr handle);
 
         [DllImport("SAFFileRouter", EntryPoint = "saf_router_seek")]
         public static extern Int64 SeekRouter(IntPtr handle, int offset, int whence);
-        
-        [DllImport("SAFFileRouter", EntryPoint = "saf_router_flush")]
-        public static extern void FlushRouter(IntPtr handle);
 
         [DllImport("SAFFileRouter", EntryPoint = "saf_router_close")]
         public static extern Int64 CloseRouter(IntPtr handle);
@@ -128,7 +122,6 @@ namespace Nofun
 
         public override void Flush()
         {
-            FlushRouter(currentHandle);
         }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -154,13 +147,7 @@ namespace Nofun
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            unsafe
-            {
-                fixed (byte* bufferPtr = buffer)
-                {
-                    WriteRouter(currentHandle, (IntPtr)(bufferPtr + offset), count);
-                }
-            }
+            throw new NotImplementedException();
         }
     }
 }

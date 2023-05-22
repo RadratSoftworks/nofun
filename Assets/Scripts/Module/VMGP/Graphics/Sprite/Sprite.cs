@@ -191,14 +191,21 @@ namespace Nofun.Module.VMGP
 
             Span<byte> spriteData = sprite[1].Cast<byte>().AsSpan(system.Memory, spriteSizeInBytes);
 
-            ITexture drawTexture = spriteCache.Retrieve(system.GraphicDriver, spriteInfo, spriteData,
-                ScreenPalette, BitUtil.FlagSet(currentTransferMode, TransferMode.Transparent));
+            try
+            {
+                ITexture drawTexture = spriteCache.Retrieve(system.GraphicDriver, spriteInfo, spriteData,
+                    ScreenPalette, BitUtil.FlagSet(currentTransferMode, TransferMode.Transparent));
 
-            // Draw it to the screen
-            system.GraphicDriver.DrawTexture(x, y, spriteInfo.centerX, spriteInfo.centerY,
-                0, drawTexture, blackAsTransparent: false,
-                flipX: BitUtil.FlagSet(currentTransferMode, TransferMode.FlipX),
-                flipY: BitUtil.FlagSet(currentTransferMode, TransferMode.FlipY));
+                // Draw it to the screen
+                system.GraphicDriver.DrawTexture(x, y, spriteInfo.centerX, spriteInfo.centerY,
+                    0, drawTexture, blackAsTransparent: false,
+                    flipX: BitUtil.FlagSet(currentTransferMode, TransferMode.FlipX),
+                    flipY: BitUtil.FlagSet(currentTransferMode, TransferMode.FlipY));
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(LogClass.VMGPGraphic, $"Draw object failed with error: {ex}");
+            }
         }
     }
 }

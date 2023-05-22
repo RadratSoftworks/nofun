@@ -21,5 +21,7 @@ namespace Nofun.Driver.Input
         uint GetButtonData();
         bool KeyPressed(uint keyCodeAsciiOrImplDefined);
         void EndFrame();
+
+        uint KeyScan { get; }
     };
 }

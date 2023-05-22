@@ -65,6 +65,7 @@
     flex-direction: row;
     margin-top: 10px;
     justify-content: center;
+    min-height: 50px;
 }
 
 #SettingButtons > .unity-button

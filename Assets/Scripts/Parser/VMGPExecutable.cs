@@ -135,18 +135,6 @@ namespace Nofun.Parser
             reader.Read(data);
         }
 
-        public void WriteResourceData(UInt32 resourceIndex, Span<byte> data, long offset)
-        {
-            var resourceInfo = resourceInfos[(int)resourceIndex];
-            writer.BaseStream.Seek(resourceInfo.offset + offset, SeekOrigin.Begin);
-            writer.Write(data);
-        }
-
-        public void FlushResourceModification()
-        {
-            writer.Flush();
-        }
-
         void IDisposable.Dispose()
         {
             reader.Dispose();

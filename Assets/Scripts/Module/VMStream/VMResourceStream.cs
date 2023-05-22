@@ -17,6 +17,7 @@
 using Nofun.Parser;
 using Nofun.Util;
 using System;
+using System.IO;
 
 namespace Nofun.Module.VMStream
 {
@@ -27,16 +28,32 @@ namespace Nofun.Module.VMStream
 
         private uint resourceNumber = 0;
         private VMGPExecutable executable;
+        private FileStream groundStream;
 
         private uint mode;
+        private string filePath;
 
-        public static IVMHostStream Create(VMGPExecutable executable, uint mode)
+        public static IVMHostStream Create(VMGPExecutable executable, string basePath, uint mode)
         {
-            return new VMResourceStream(executable, (mode >> 16), mode & 0xFFFF);
+            return new VMResourceStream(executable, basePath, (mode >> 16), mode & 0xFFFF);
         }
 
-        public VMResourceStream(VMGPExecutable executable, uint resourceNumber, uint mode)
+        public VMResourceStream(VMGPExecutable executable, string baseStorePath, uint resourceNumber, uint mode)
         {
+            string baseResourcePath = Path.Join(baseStorePath, "__Resources");
+            Directory.CreateDirectory(baseResourcePath);
+
+            this.filePath = Path.Join(baseResourcePath, $"{resourceNumber:X8}");
+
+            try
+            {
+                groundStream = File.Open(this.filePath, FileMode.Open, FileAccess.ReadWrite);
+            }
+            catch (Exception _)
+            {
+                // Nothing yet
+            }
+
             this.executable = executable;
             this.mode = mode;
             this.resourceNumber = resourceNumber;
@@ -45,6 +62,11 @@ namespace Nofun.Module.VMStream
 
         public int Read(Span<byte> buffer, object extraArgs)
         {
+            if (groundStream != null)
+            {
+                return groundStream.Read(buffer);
+            }
+
             uint countRead = Math.Min((uint)buffer.Length, maxSize - currentPointer);
             if (countRead != buffer.Length)
             {
@@ -64,6 +86,11 @@ namespace Nofun.Module.VMStream
 
         public int Seek(int offset, StreamSeekMode whence)
         {
+            if (groundStream != null)
+            {
+                return (int)groundStream.Seek(offset, whence.ToSeekOrigin());
+            }
+
             switch (whence)
             {
                 case StreamSeekMode.Cur:
@@ -88,7 +115,7 @@ namespace Nofun.Module.VMStream
 
         public int Tell()
         {
-            return (int)currentPointer;
+            return (int?)groundStream?.Position ?? (int)currentPointer;
         }
 
         public int Write(Span<byte> buffer, object extraArgs)
@@ -98,21 +125,26 @@ namespace Nofun.Module.VMStream
                 throw new ArgumentException("The stream is not writable!");
             }
 
-            uint countWrite = Math.Min((uint)buffer.Length, maxSize - currentPointer);
-            if (countWrite != buffer.Length)
+            if (groundStream == null)
             {
-                buffer = buffer.Slice(0, (int)countWrite);
+                byte[] wholeData = new byte[maxSize];
+                executable.ReadResourceData(resourceNumber, wholeData, 0);
+
+                // Create file and copy new data to it
+                groundStream = File.Open(this.filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                groundStream.Write(wholeData);
+                groundStream.Seek(currentPointer, SeekOrigin.Begin);
             }
 
-            executable.WriteResourceData(resourceNumber, buffer, currentPointer);
-            currentPointer += countWrite;
+            int maxWrite = Math.Clamp(buffer.Length, 0, (int)(maxSize - groundStream.Position));
+            groundStream.Write(buffer.Slice(0, maxWrite));
 
-            return (int)countWrite;
+            return maxWrite;
         }
 
         public void OnClose()
         {
-            executable.FlushResourceModification();
+            groundStream?.Close();
         }
     }
 }

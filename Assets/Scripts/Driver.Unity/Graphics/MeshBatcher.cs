@@ -128,24 +128,25 @@ namespace Nofun.Driver.Unity.Graphics
             return true;
         }
 
-        public Mesh Pop()
+        public int Pop(BufferPusher pusher)
         {
             BatchedInfo batch = null;
 
             lock (doneBatches)
             {
-                batch = doneBatches.Dequeue();
+                batch = doneBatches.Peek();
             }
 
-            Mesh returnMesh = new Mesh();
+            int val = pusher.Push(batch.vertices, batch.uvs, batch.normals, batch.colors, batch.indicies);
+            if (val >= 0)
+            {
+                lock (doneBatches)
+                {
+                    doneBatches.Dequeue();
+                }
+            }
 
-            returnMesh.vertices = batch.vertices.ToArray();
-            returnMesh.uv = batch.uvs.ToArray();
-            returnMesh.normals = batch.normals.ToArray();
-            returnMesh.colors = batch.colors.ToArray();
-            returnMesh.triangles = batch.indicies.ToArray();
-
-            return returnMesh;
+            return val;
         }
 
         public void Reset()

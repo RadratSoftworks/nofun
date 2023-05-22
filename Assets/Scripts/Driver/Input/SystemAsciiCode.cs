@@ -14,27 +14,10 @@
  * limitations under the License.
  */
 
-namespace Nofun.Module.VMGP
+namespace Nofun.Driver.Input
 {
-    [Module]
-    public partial class VMGP
+    public enum SystemAsciiCode: uint
     {
-        [ModuleCall]
-        private uint vGetButtonData()
-        {
-            return system.InputDriver.GetButtonData();
-        }
-
-        [ModuleCall]
-        private int vTestKey(uint key)
-        {
-            return system.InputDriver.KeyPressed(key) ? 1 : 0;
-        }
-
-        [ModuleCall]
-        private uint vScanKeys()
-        {
-            return system.InputDriver.KeyScan;
-        }
+        SEOption = 217
     }
 }

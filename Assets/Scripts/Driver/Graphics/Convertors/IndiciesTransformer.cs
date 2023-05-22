@@ -69,6 +69,67 @@ namespace Nofun.Driver.Graphics
             return newIndicies;
         }
 
+        public static int Estimate(Span<short> indices, PrimitiveTopology topology)
+        {
+            switch (topology)
+            {
+                case PrimitiveTopology.TriangleList:
+                    return indices.Length;
+
+
+                case PrimitiveTopology.TriangleStrip:
+                    {
+                        bool winding = false;
+                        int totalCount = 0;
+
+                        for (int i = 0; i < indices.Length - 2; i++)
+                        {
+                            if (indices[i + 2] < 0)
+                            {
+                                // Restart the winding
+                                winding = false;
+                                i += 2;
+
+                                continue;
+                            }
+
+                            totalCount += 3;
+                            winding = !winding;
+                        }
+
+                        return totalCount;
+                    }
+
+                case PrimitiveTopology.TriangleFan:
+                    {
+                        int fanRoot = -1;
+                        int totalCount = 0;
+
+                        for (int i = 0; i < indices.Length - 1; i++)
+                        {
+                            if (indices[i] < 0)
+                            {
+                                fanRoot = -1;
+                                continue;
+                            }
+
+                            if (fanRoot == -1)
+                            {
+                                fanRoot = indices[i];
+                                continue;
+                            }
+
+                            totalCount += 3;
+                        }
+
+                        return totalCount;
+                    }
+
+                default:
+                    throw new ArgumentException($"Unknown topology: {topology}");
+            }
+        }
+
         public static List<int> Process(Span<short> indices, PrimitiveTopology topology, int addOffset)
         {
             List<int> triangles = new();

@@ -26,6 +26,7 @@ using UnityEngine.Rendering;
 using Nofun.Module.VMGP3D;
 using System.Linq;
 using Unity.VisualScripting;
+using System.Collections;
 
 namespace Nofun.Driver.Unity.Graphics
 {
@@ -67,7 +68,6 @@ namespace Nofun.Driver.Unity.Graphics
         private Matrix4x4 orthoMatrix = Matrix4x4.identity;
         private bool in3DMode = false;
 
-        private MeshCache meshCache;
         private MeshBatcher meshBatcher;
 
         [SerializeField]
@@ -75,9 +75,6 @@ namespace Nofun.Driver.Unity.Graphics
 
         [SerializeField]
         private TMPro.TMP_Text textMeasure;
-
-        [SerializeField]
-        private UnityEngine.UI.RawImage displayImage;
 
         [SerializeField]
         private Material mophunDrawTextureMaterial;
@@ -97,8 +94,12 @@ namespace Nofun.Driver.Unity.Graphics
         private List<TMPro.TMP_Text> textRenderInternals;
         private Dictionary<ulong, Material> unlitMaterialCache;
 
+        private List<BufferPusher> bufferPushers;
+        private int bufferPusherInUse;
+
         private Material currentMaterial;
         private bool softwareScissor = false;
+        private bool fullscreen = false;
 
         private enum BatchingMode
         {
@@ -115,6 +116,64 @@ namespace Nofun.Driver.Unity.Graphics
         public float FpsLimit { get; set; }
 
         private float SecondPerFrame => 1.0f / FpsLimit;
+
+        private Tuple<Mesh, int> GetPushedSubMesh(Func<BufferPusher, int> pushAction)
+        {
+            int result = pushAction(bufferPushers[bufferPusherInUse]);
+            if (result < 0)
+            {
+                if (bufferPusherInUse + 1 >= bufferPushers.Count)
+                {
+                    JobScheduler.Instance.RunOnUnityThreadSync(() =>
+                    {
+                        bufferPushers.Add(new BufferPusher());
+                    });
+                }
+
+                bufferPusherInUse++;
+                int final = pushAction(bufferPushers[bufferPusherInUse]);
+
+                if (final < 0)
+                {
+                    throw new OutOfMemoryException("Can't push submesh to buffer!");
+                }
+
+                return new Tuple<Mesh, int>(bufferPushers[bufferPusherInUse].BigMesh, final);
+            }
+            else
+            {
+                return new Tuple<Mesh, int>(bufferPushers[bufferPusherInUse].BigMesh, result);
+            }
+        }
+
+        private Tuple<Mesh, int> GetPushedSubMesh(MpMesh rawMesh)
+        {
+            int result = bufferPushers[bufferPusherInUse].Push(rawMesh);
+            if (result < 0)
+            {
+                if (bufferPusherInUse + 1 >= bufferPushers.Count)
+                {
+                    JobScheduler.Instance.RunOnUnityThreadSync(() =>
+                    {
+                        bufferPushers.Add(new BufferPusher());
+                    });
+                }
+
+                bufferPusherInUse++;
+                int final = bufferPushers[bufferPusherInUse].Push(rawMesh);
+
+                if (final < 0)
+                {
+                    throw new OutOfMemoryException("Can't push submesh to buffer!");
+                }
+
+                return new Tuple<Mesh, int>(bufferPushers[bufferPusherInUse].BigMesh, final);
+            }
+            else
+            {
+                return new Tuple<Mesh, int>(bufferPushers[bufferPusherInUse].BigMesh, result);
+            }
+        }
 
         private void PrepareUnlitMaterial()
         {
@@ -159,11 +218,13 @@ namespace Nofun.Driver.Unity.Graphics
         {
             if (meshBatcher.Flush())
             {
-                JobScheduler.Instance.RunOnUnityThread(() =>
+                var subMesh = GetPushedSubMesh(pusher => meshBatcher.Pop(pusher));
+
+                JobScheduler.Instance.PostponeToUnityThread(() =>
                 {
                     BeginRender(mode2D: false);
 
-                    commandBuffer.DrawMesh(meshBatcher.Pop(), Matrix4x4.identity, currentMaterial, 0, 0, UnlitPropertyBlock);
+                    commandBuffer.DrawMesh(subMesh.Item1, Matrix4x4.identity, currentMaterial, subMesh.Item2, 0, UnlitPropertyBlock);
                 });
             }
         }
@@ -175,7 +236,9 @@ namespace Nofun.Driver.Unity.Graphics
                 Texture2D currentTexCopy = current2DTexture;
                 bool blackAsTransparentCopy = currentBlackAsTransparent;
 
-                JobScheduler.Instance.RunOnUnityThread(() =>
+                var subMesh = GetPushedSubMesh(pusher => meshBatcher.Pop(pusher));
+
+                JobScheduler.Instance.PostponeToUnityThread(() =>
                 {
                     BeginRender(mode2D: true);
 
@@ -183,7 +246,7 @@ namespace Nofun.Driver.Unity.Graphics
                     block.SetTexture(MainTexUniformName, currentTexCopy);
                     block.SetFloat(BlackTransparentUniformName, blackAsTransparentCopy ? 1.0f : 0.0f);
 
-                    commandBuffer.DrawMesh(meshBatcher.Pop(), Matrix4x4.identity, mophunDrawTextureMaterial, 0, 0, block);
+                    commandBuffer.DrawMesh(subMesh.Item1, Matrix4x4.identity, mophunDrawTextureMaterial, subMesh.Item2, 0, block);
                 });
             }
         }
@@ -273,14 +336,73 @@ namespace Nofun.Driver.Unity.Graphics
             quadMesh.uv = uv;
         }
 
+        private void PrepareNonFullscreenFitDisplay(RectTransform transform, AspectRatioFitter fitter, Vector2 size, Settings.ScreenOrientation newOrientation)
+        {
+            fitter.aspectRatio = size.x / size.y;
+
+            if (newOrientation == Settings.ScreenOrientation.Potrait)
+            {
+                fitter.aspectMode = AspectRatioFitter.AspectMode.WidthControlsHeight;
+            }
+            else
+            {
+                fitter.aspectMode = AspectRatioFitter.AspectMode.HeightControlsWidth;
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(transform);
+
+            if (newOrientation == Settings.ScreenOrientation.Landscape)
+            {
+                transform.localPosition = Vector3.zero;
+            }
+        }
+
+        private IEnumerator PerformOrientationChange()
+        {
+            yield return null;
+
+            RawImage displayImage = ScreenManager.Instance.CurrentDisplay;
+            RectTransform imageTransform = displayImage.GetComponent<RectTransform>();
+
+            if (displayImage.texture != screenTextureBackBuffer)
+            {
+                displayImage.texture = screenTextureBackBuffer;
+                if (!fullscreen)
+                {
+                    AspectRatioFitter fitter = displayImage.AddComponent<AspectRatioFitter>();
+                    PrepareNonFullscreenFitDisplay(imageTransform, fitter, screenSize, ScreenManager.Instance.ScreenOrientation);
+                }
+                else
+                {
+                    imageTransform.anchorMin = Vector2.zero;
+                    imageTransform.anchorMax = Vector2.one;
+                    imageTransform.offsetMax = Vector2.zero;
+
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(imageTransform);
+                }
+            }
+
+            yield break;
+        }
+
+        private void OnOrientationChanged(Settings.ScreenOrientation newOrientation)
+        {
+            StartCoroutine(PerformOrientationChange());
+        }
+
         public void Initialize(Vector2 size, bool softwareScissor = false)
         {
+            ScreenManager.Instance.ScreenOrientationChanged += OnOrientationChanged;
+
+            RawImage displayImage = ScreenManager.Instance.CurrentDisplay;
+            Canvas canvas = ScreenManager.Instance.CurrentCanvas;
+
             RectTransform transform = displayImage.GetComponent<RectTransform>();
 
             transform.anchoredPosition = Vector2.zero;
             transform.offsetMin = Vector2.zero;
 
-            bool fullscreen = false;
+            fullscreen = false;
 
             // Assume that as cover screen
             if ((size.x <= 0) || (size.y <= 0))
@@ -292,7 +414,18 @@ namespace Nofun.Driver.Unity.Graphics
 
                 LayoutRebuilder.ForceRebuildLayoutImmediate(transform);
 
-                size = transform.rect.size * displayImage.canvas.scaleFactor;
+                size = transform.rect.size * canvas.scaleFactor;
+
+                // For some reason, the size is not swapped on Android even when the screen has completely rotated...
+                // May take few more frames, but don't risk it
+                if (Application.isMobilePlatform)
+                {
+                    if (ScreenManager.Instance.ScreenOrientation != Settings.ScreenOrientation.Potrait)
+                    {
+                        size = new Vector2(size.y, size.x);
+                    }
+                }
+
                 fullscreen = true;
             }
 
@@ -302,33 +435,33 @@ namespace Nofun.Driver.Unity.Graphics
             if (!fullscreen)
             {
                 AspectRatioFitter fitter = displayImage.AddComponent<AspectRatioFitter>();
-                fitter.aspectRatio = size.x / size.y;
-                fitter.aspectMode = AspectRatioFitter.AspectMode.WidthControlsHeight;
-
-                LayoutRebuilder.ForceRebuildLayoutImmediate(transform);
+                PrepareNonFullscreenFitDisplay(transform, fitter, size, ScreenManager.Instance.ScreenOrientation);
             }
-            
-            meshCache = new();
+
+            displayImage.texture = screenTextureBackBuffer;
+
             meshBatcher = new();
             unlitMaterialCache = new();
             measuredCache = new();
             clientSideState = new();
             serverSideState = new();
+            bufferPushers = new();
+
+            for (int i = 0; i < 5; i++)
+            {
+                bufferPushers.Add(new BufferPusher());
+            }
 
             clientSideState.scissorRect = serverSideState.scissorRect = new Rect(0, 0, size.x, size.y);
             clientSideState.viewportRect = serverSideState.viewportRect = new Rect(0, 0, size.x, size.y);
 
-            SetupWhiteTexture();
-            SetupQuadMesh();
-
-            displayImage.texture = screenTextureBackBuffer;
-            displayImage.gameObject.SetActive(false);
-
-            textRenderInternals = new(textRenders);
-
             this.screenSize = size;
             this.softwareScissor = softwareScissor;
 
+            SetupWhiteTexture();
+            SetupQuadMesh();
+
+            textRenderInternals = new(textRenders);
             orthoMatrix = Matrix4x4.Ortho(0, ScreenWidth, 0, ScreenHeight, 1, -100);
         }
 
@@ -336,9 +469,10 @@ namespace Nofun.Driver.Unity.Graphics
         {
         }
 
-        private Rect GetUnityScreenRect(Rect curRect)
+        private Rect GetUnityScreenRect(Rect curRect, bool zeroClamp = false)
         {
-            return new Rect(curRect.x, screenSize.y - (curRect.y + curRect.height), curRect.width, curRect.height);
+            float flipY = screenSize.y - (curRect.y + curRect.height);
+            return new Rect(zeroClamp ? Math.Max(curRect.x, 0) : curRect.x, zeroClamp ? Math.Max(0, flipY) : flipY, curRect.width, curRect.height);
         }
 
         private Vector2 GetUnityCoords(float x, float y)
@@ -452,7 +586,7 @@ namespace Nofun.Driver.Unity.Graphics
 
                 if (!softwareScissor)
                 {
-                    commandBuffer.EnableScissorRect(GetUnityScreenRect(serverSideState.scissorRect));
+                    commandBuffer.EnableScissorRect(GetUnityScreenRect(serverSideState.scissorRect, true));
                 }
             }
         }
@@ -506,7 +640,7 @@ namespace Nofun.Driver.Unity.Graphics
         {
             FlushBatch();
 
-            JobScheduler.Instance.RunOnUnityThread(() =>
+            JobScheduler.Instance.PostponeToUnityThread(() =>
             {
                 BeginRender();
                 commandBuffer.ClearRenderTarget(false, true, color.ToUnityColor());
@@ -517,7 +651,7 @@ namespace Nofun.Driver.Unity.Graphics
         {
             FlushBatch();
 
-            JobScheduler.Instance.RunOnUnityThread(() =>
+            JobScheduler.Instance.PostponeToUnityThread(() =>
             {
                 BeginRender();
 
@@ -612,6 +746,41 @@ namespace Nofun.Driver.Unity.Graphics
             DrawLineThickScaled(x0, y0, x1, y1, lineColor);
         }
 
+        public void DrawTriangle(int x0, int y0, int x1, int y1, int x2, int y2, SColor fillColor)
+        {
+            Begin2DBatching(whiteTexture);
+
+            Vector3[] positions = new Vector3[]
+            {
+                GetUnityCoords(x0, y0),
+                GetUnityCoords(x1, y1),
+                GetUnityCoords(x2, y2)
+            };
+
+            int[] indices = new int[]
+            {
+                0, 1, 2
+            };
+
+            Vector2[] uvs = new Vector2[]
+            {
+                new Vector2(0, 0),
+                new Vector2(1, 0),
+                new Vector2(0.5f, 1)
+            };
+
+            Color oneColor = fillColor.ToUnityColor();
+
+            Color[] colors = new Color[]
+            {
+                oneColor,
+                oneColor,
+                oneColor
+            };
+
+            meshBatcher.AddBasic(positions, uvs, colors, indices);
+        }
+
         public void FillRect(int x0, int y0, int x1, int y1, SColor color)
         {
             Rect destRect = new Rect(x0, y0, x1 - x0, y1 - y0);
@@ -628,7 +797,13 @@ namespace Nofun.Driver.Unity.Graphics
 
             DateTime flipStart = DateTime.Now;
 
-            JobScheduler.Instance.RunOnUnityThreadSync(() =>
+            bufferPusherInUse = 0;
+            bufferPushers.ForEach(pusher =>
+            {
+                JobScheduler.Instance.PostponeToUnityThread(() => pusher.Flush(), true);
+            });
+
+            JobScheduler.Instance.PostponeToUnityThread(() =>
             {
                 if (began)
                 {
@@ -644,14 +819,11 @@ namespace Nofun.Driver.Unity.Graphics
                     fontMeshUsed = 0;
                     meshBatcher.Reset();
 
-                    if (!displayImage.gameObject.activeSelf)
-                    {            
-                        displayImage.gameObject.SetActive(true);
-                    }
-
                     began = false;
                 }
             });
+
+            JobScheduler.Instance.FlushPostponed();
 
             DateTime now = DateTime.Now;
             double remaining = SecondPerFrame - (now - flipStart).TotalSeconds;
@@ -688,13 +860,13 @@ namespace Nofun.Driver.Unity.Graphics
                 {
                     case SystemFontSize.Large:
                         {
-                            fontSizeNew = 22;
+                            fontSizeNew = 14.5f;
                             break;
                         }
 
                     case SystemFontSize.Normal:
                         {
-                            fontSizeNew = 17;
+                            fontSizeNew = 13.0f;
                             break;
                         }
 
@@ -741,7 +913,7 @@ namespace Nofun.Driver.Unity.Graphics
         {
             FlushBatch();
 
-            JobScheduler.Instance.RunOnUnityThread(() =>
+            JobScheduler.Instance.PostponeToUnityThread(() =>
             {
                 BeginRender();
 
@@ -896,17 +1068,12 @@ namespace Nofun.Driver.Unity.Graphics
             {
                 FlushBatch();
 
-                uint identifier = meshCache.GetMeshIdentifier(meshToDraw, out Mesh targetMesh);
+                var identifier = GetPushedSubMesh(meshToDraw);
 
-                JobScheduler.Instance.RunOnUnityThread(() =>
+                JobScheduler.Instance.PostponeToUnityThread(() =>
                 {
                     BeginRender(mode2D: false);
-                    if (targetMesh == null)
-                    {
-                        targetMesh = meshCache.GetMesh(identifier);
-                    }
-
-                    commandBuffer.DrawMesh(targetMesh, Matrix4x4.identity, currentMaterial, 0, 0, UnlitPropertyBlock);
+                    commandBuffer.DrawMesh(identifier.Item1, Matrix4x4.identity, currentMaterial, identifier.Item2, 0, UnlitPropertyBlock);
                 });
             }
         }
@@ -920,7 +1087,7 @@ namespace Nofun.Driver.Unity.Graphics
                     clientSideState.cullMode = value;
                     HandleFixedStateChangedClient();
 
-                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.cullMode = value;
                         fixedStateChanged = true;
@@ -942,7 +1109,7 @@ namespace Nofun.Driver.Unity.Graphics
                     clientSideState.depthCompareFunc = value;
                     HandleFixedStateChangedClient();
 
-                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.depthCompareFunc = value;
                         fixedStateChanged = true;
@@ -961,7 +1128,7 @@ namespace Nofun.Driver.Unity.Graphics
                     clientSideState.blendMode = value;
                     HandleFixedStateChangedClient();
 
-                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.blendMode = value;
                         fixedStateChanged = true;
@@ -980,7 +1147,7 @@ namespace Nofun.Driver.Unity.Graphics
                     clientSideState.textureMode = value;
                     HandleFixedStateChangedClient();
 
-                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.textureMode = value;
                     });
@@ -1004,13 +1171,13 @@ namespace Nofun.Driver.Unity.Graphics
                         HandleFixedStateChangedClient();
                     }
 
-                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.scissorRect = unityRect;
 
                         if (!softwareScissor && began && !in3DMode)
                         {
-                            commandBuffer.EnableScissorRect(GetUnityScreenRect(unityRect));
+                            commandBuffer.EnableScissorRect(GetUnityScreenRect(unityRect, true));
                         }
                     });
                 }
@@ -1028,7 +1195,7 @@ namespace Nofun.Driver.Unity.Graphics
                 {
                     clientSideState.viewportRect = unityRect;
 
-                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.viewportRect = unityRect;
 
@@ -1052,7 +1219,7 @@ namespace Nofun.Driver.Unity.Graphics
                     clientSideState.projectionMatrix3D = value;
                     HandleFixedStateChangedClient();
 
-                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.projectionMatrix3D = value;
 
@@ -1075,7 +1242,7 @@ namespace Nofun.Driver.Unity.Graphics
                     clientSideState.viewMatrix3D = value;
                     HandleFixedStateChangedClient();
 
-                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.viewMatrix3D = value;
 
@@ -1099,7 +1266,7 @@ namespace Nofun.Driver.Unity.Graphics
                     clientSideState.mainTexture = casted;
                     HandleFixedStateChangedClient();
 
-                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.mainTexture = casted;
                     });
@@ -1117,7 +1284,7 @@ namespace Nofun.Driver.Unity.Graphics
                     clientSideState.textureBlendMode = value;
                     HandleFixedStateChangedClient();
 
-                    JobScheduler.Instance.RunOnUnityThread(() =>
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.textureBlendMode = value;
                     });

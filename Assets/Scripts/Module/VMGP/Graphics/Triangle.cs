@@ -16,25 +16,13 @@
 
 namespace Nofun.Module.VMGP
 {
-    [Module]
-    public partial class VMGP
+    public struct Triangle
     {
-        [ModuleCall]
-        private uint vGetButtonData()
-        {
-            return system.InputDriver.GetButtonData();
-        }
-
-        [ModuleCall]
-        private int vTestKey(uint key)
-        {
-            return system.InputDriver.KeyPressed(key) ? 1 : 0;
-        }
-
-        [ModuleCall]
-        private uint vScanKeys()
-        {
-            return system.InputDriver.KeyScan;
-        }
+        public short x0;
+        public short y0;
+        public short x1;
+        public short y1;
+        public short x2;
+        public short y2;
     }
 }

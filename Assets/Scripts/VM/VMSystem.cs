@@ -58,6 +58,7 @@ namespace Nofun.VM
         private string gameName;
 
         public GameSetting GameSetting { get; set; }
+        public SystemVersion Version { get; set; }
 
         public VMMemory Memory => memory;
         public Processor Processor => processor;
@@ -184,7 +185,7 @@ namespace Nofun.VM
             stackStartAddress = totalSize;
             heapAddress = stackStartAddress + VMMemory.DataAlignment;       // Make a gap to avoid weird stack manipulation
 
-            roundedHeapSize = MemoryUtil.AlignUp(executable.Header.dynamicDataHeapSize, VMMemory.DataAlignment);
+            roundedHeapSize = MemoryUtil.AlignUp(executable.Header.dynamicDataHeapSize * 4 / 3, VMMemory.DataAlignment);
             totalSize += VMMemory.DataAlignment + roundedHeapSize;
 
             listRunAddress = heapAddress + roundedHeapSize;
