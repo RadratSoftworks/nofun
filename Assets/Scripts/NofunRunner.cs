@@ -30,6 +30,10 @@ using Nofun.UI;
 using Nofun.Settings;
 using System.Collections;
 
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+using System.Runtime.InteropServices;
+#endif
+
 namespace Nofun
 {
     public class NofunRunner: MonoBehaviour
@@ -68,6 +72,15 @@ namespace Nofun
         private bool started = false;
         private bool failed = false;
         private bool settingActive = false;
+
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+        [DllImport("user32.dll", EntryPoint = "SetWindowText")]
+        public static extern bool SetWindowText(System.IntPtr hwnd, System.String lpString);
+        [DllImport("user32.dll", EntryPoint = "GetActiveWindow")]
+        public static extern System.IntPtr GetActiveWindow();
+
+        private System.IntPtr currentWindow;
+#endif
 
         [SerializeField]
         private string executableFilePath = "E:\\spacebox.mpn";
@@ -118,7 +131,12 @@ namespace Nofun
             SetupLogger();
 
             Stream gameStream = null;
+
+#if UNITY_EDITOR
             string targetExecutable = executableFilePath;
+#else
+            string targetExecutable = null;
+#endif
 
 #if !UNITY_EDITOR && NOFUN_PRODUCTION
 #if UNITY_ANDROID
@@ -147,6 +165,17 @@ namespace Nofun
 #endif
 
 #if UNITY_EDITOR || !UNITY_ANDROID
+            if (targetExecutable == null)
+            {
+                NofunMessageBoxController.Show(messageBoxPrefab, Driver.UI.IUIDriver.Severity.Info, Driver.UI.IUIDriver.ButtonType.OK,
+                    null, "Please drag and drop your mpn file to the emulator shortcut/executable!", value => Application.Quit());
+
+                messageBoxSfx.Play();
+                failed = true;
+
+                return;
+            }
+
             gameStream = new FileStream(targetExecutable, FileMode.Open, FileAccess.ReadWrite,
                 FileShare.Read);
 #endif
@@ -185,6 +214,10 @@ namespace Nofun
                     system.Run();
                 }
             }));
+            
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+            currentWindow = GetActiveWindow();
+#endif
         }
 
         private IEnumerator InitializeGameRun()
@@ -233,6 +266,13 @@ namespace Nofun
             {
                 Application.Quit();
             }
+
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+            if (currentWindow != System.IntPtr.Zero)
+            {
+                SetWindowText(currentWindow, $"nofun - {system.GameName} - {graphicDriver.Fps} FPS");
+            }
+#endif
 
             timeDriver.Update();
         }

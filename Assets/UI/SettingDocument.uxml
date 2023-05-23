@@ -2,7 +2,7 @@
     <ui:Template name="Vector2Input" src="project://database/Assets/UI/Vector2Input.uxml?fileID=9197481963319205126&amp;guid=ed15cd3c56e2f2846bd9ff61c1e85754&amp;type=3#Vector2Input" />
     <Style src="project://database/Assets/UI/Stylesheet/SettingDocument.uss?fileID=7433441132597879392&amp;guid=fd4a887a877cf074bb729d59f2302146&amp;type=3#SettingDocument" />
     <ui:VisualElement name="Root2" style="width: 100%; height: 100%;">
-        <ui:ScrollView name="SettingView">
+        <ui:ScrollView name="SettingView" mouse-wheel-scroll-size="500">
             <ui:Label text="Sample game" display-tooltip-when-elided="true" name="GameLabel" />
             <ui:GroupBox text="Graphics" name="GraphicsGroup">
                 <ui:DropdownField label="Screen mode" index="0" choices="Custom size, Fullscreen" name="ScreenModeCombo" />

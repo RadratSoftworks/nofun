@@ -123,7 +123,24 @@ namespace Nofun
             }
         }
 
-        public void Start()
+#if UNITY_EDITOR || (!UNITY_ANDROID && !UNITY_IOS)
+        private void Update()
+        {
+            if ((Screen.width > Screen.height) && (screenOrientation != Settings.ScreenOrientation.Landscape))
+            {
+                screenOrientation = Settings.ScreenOrientation.Landscape;
+                UpdateCanvasOrientation();
+            }
+
+            if ((Screen.width <= Screen.height) && (screenOrientation != Settings.ScreenOrientation.Potrait))
+            {
+                screenOrientation = Settings.ScreenOrientation.Potrait;
+                UpdateCanvasOrientation();
+            }
+        }
+#endif
+
+        private void Start()
         {
             if (!Application.isMobilePlatform)
             {

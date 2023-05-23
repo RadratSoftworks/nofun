@@ -117,6 +117,12 @@ namespace Nofun.Driver.Unity.Graphics
 
         private float SecondPerFrame => 1.0f / FpsLimit;
 
+        private DateTime previousTime;
+        private int fps = 0;
+        private int currentFps = 0;
+
+        public int Fps => fps;
+
         private Tuple<Mesh, int> GetPushedSubMesh(Func<BufferPusher, int> pushAction)
         {
             int result = pushAction(bufferPushers[bufferPusherInUse]);
@@ -793,9 +799,21 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void FlipScreen()
         {
-            FlushBatch();
+            DateTime currentTime = DateTime.Now;
 
-            DateTime flipStart = DateTime.Now;
+#region Calculate FPS
+            currentFps++;
+
+            if ((previousTime == null) || ((currentTime - previousTime).TotalSeconds > 1.0f))
+            {
+                fps = currentFps;
+                currentFps = 0;
+
+                previousTime = currentTime;
+            }
+#endregion
+
+            FlushBatch();
 
             bufferPusherInUse = 0;
             bufferPushers.ForEach(pusher =>
@@ -826,7 +844,7 @@ namespace Nofun.Driver.Unity.Graphics
             JobScheduler.Instance.FlushPostponed();
 
             DateTime now = DateTime.Now;
-            double remaining = SecondPerFrame - (now - flipStart).TotalSeconds;
+            double remaining = SecondPerFrame - (now - currentTime).TotalSeconds;
 
             if (remaining > 0.0f)
             {
