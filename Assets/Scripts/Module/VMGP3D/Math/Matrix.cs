@@ -212,7 +212,18 @@ namespace Nofun.Module.VMGP3D
             Vector3 at = vAtptr.Read(system.Memory).ToUnity();
             Vector3 up = vUpPtr.Read(system.Memory).ToUnity();
 
-            currentMatrix *= Matrix4x4.LookAt(eye, at, up);
+            Matrix4x4 lookAtMatrix = Matrix4x4.identity;
+
+            Vector3 zaxis = (at - eye).normalized;
+            Vector3 xaxis = Vector3.Cross(up, zaxis).normalized;
+            Vector3 yaxis = Vector3.Cross(zaxis, xaxis);
+
+            lookAtMatrix.SetColumn(0, xaxis);
+            lookAtMatrix.SetColumn(1, yaxis);
+            lookAtMatrix.SetColumn(2, zaxis);
+
+            currentMatrix *= lookAtMatrix;
+            currentMatrix *= Matrix4x4.Translate(-eye);
         }
 
         [ModuleCall]
@@ -226,11 +237,6 @@ namespace Nofun.Module.VMGP3D
         private void vMatrixSetLight(VMPtr<V3DMatrix> matrixPtr)
         {
             lightMatrix = ReadMatrix(matrixPtr);
-        }
-
-        public void Insane()
-        {
-            currentMatrix = Matrix4x4.identity;
         }
     }
 }
