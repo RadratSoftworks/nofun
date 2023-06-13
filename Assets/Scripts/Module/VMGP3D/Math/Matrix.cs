@@ -199,10 +199,11 @@ namespace Nofun.Module.VMGP3D
         [ModuleCall]
         private void vMatrixOrtho(int widthFixed, int heightFixed, int zNearFixed, int zFarFixed)
         {
-            // Matrix column 2 in Unity already flipping Z, because of reversing view matrix flip
-            // But we don't need that, so reverse it
-            currentMatrix = Matrix4x4.Ortho(0, FixedUtil.FixedToFloat(widthFixed), 0, FixedUtil.FixedToFloat(heightFixed), FixedUtil.FixedToFloat(zFarFixed), FixedUtil.FixedToFloat(zNearFixed));
-            currentMatrix.SetColumn(2, -currentMatrix.GetColumn(2));
+            currentMatrix = Matrix4x4.identity;
+            currentMatrix.m00 = 2.0f / FixedUtil.FixedToFloat(widthFixed);
+            currentMatrix.m11 = 2.0f / FixedUtil.FixedToFloat(heightFixed);
+            currentMatrix.m22 = -2.0f / FixedUtil.FixedToFloat(zNearFixed - zFarFixed);
+            currentMatrix.m23 = FixedUtil.FixedToFloat(zNearFixed + zFarFixed) / FixedUtil.FixedToFloat(zNearFixed - zFarFixed);
         }
 
         [ModuleCall]
