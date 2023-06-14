@@ -33,9 +33,9 @@ namespace Nofun.Driver.Graphics
         RGB444 = 12,
         ARGB4444 = 13,
         ARGB1555 = 14,
-        Palette16_Alt = 16,
-        Palette256_Alt = 17,
-        Palette16_ARGB = 18,
-        Palette256_ARGB = 19
+        Palette16_RGB888 = 16,
+        Palette256_RGB888 = 17,
+        Palette16_ARGB8888 = 18,
+        Palette256_ARGB8888 = 19
     };
 }

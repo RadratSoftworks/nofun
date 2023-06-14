@@ -64,6 +64,11 @@ namespace Nofun.Driver.Unity.Graphics
             }
         }
 
+        private bool DoesMappableNeedCheckAlpha(Driver.Graphics.TextureFormat format)
+        {
+            return (format == Driver.Graphics.TextureFormat.ARGB4444) || (format == Driver.Graphics.TextureFormat.ARGB8888);
+        }
+
         private void UploadSingleMip(byte[] data, int width, int height, int offset, int sizeInBits, int mipLevel, Memory<SColor> palettes, bool zeroAsTransparent)
         {
             bool needTransform = DoesFormatNeedTransform(format);
@@ -72,6 +77,61 @@ namespace Nofun.Driver.Unity.Graphics
             // Gurantee that this is in byte-unit.
             if (!needTransform)
             {
+                if (DoesMappableNeedCheckAlpha(format))
+                {
+                    // According to docs, if the top bit on, it's transparent, lol
+                    // At least, that's what it's with software rendering, which is used by almost all games...
+                    switch (format)
+                    {
+                        case Driver.Graphics.TextureFormat.ARGB4444:
+                            {
+                                for (int y = 0; y < height; y++)
+                                {
+                                    for (int x = 0; x < width; x++)
+                                    {
+                                        byte ar = data[y * width * 2 + x * 2 + 1];
+
+                                        if ((ar & (1 << 7)) == 0)
+                                        {
+                                            ar |= 0xF0;
+                                        }
+                                        else
+                                        {
+                                            ar = (byte)(ar & ~0xF0);
+                                        }
+
+                                        data[y * width * 2 + x * 2 + 1] = ar;
+                                    }
+                                }
+
+                                break;
+                            }
+
+                        case Driver.Graphics.TextureFormat.ARGB8888:
+                            {
+                                for (int y = 0; y < height; y++)
+                                {
+                                    for (int x = 0; x < width; x++)
+                                    {
+                                        byte a = data[y * width * 4 + x * 4 + 3];
+
+                                        if ((a & (1 << 7)) != 0)
+                                        {
+                                            data[y * width * 4 + x * 4 + 3] = 0;
+                                        }
+                                        else
+                                        {
+                                            data[y * width * 4 + x * 4 + 3] = 255;
+                                        }
+                                    }
+                                }
+
+                                break;
+                            }
+                    }
+                }
+
+                // Still need to fiddle with data a bit if it has transform
                 uTexture.SetPixelData(data, mipLevel, offset);
             }
             else
@@ -96,15 +156,15 @@ namespace Nofun.Driver.Unity.Graphics
                         break;
 
                     case Driver.Graphics.TextureFormat.Palette16:
-                    case Driver.Graphics.TextureFormat.Palette16_Alt:
-                    case Driver.Graphics.TextureFormat.Palette16_ARGB:
-                        finalConverData = DataConvertor.PaletteToARGB8888(dataSpan, width, height, 4, palettes, zeroAsTransparent, format == Driver.Graphics.TextureFormat.Palette16_ARGB);
+                    case Driver.Graphics.TextureFormat.Palette16_RGB888:
+                    case Driver.Graphics.TextureFormat.Palette16_ARGB8888:
+                        finalConverData = DataConvertor.PaletteToARGB8888(dataSpan, width, height, 4, palettes, zeroAsTransparent, format == Driver.Graphics.TextureFormat.Palette16_ARGB8888);
                         break;
 
                     case Driver.Graphics.TextureFormat.Palette256:
-                    case Driver.Graphics.TextureFormat.Palette256_Alt:
-                    case Driver.Graphics.TextureFormat.Palette256_ARGB:
-                        finalConverData = DataConvertor.PaletteToARGB8888(dataSpan, width, height, 8, palettes, zeroAsTransparent, format == Driver.Graphics.TextureFormat.Palette256_ARGB);
+                    case Driver.Graphics.TextureFormat.Palette256_RGB888:
+                    case Driver.Graphics.TextureFormat.Palette256_ARGB8888:
+                        finalConverData = DataConvertor.PaletteToARGB8888(dataSpan, width, height, 8, palettes, zeroAsTransparent, format == Driver.Graphics.TextureFormat.Palette256_ARGB8888);
                         break;
 
                     default:
@@ -166,7 +226,14 @@ namespace Nofun.Driver.Unity.Graphics
         {
             JobScheduler.Instance.PostponeToUnityThread(() =>
             {
-                UploadSingleMip(data, uTexture.width >> mipLevel, uTexture.height >> mipLevel, 0, data.Length * 8, mipLevel, palettes, zeroAsTransparent);
+                if (mipLevel < 0)
+                {
+                    UploadData(data, uTexture.width, uTexture.height, -mipLevel, palettes, zeroAsTransparent);
+                }
+                else
+                {
+                    UploadSingleMip(data, uTexture.width >> mipLevel, uTexture.height >> mipLevel, 0, data.Length * 8, mipLevel, palettes, zeroAsTransparent);
+                }
             });
         }
 

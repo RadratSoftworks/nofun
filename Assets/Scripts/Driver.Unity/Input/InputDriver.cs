@@ -132,7 +132,7 @@ namespace Nofun.Driver.Unity.Input
             {
                 case '1':
                     {
-                        return ((buttonData & (uint)(Driver.Input.KeyCode.Up | Driver.Input.KeyCode.Left)) != 0);
+                        return (buttonData & (uint)(Driver.Input.KeyCode.Up | Driver.Input.KeyCode.Left)) == (uint)(Driver.Input.KeyCode.Up | Driver.Input.KeyCode.Left);
                     }
 
                 case '2':
@@ -142,7 +142,7 @@ namespace Nofun.Driver.Unity.Input
 
                 case '3':
                     {
-                        return ((buttonData & (uint)(Driver.Input.KeyCode.Up | Driver.Input.KeyCode.Right)) != 0);
+                        return (buttonData & (uint)(Driver.Input.KeyCode.Up | Driver.Input.KeyCode.Right)) == (uint)(Driver.Input.KeyCode.Up | Driver.Input.KeyCode.Right);
                     }
 
                 case '4':
@@ -174,7 +174,7 @@ namespace Nofun.Driver.Unity.Input
 
                 case '7':
                     {
-                        return ((buttonData & (uint)(Driver.Input.KeyCode.Down | Driver.Input.KeyCode.Left)) != 0);
+                        return (buttonData & (uint)(Driver.Input.KeyCode.Down | Driver.Input.KeyCode.Left)) == (uint)(Driver.Input.KeyCode.Down | Driver.Input.KeyCode.Left);
                     }
 
                 case '8':
@@ -184,7 +184,7 @@ namespace Nofun.Driver.Unity.Input
 
                 case '9':
                     {
-                        return ((buttonData & (uint)(Driver.Input.KeyCode.Down | Driver.Input.KeyCode.Right)) != 0);
+                        return (buttonData & (uint)(Driver.Input.KeyCode.Down | Driver.Input.KeyCode.Right)) == (uint)(Driver.Input.KeyCode.Down | Driver.Input.KeyCode.Right);
                     }
 
                 default:

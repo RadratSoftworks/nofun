@@ -19,6 +19,7 @@ using Nofun.Module.VMStream;
 using Nofun.Util.Logging;
 using Nofun.VM;
 using System;
+using System.IO;
 
 namespace Nofun.Module.VMusic
 {
@@ -111,7 +112,7 @@ namespace Nofun.Module.VMusic
                     }
 
                 default:
-                    Logger.Error(LogClass.VSound, $"Unimplemented sound control command: {control}");
+                    Logger.Error(LogClass.VSound, $"Unimplemented music control command: {control}");
                     return MUSIC_ERR;
             }
 
@@ -139,7 +140,23 @@ namespace Nofun.Module.VMusic
         [ModuleCall]
         private int vMusicGetHandle(VMPtr<byte> musicData)
         {
-            return MUSIC_ERR;
+            try
+            {
+                // Get as far as possible
+                unsafe
+                {
+                    byte* musicDataPtr = musicData.AsPointer(system.Memory);
+                    using (UnmanagedMemoryStream stream = new UnmanagedMemoryStream(musicDataPtr, musicData.RemainingMemoryFromThis(system.Memory)))
+                    {
+                        return musicContainer.Add(system.AudioDriver.LoadMusic(stream));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(LogClass.VMusic, $"Failed to load music (err={ex.ToString()}");
+                return -1;
+            }
         }
 
         [ModuleCall]

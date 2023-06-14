@@ -31,6 +31,8 @@ namespace Nofun.VM
             memory = new byte[memorySize];
         }
 
+        public long MemorySize => memory.Length;
+
         public Span<byte> GetMemorySpan(int offset, int size)
         {
             if ((offset >= 0) && (offset < DataAlignment))
@@ -49,6 +51,14 @@ namespace Nofun.VM
             }
 
             return new Memory<byte>(memory, offset, size);
+        }
+
+        public unsafe byte* GetMemoryPointer(int offset)
+        {
+            fixed (byte *unmanagedPtr = memory)
+            {
+                return unmanagedPtr + offset;
+            }
         }
 
         #region Memory Access

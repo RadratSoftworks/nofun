@@ -104,6 +104,16 @@ namespace Nofun.VM
             return memory.GetMemoryMemory((int)address + startOffset, Marshal.SizeOf<T>() * count);
         }
 
+        public unsafe byte *AsPointer(VMMemory memory, int startOffset = 0)
+        {
+            return memory.GetMemoryPointer((int)address + startOffset);
+        }
+
+        public int RemainingMemoryFromThis(VMMemory memory, int startOffset = 0)
+        {
+            return Math.Max(0, (int)(memory.MemorySize - (startOffset + address - 1)));
+        }
+
         public void Write(VMMemory memory, T value)
         {
             MemoryMarshal.Write(memory.GetMemorySpan((int)address, Marshal.SizeOf<T>()), ref value);

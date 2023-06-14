@@ -22,7 +22,13 @@ namespace Nofun.Driver.Graphics
     {
         public static bool IsPaletteARGB8(TextureFormat format)
         {
-            return (format == TextureFormat.Palette16_ARGB) || (format == TextureFormat.Palette256_ARGB);
+            return (format == TextureFormat.Palette16_ARGB8888) || (format == TextureFormat.Palette256_ARGB8888);
+        }
+
+        public static bool IsPaletteSelfProvidedInTexture(TextureFormat format)
+        {
+            return (format == TextureFormat.Palette16_ARGB8888) || (format == TextureFormat.Palette256_ARGB8888) ||
+                (format == TextureFormat.Palette16_RGB888) || (format == TextureFormat.Palette256_RGB888);
         }
 
         public static int GetPixelSizeInBits(TextureFormat format)
@@ -39,13 +45,13 @@ namespace Nofun.Driver.Graphics
 
                 case TextureFormat.Gray16:
                 case TextureFormat.Palette16:
-                case TextureFormat.Palette16_Alt:
-                case TextureFormat.Palette16_ARGB:
+                case TextureFormat.Palette16_RGB888:
+                case TextureFormat.Palette16_ARGB8888:
                     return 4;
 
                 case TextureFormat.Palette256:
-                case TextureFormat.Palette256_ARGB:
-                case TextureFormat.Palette256_Alt:
+                case TextureFormat.Palette256_ARGB8888:
+                case TextureFormat.Palette256_RGB888:
                 case TextureFormat.RGB332:
                     return 8;
 
@@ -84,9 +90,9 @@ namespace Nofun.Driver.Graphics
         public static bool IsPaletteFormat(TextureFormat format)
         {
             return (format == TextureFormat.Palette2) || (format == TextureFormat.Palette4) ||
-                (format == TextureFormat.Palette16_Alt) || (format == TextureFormat.Palette256_Alt) ||
+                (format == TextureFormat.Palette16_RGB888) || (format == TextureFormat.Palette256_RGB888) ||
                 (format == TextureFormat.Palette16) || (format == TextureFormat.Palette256) ||
-                (format == TextureFormat.Palette16_ARGB) || (format == TextureFormat.Palette256_ARGB);
+                (format == TextureFormat.Palette16_ARGB8888) || (format == TextureFormat.Palette256_ARGB8888);
         }
     }
 }

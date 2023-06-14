@@ -162,8 +162,12 @@ namespace SharpMik.Loaders
 							UniEffect(SharpMikCommon.Commands.UNI_XMEFFECT6,dat);
 							break;
 
-						// Panning is dropped, and extensions are flatten into effect number
-						default:
+                        // Can't find it in Symbian runtime, skip
+                        case 0x1A:
+                            break;
+
+                        // Panning is dropped, and extensions are flatten into effect number
+                        default:
 							/* the pattern jump destination is written in decimal,
 								but it seems some poor tracker software writes them
 								in hexadecimal... (sigh) */

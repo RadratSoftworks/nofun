@@ -136,6 +136,9 @@ namespace Nofun.Module.VSound
                         break;
                     }
 
+                case NativeSoundControlCode.MasterVolume:
+                    break;
+
                 case NativeSoundControlCode.Freq:
                     if (parameters == -1)
                     {

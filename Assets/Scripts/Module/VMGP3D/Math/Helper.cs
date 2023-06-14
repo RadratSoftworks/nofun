@@ -25,51 +25,72 @@ namespace Nofun.Module.VMGP3D
     [Module]
     public partial class VMGP3D
     {
+        private Vector4 MakePlane(Vector3 p1, Vector3 p2, Vector3 p3)
+        {
+            Vector3 edge1 = p2 - p1;
+            Vector3 edge2 = p3 - p1;
+
+            Vector3 normal = Vector3.Cross(edge1, edge2);
+            float dist = -Vector3.Dot(normal, p1);
+
+            return new Vector4(normal.x, normal.y, normal.z, dist);
+        }
+
         [ModuleCall]
         private void vCreatePlaneFromPoly(VMPtr<NativePlane> destPlanePtr, VMPtr<NativeVector3D> polygonsPtr)
         {
             Span<NativeVector3D> polygons = polygonsPtr.AsSpan(system.Memory, 3);
             NativePlane plane = destPlanePtr.AsSpan(system.Memory)[0];
 
-            float x1 = FixedUtil.FixedToFloat(polygons[0].fixedX);
-            float y1 = FixedUtil.FixedToFloat(polygons[0].fixedY);
-            float z1 = FixedUtil.FixedToFloat(polygons[0].fixedZ);
-
-            float x2 = FixedUtil.FixedToFloat(polygons[1].fixedX);
-            float y2 = FixedUtil.FixedToFloat(polygons[1].fixedY);
-            float z2 = FixedUtil.FixedToFloat(polygons[1].fixedZ);
-
-            float x3 = FixedUtil.FixedToFloat(polygons[2].fixedX);
-            float y3 = FixedUtil.FixedToFloat(polygons[2].fixedY);
-            float z3 = FixedUtil.FixedToFloat(polygons[2].fixedZ);
-
-            // Calculate first vector
-            float v1x = x1 - x2;
-            float v1y = y1 - y2;
-            float v1z = z1 - z2;
-
-            // Calculate second vector
-            float v2x = x1 - x3;
-            float v2y = y1 - y3;
-            float v2z = z1 - z3;
-
-            // Calculate normal by cross product
-            float nx = (v1y * v2z - v1z * v2y);
-            float ny = (v1z * v2x - v1x * v2z);
-            float nz = (v1x * v2y - v1y * v2x);
-
-            float lengthn = (float)Math.Sqrt(nx * nx + ny * ny + nz * nz);
-            float dist = -(x1 * nx + x2 * ny + x3 * nz);
+            Vector4 planeU = MakePlane(polygons[0].ToUnity(), polygons[1].ToUnity(), polygons[2].ToUnity());
 
             plane.normal = new NativeVector3D()
             {
-                fixedX = FixedUtil.FloatToFixed(nx / lengthn),
-                fixedY = FixedUtil.FloatToFixed(ny / lengthn),
-                fixedZ = FixedUtil.FloatToFixed(nz / lengthn)
+                fixedX = FixedUtil.FloatToFixed(planeU.x),
+                fixedY = FixedUtil.FloatToFixed(planeU.y),
+                fixedZ = FixedUtil.FloatToFixed(planeU.z)
             };
 
-            plane.fixedDistance = FixedUtil.FloatToFixed(dist / lengthn);
+            plane.fixedDistance = FixedUtil.FloatToFixed(planeU.w);
             destPlanePtr.Write(system.Memory, plane);
+        }
+
+        [ModuleCall]
+        private short vCollisionVectorPoly(VMPtr<NativeVector3D> collisionPosPtr, VMPtr<NativeVector3D> lineVPtr,
+            VMPtr<NativeVector3D> polygonVPtr, VMPtr<NativePlane> planePtr)
+        {
+            Vector4 plane;
+
+            if (!planePtr.IsNull)
+            {
+                NativePlane planeCopy = planePtr.Read(system.Memory);
+                plane = new Vector4(FixedUtil.FixedToFloat(planeCopy.normal.fixedX), FixedUtil.FixedToFloat(planeCopy.normal.fixedY),
+                    FixedUtil.FixedToFloat(planeCopy.normal.fixedZ), FixedUtil.FixedToFloat(planeCopy.fixedDistance));
+            }
+            else
+            {
+                Span<NativeVector3D> polygonV = polygonVPtr.AsSpan(system.Memory, 3);
+                plane = MakePlane(polygonV[0].ToUnity(), polygonV[1].ToUnity(), polygonV[2].ToUnity());
+            }
+
+            Span<NativeVector3D> lineVs = lineVPtr.AsSpan(system.Memory, 2);
+            Vector3 dir = lineVs[1].ToUnity() - lineVs[0].ToUnity();
+            Vector3 lineThrough = lineVs[0].ToUnity();
+
+            float multiplier = Vector3.Dot(dir, plane);
+            float otherSide = -plane.w - Vector3.Dot(plane, lineThrough);
+
+            if (multiplier == 0.0f)
+            {
+                return 0;
+            }
+
+            float t = otherSide / multiplier;
+            Vector3 collisionPoint = lineThrough + dir * t;
+
+            collisionPosPtr.Write(system.Memory, collisionPoint.ToMophun());
+
+            return 1;
         }
 
         [ModuleCall]
@@ -159,7 +180,7 @@ namespace Nofun.Module.VMGP3D
             Vector3 boxMin = box.min.ToUnity();
             Vector3 boxMax = box.max.ToUnity();
 
-            Vector4[] pointChecks = new Vector4[]
+            Span<Vector4> pointChecks = stackalloc Vector4[]
             {
                 pv * new Vector4(boxMin.x, boxMin.y, boxMin.z, 1.0f),
                 pv * new Vector4(boxMin.x, boxMin.y, boxMax.z, 1.0f),

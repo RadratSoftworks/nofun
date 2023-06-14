@@ -154,7 +154,7 @@ namespace Nofun.Module.VMGP3D
         private void vVectorArrayDelta(VMPtr<NativeVector3D> destPtr, VMPtr<NativeVector3D> source1Ptr, VMPtr<NativeVector3D> source2Ptr, uint param)
         {
             int numVec = (int)(param & 0xFFFF);
-            uint step = param >> 16;
+            float step = param >> 16;
 
             Span<NativeVector3D> source1 = source1Ptr.AsSpan(system.Memory, numVec);
             Span<NativeVector3D> source2 = source2Ptr.AsSpan(system.Memory, numVec);
@@ -187,15 +187,23 @@ namespace Nofun.Module.VMGP3D
                 }
                 else
                 {
+                    // For some reason the X and Y is actually in 2^4 units. I don't know the reason
+                    // The Z should be in the fixed range of 0..4, provide reverse engineering
+                    // W is kept
+                    // Plus the Y is reversed, lul
                     projected.x /= projected.w;
                     projected.y /= projected.w;
                     projected.z /= projected.w;
 
-                    projected += new Vector4(1.0f, 1.0f, 1.0f, 0.0f);
-                    projected.Scale(new Vector4(viewportRect.width * 0.5f, viewportRect.height * 0.5f, 0.5f, 1.0f));
-                }
+                    projected += new Vector4(1.0f, -1.0f, 0.0f, 0.0f);
+                    projected.Scale(new Vector4(viewportRect.width * 0.5f, viewportRect.height * 0.5f, 2.0f, 1.0f));
 
-                dest[i] = (projected + new Vector4(viewportRect.x, viewportRect.y, 0.0f, 0.0f)).ToMophun();
+                    Vector4 final = (projected + new Vector4(viewportRect.x, viewportRect.y, 2.0f, 0.0f));
+                    dest[i].fixedX = (int)(final.x * 16);
+                    dest[i].fixedY = (int)(final.y * 16);
+                    dest[i].fixedZ = FixedUtil.FloatToFixed(final.z);
+                    dest[i].fixedW = FixedUtil.FloatToFixed(final.w);
+                }
             }
         }
     }

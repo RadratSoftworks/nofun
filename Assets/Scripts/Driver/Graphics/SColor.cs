@@ -60,6 +60,24 @@ namespace Nofun.Driver.Graphics
                     ((value >> 24) & 0xFF) / 255.0f);
         }
 
+        public static SColor FromArgb8888SW(uint value)
+        {
+            uint alpha = (value >> 24) & 0xFF;
+            if ((alpha & (1 << 7)) != 0)
+            {
+                alpha = 0;
+            }
+            else
+            {
+                alpha = 255;
+            }
+
+            return new SColor(((value >> 16) & 0xFF) / 255.0f,
+                    ((value >> 8) & 0xFF) / 255.0f,
+                    (value & 0xFF) / 255.0f,
+                    alpha / 255.0f);
+        }
+
         public static SColor FromRgb888(uint value)
         {
             return new SColor(((value >> 16) & 0xFF) / 255.0f,

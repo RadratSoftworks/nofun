@@ -147,6 +147,12 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
+        private void vMatrixInvert()
+        {
+            currentMatrix = Matrix4x4.Inverse(currentMatrix);
+        }
+
+        [ModuleCall]
         private void vMatrixMultiply(VMPtr<V3DMatrix> matrixPtr)
         {
             currentMatrix *= ReadMatrix(matrixPtr);
@@ -202,8 +208,8 @@ namespace Nofun.Module.VMGP3D
             currentMatrix = Matrix4x4.identity;
             currentMatrix.m00 = 2.0f / FixedUtil.FixedToFloat(widthFixed);
             currentMatrix.m11 = 2.0f / FixedUtil.FixedToFloat(heightFixed);
-            currentMatrix.m22 = -2.0f / FixedUtil.FixedToFloat(zNearFixed - zFarFixed);
-            currentMatrix.m23 = FixedUtil.FixedToFloat(zNearFixed + zFarFixed) / FixedUtil.FixedToFloat(zNearFixed - zFarFixed);
+            currentMatrix.m22 = -2.0f / FixedUtil.FixedToFloat(zFarFixed - zNearFixed);
+            currentMatrix.m23 = FixedUtil.FixedToFloat(zNearFixed + zFarFixed) / FixedUtil.FixedToFloat(zFarFixed - zNearFixed);
         }
 
         [ModuleCall]
@@ -219,9 +225,9 @@ namespace Nofun.Module.VMGP3D
             Vector3 xaxis = Vector3.Cross(up, zaxis).normalized;
             Vector3 yaxis = Vector3.Cross(zaxis, xaxis);
 
-            lookAtMatrix.SetColumn(0, xaxis);
-            lookAtMatrix.SetColumn(1, yaxis);
-            lookAtMatrix.SetColumn(2, zaxis);
+            lookAtMatrix.SetRow(0, xaxis);
+            lookAtMatrix.SetRow(1, yaxis);
+            lookAtMatrix.SetRow(2, zaxis);
 
             currentMatrix *= lookAtMatrix;
             currentMatrix *= Matrix4x4.Translate(-eye);

@@ -170,18 +170,27 @@ namespace Nofun.Module.VMGP3D
 
             long texSize = TextureUtil.GetTextureSizeInBytes(textureWidth, textureHeight, format);
             SColor[] palettes = null;
+            bool zeroAsTrans = true;
             
             if (TextureUtil.IsPaletteFormat(format))
             {
-                bool argb = TextureUtil.IsPaletteARGB8(format);
+                if (TextureUtil.IsPaletteSelfProvidedInTexture(format))
+                {
+                    bool argb = TextureUtil.IsPaletteARGB8(format);
 
-                palettes = texValue.palette.AsSpan(system.Memory, (int)texValue.paletteCount).Select(
-                    color => argb ? SColor.FromArgb8888(color) : SColor.FromRgb555(color)).ToArray();
+                    palettes = texValue.palette.AsSpan(system.Memory, (int)texValue.paletteCount).Select(
+                        color => argb ? SColor.FromArgb8888SW(color) : SColor.FromRgb888(color)).ToArray();
+                    zeroAsTrans = false;
+                }
+                else
+                {
+                    palettes = system.VMGPModule.ScreenPalette;
+                }
             }
 
             Span<byte> data = texValue.textureData.AsSpan(system.Memory, (int)texSize);
             ITexture texDriver = system.GraphicDriver.CreateTexture(data.ToArray(), textureWidth, textureHeight,
-                (int)texValue.mipmapCount + 1, format, palettes, true);
+                (int)texValue.mipmapCount + 1, format, palettes, zeroAsTrans);
 
             return managedTextures.Add(texDriver);
         }
