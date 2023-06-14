@@ -29,7 +29,7 @@ namespace Nofun.Module.VMGP3D
         public NativeDiffuseColor color1;
         public NativeDiffuseColor color2;
         public NativeDiffuseColor color3;
-        public ushort rotation;
+        public short rotation;
         public ushort rotationPointFlag;
     }
 }

@@ -105,7 +105,8 @@ namespace Nofun.Driver.Unity.Graphics
         {
             None,
             Render2D,
-            Render3D
+            Render3D,
+            Render3DBillboard
         }
 
         private BatchingMode currentBatching = BatchingMode.None;
@@ -225,12 +226,39 @@ namespace Nofun.Driver.Unity.Graphics
             if (meshBatcher.Flush())
             {
                 var subMesh = GetPushedSubMesh(pusher => meshBatcher.Pop(pusher));
+                bool billboard = currentBatching == BatchingMode.Render3DBillboard;
 
                 JobScheduler.Instance.PostponeToUnityThread(() =>
                 {
                     BeginRender(mode2D: false);
 
+                    if (billboard)
+                    {
+                        Matrix4x4 rotScaleMat = serverSideState.viewMatrix3D;
+                        for (int i = 0; i < 3; i++)
+                        {
+                            for (int j = 0; j < 3; j++)
+                            {
+                                if (i == j)
+                                {
+                                    rotScaleMat[i, j] = 1.0f;
+                                }
+                                else
+                                {
+                                    rotScaleMat[i, j] = 0.0f;
+                                }
+                            }
+                        }
+
+                        commandBuffer.SetViewMatrix(rotScaleMat);
+                    }
+
                     commandBuffer.DrawMesh(subMesh.Item1, Matrix4x4.identity, currentMaterial, subMesh.Item2, 0, UnlitPropertyBlock);
+
+                    if (billboard)
+                    {
+                        commandBuffer.SetViewMatrix(serverSideState.viewMatrix3D);
+                    }
                 });
             }
         }
@@ -266,6 +294,7 @@ namespace Nofun.Driver.Unity.Graphics
                     break;
 
                 case BatchingMode.Render3D:
+                case BatchingMode.Render3DBillboard:
                     Flush3DBatch();
                     break;
 
@@ -1008,18 +1037,23 @@ namespace Nofun.Driver.Unity.Graphics
                 case BillboardPivot.Center:
                     return new Vector2(0.5f, 0.5f);
 
+                case BillboardPivot.Top:
+                    return new Vector2(0.5f, 0.0f);
+
                 case BillboardPivot.TopLeft:
-                    return new Vector2(0.0f, 1.0f);
-
-                case BillboardPivot.TopRight:
-                    return new Vector2(1.0f, 1.0f);
-
-                case BillboardPivot.BottomLeft:
-                case BillboardPivot.Bottom:
                     return new Vector2(0.0f, 0.0f);
 
-                case BillboardPivot.BottomRight:
+                case BillboardPivot.TopRight:
+                    return new Vector2(1.0f, 0.0f);
+
+                case BillboardPivot.BottomLeft:
                     return new Vector2(0.0f, 1.0f);
+
+                case BillboardPivot.Bottom:
+                    return new Vector2(0.5f, 1.0f);
+
+                case BillboardPivot.BottomRight:
+                    return new Vector2(1.0f, 1.0f);
 
                 default:
                     throw new ArgumentException($"Unhandled pivot value: {pivot}");
@@ -1040,13 +1074,26 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void DrawBillboard(NativeBillboard billboard)
         {
-            BeginBatching(BatchingMode.Render3D);
+            BeginBatching(BatchingMode.Render3DBillboard);
 
             MpCullMode previousCull = Cull;
             Cull = MpCullMode.CounterClockwise;
 
-            Rect destRect = new Rect(FixedUtil.FixedToFloat(billboard.position.fixedX), FixedUtil.FixedToFloat(billboard.position.fixedY),
-                FixedUtil.FixedToFloat(billboard.fixedWidth), FixedUtil.FixedToFloat(billboard.fixedHeight));
+            Matrix4x4 rotScaleMat = clientSideState.viewMatrix3D;
+            rotScaleMat.SetColumn(3, new Vector4(0, 0, 0, 1));
+
+            float zFloat = FixedUtil.FixedToFloat(billboard.position.fixedZ);
+
+            Vector3 posMoved = new Vector3(FixedUtil.FixedToFloat(billboard.position.fixedX), FixedUtil.FixedToFloat(billboard.position.fixedY), zFloat);
+            Vector2 size = new Vector2(FixedUtil.FixedToFloat(billboard.fixedWidth), FixedUtil.FixedToFloat(billboard.fixedHeight));
+
+            Vector3 center = size * GetPivotMultiplier((BillboardPivot)billboard.rotationPointFlag);
+            posMoved = rotScaleMat * posMoved;
+
+            posMoved -= center;
+            posMoved.y -= size.y;
+
+            Rect destRect = new Rect(posMoved.x, posMoved.y, size.x, size.y);
 
             Vector2[] uvs = new Vector2[]
             {
@@ -1064,12 +1111,7 @@ namespace Nofun.Driver.Unity.Graphics
                 billboard.color1.ToUnity()
             };
 
-            Vector2 center = destRect.size;
-
-            center *= GetPivotMultiplier((BillboardPivot)billboard.rotationPointFlag);
-            destRect.min += center;
-
-            DrawRectBoardGeneral(destRect, uvs, center.x, center.y, billboard.rotation, colors, z: FixedUtil.FixedToFloat(billboard.position.fixedZ));
+            DrawRectBoardGeneral(destRect, uvs, center.x, center.y, FixedUtil.Fixed11PointToFloat(billboard.rotation) * VMGP3D.FullCircleDegrees, colors, z: posMoved.z);
             Cull = previousCull;
         }
 

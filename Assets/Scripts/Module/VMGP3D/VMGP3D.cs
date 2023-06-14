@@ -160,6 +160,17 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
+        private void vFreeTexture(int handle)
+        {
+            if (handle <= 0)
+            {
+                return;
+            }
+
+            managedTextures.Remove(handle);
+        }
+
+        [ModuleCall]
         private int vCreateTexture(VMPtr<NativeTexture> tex)
         {
             NativeTexture texValue = tex.Read(system.Memory);

@@ -30,8 +30,8 @@ namespace Nofun.Module.VMGP3D
     {
         private const int MatrixOrientationRowMajor = 0;
         private const int MatrixOrientationColumnMajor = 0x2000;
-        private const int FullCircleDegrees = 360;
-        private const double FullCircleRads = Math.PI * 2;
+        public const int FullCircleDegrees = 360;
+        public const double FullCircleRads = Math.PI * 2;
 
         private int currentMatrixOrientation = MatrixOrientationColumnMajor;
 

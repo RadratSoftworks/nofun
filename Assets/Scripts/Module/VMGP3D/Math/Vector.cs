@@ -195,10 +195,9 @@ namespace Nofun.Module.VMGP3D
                     projected.y /= projected.w;
                     projected.z /= projected.w;
 
-                    projected += new Vector4(1.0f, -1.0f, 0.0f, 0.0f);
-                    projected.Scale(new Vector4(viewportRect.width * 0.5f, viewportRect.height * 0.5f, 2.0f, 1.0f));
+                    projected.Scale(new Vector4(viewportRect.width * 0.5f, -viewportRect.height * 0.5f, 2.0f, 1.0f));
+                    Vector4 final = (projected + new Vector4(viewportRect.x + viewportRect.width * 0.5f, viewportRect.y + viewportRect.height * 0.5f, 2.0f, 0.0f));
 
-                    Vector4 final = (projected + new Vector4(viewportRect.x, viewportRect.y, 2.0f, 0.0f));
                     dest[i].fixedX = (int)(final.x * 16);
                     dest[i].fixedY = (int)(final.y * 16);
                     dest[i].fixedZ = FixedUtil.FloatToFixed(final.z);
