@@ -32,6 +32,7 @@ namespace Nofun.Driver.Unity.Graphics
             public Vector3 normal;
             public Color color;
             public Vector2 uv;
+            public Color specularColor;
         }
 
         private Mesh bigMesh;
@@ -54,7 +55,8 @@ namespace Nofun.Driver.Unity.Graphics
                 new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
                 new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
                 new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.Float32, 4),
-                new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
+                new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2),
+                new VertexAttributeDescriptor(VertexAttribute.TexCoord1, VertexAttributeFormat.Float32, 4)
             });
 
             bigMesh.SetIndexBufferParams(maxIndiciesCount, IndexFormat.UInt32);
@@ -93,7 +95,8 @@ namespace Nofun.Driver.Unity.Graphics
                     position = meshes.vertices[i].ToUnity(),
                     uv = meshes.uvs.IsEmpty ? Vector2.zero : meshes.uvs[i].ToUnity(),
                     normal = meshes.normals.IsEmpty ? Vector3.one : meshes.normals[i].ToUnity(),
-                    color = meshes.diffuses.IsEmpty ? Color.white : meshes.diffuses[i].ToUnity()
+                    color = meshes.diffuses.IsEmpty ? Color.white : meshes.diffuses[i].ToUnity(),
+                    specularColor = meshes.speculars.IsEmpty ? Color.white : meshes.speculars[i].ToUnity()
                 });
             }
 
@@ -105,7 +108,7 @@ namespace Nofun.Driver.Unity.Graphics
             return submeshes.Count - 1;
         }
 
-        public int Push(List<Vector3> positions, List<Vector2> uvs, List<Vector3> normals, List<Color> colors, List<int> indiciesSpan)
+        public int Push(List<Vector3> positions, List<Vector2> uvs, List<Vector3> normals, List<Color> colors, List<Color> specularColors, List<int> indiciesSpan)
         {
             if ((vertices.Count + positions.Count > maxVerticesCount) || (indicies.Count + indiciesSpan.Count > maxIndiciesCount))
             {
@@ -121,7 +124,8 @@ namespace Nofun.Driver.Unity.Graphics
                     position = positions[i],
                     uv = uvs[i],
                     normal = normals[i],
-                    color = colors[i]
+                    color = colors[i],
+                    specularColor = specularColors[i]
                 });
             }
 

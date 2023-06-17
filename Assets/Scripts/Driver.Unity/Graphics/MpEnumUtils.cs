@@ -110,5 +110,23 @@ namespace Nofun.Driver.Unity.Graphics
                     throw new ArgumentException($"Unknown filter mode {mode}");
             }
         }
+        
+        public static TextureWrapMode ToUnity(this MpTextureWrapMode mode)
+        {
+            switch (mode)
+            {
+                case MpTextureWrapMode.Wrap:
+                    return TextureWrapMode.Repeat;
+
+                case MpTextureWrapMode.Clamp:
+                    return TextureWrapMode.Clamp;
+
+                case MpTextureWrapMode.Mirror:
+                    return TextureWrapMode.Mirror;
+
+                default:
+                    throw new ArgumentException($"Unknown wrap mode {mode}");
+            }
+        }
     }
 }

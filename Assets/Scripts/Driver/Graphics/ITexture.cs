@@ -25,6 +25,7 @@ namespace Nofun.Driver.Graphics
         int MipCount { get; }
         TextureFormat Format { get; }
         MpFilterMode Filter { get; set; }
+        MpTextureWrapMode Wrap { get; set; }
 
         void SetData(byte[] data, int mipLevel, Memory<SColor> palettes = new Memory<SColor>(), bool zeroAsTransparent = false);
         void Apply();

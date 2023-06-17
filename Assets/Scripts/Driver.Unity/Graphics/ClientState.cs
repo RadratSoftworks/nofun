@@ -23,8 +23,10 @@ namespace Nofun.Driver.Unity.Graphics
 {
     public class ClientState
     {
+        public const int MaximumLight = 8;
+
         public MpCullMode cullMode = MpCullMode.CounterClockwise;
-        public MpBlendMode blendMode = MpBlendMode.Alpha;
+        public MpBlendMode blendMode = MpBlendMode.Replace;
         public MpTextureBlendMode textureBlendMode = MpTextureBlendMode.Modulate;
         public bool textureMode = false;
         public MpCompareFunc depthCompareFunc = MpCompareFunc.Always;
@@ -32,8 +34,17 @@ namespace Nofun.Driver.Unity.Graphics
         public Rect viewportRect;
         public Matrix4x4 projectionMatrix3D;
         public Matrix4x4 viewMatrix3D;
+        public Matrix4x4 lightMatrix3D;
         public Texture mainTexture;
-        
+        public MpExtendedMaterial extendedMaterial;
+        public bool lighting = false;
+        public bool specular = false;
+        public bool fog = false;
+        public SColor globalAmbient;
+        public MpLight[] lights = new MpLight[MaximumLight];
+        public Vector3 cameraPosition;
+        public bool transparentTest = false;
+
         public ulong MaterialIdentifier
         {
             get

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * (C) 2023 Radrat Softworks
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

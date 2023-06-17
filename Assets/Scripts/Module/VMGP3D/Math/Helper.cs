@@ -27,11 +27,11 @@ namespace Nofun.Module.VMGP3D
     {
         private Vector4 MakePlane(Vector3 p1, Vector3 p2, Vector3 p3)
         {
-            Vector3 edge1 = p2 - p1;
-            Vector3 edge2 = p3 - p1;
+            Vector3 edge1 = p1 - p3;
+            Vector3 edge2 = p2 - p3;
 
-            Vector3 normal = Vector3.Cross(edge1, edge2);
-            float dist = -Vector3.Dot(normal, p1);
+            Vector3 normal = Vector3.Cross(edge1, edge2).normalized;
+            float dist = Vector3.Dot(normal, p1);
 
             return new Vector4(normal.x, normal.y, normal.z, dist);
         }
@@ -60,6 +60,12 @@ namespace Nofun.Module.VMGP3D
             VMPtr<NativeVector3D> polygonVPtr, VMPtr<NativePlane> planePtr)
         {
             Vector4 plane;
+            Span<NativeVector3D> polygonV = null;
+
+            if (!polygonVPtr.IsNull)
+            {
+                polygonV = polygonVPtr.AsSpan(system.Memory, 3);
+            }
 
             if (!planePtr.IsNull)
             {
@@ -69,7 +75,11 @@ namespace Nofun.Module.VMGP3D
             }
             else
             {
-                Span<NativeVector3D> polygonV = polygonVPtr.AsSpan(system.Memory, 3);
+                if (polygonV == null)
+                {
+                    return 0;
+                }
+
                 plane = MakePlane(polygonV[0].ToUnity(), polygonV[1].ToUnity(), polygonV[2].ToUnity());
             }
 
@@ -78,7 +88,7 @@ namespace Nofun.Module.VMGP3D
             Vector3 lineThrough = lineVs[0].ToUnity();
 
             float multiplier = Vector3.Dot(dir, plane);
-            float otherSide = -plane.w - Vector3.Dot(plane, lineThrough);
+            float otherSide = plane.w - Vector3.Dot(plane, lineThrough);
 
             if (Math.Abs(multiplier) <= Mathf.Epsilon)
             {
@@ -88,8 +98,30 @@ namespace Nofun.Module.VMGP3D
             float t = otherSide / multiplier;
             Vector3 collisionPoint = lineThrough + dir * t;
 
-            collisionPosPtr.Write(system.Memory, collisionPoint.ToMophun());
+            if (!polygonVPtr.IsNull)
+            {
+                // We can check if it's inside 3d polygon
+                // https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/point_in_triangle.html
+                Vector3 p0 = polygonV[0].ToUnity() - collisionPoint;
+                Vector3 p1 = polygonV[1].ToUnity() - collisionPoint;
+                Vector3 p2 = polygonV[2].ToUnity() - collisionPoint;
 
+                Vector3 u = Vector3.Cross(p1, p2);
+                Vector3 v = Vector3.Cross(p2, p0);
+                Vector3 w = Vector3.Cross(p0, p1);
+
+                if (Vector3.Dot(u, v) < 0.0f)
+                {
+                    return 0;
+                }
+
+                if (Vector3.Dot(v, w) < 0.0f)
+                {
+                    return 0;
+                }
+            }
+
+            collisionPosPtr.Write(system.Memory, collisionPoint.ToMophun());
             return 1;
         }
 

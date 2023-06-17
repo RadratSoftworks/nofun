@@ -159,6 +159,21 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
+        private void vMatrixMultiply3x3(VMPtr<V3DMatrix> matrixPtr)
+        {
+            Matrix4x4 target = ReadMatrix(matrixPtr);
+            Matrix4x4 copyCurrent = currentMatrix;
+
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    currentMatrix[i, j] = Vector3.Dot(copyCurrent.GetRow(i), target.GetColumn(j));
+                }
+            }
+        }
+
+        [ModuleCall]
         private void vMatrixTranslate(int xFixed, int yFixed, int zFixed)
         {
             currentMatrix *= Matrix4x4.Translate(new Vector3(FixedUtil.FixedToFloat(xFixed), FixedUtil.FixedToFloat(yFixed), FixedUtil.FixedToFloat(zFixed)));
@@ -186,6 +201,13 @@ namespace Nofun.Module.VMGP3D
         private void vMatrixRotateZ(short d)
         {
             currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * FullCircleDegrees, Vector3.forward));
+        }
+        
+        [ModuleCall]
+        private void vMatrixRotateVector(VMPtr<NativeVector3D> axisPtr, short d)
+        {
+            NativeVector3D axis = axisPtr.Read(system.Memory);
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * FullCircleDegrees, -axis.ToUnity()));
         }
 
         [ModuleCall]
@@ -244,6 +266,7 @@ namespace Nofun.Module.VMGP3D
         private void vMatrixSetLight(VMPtr<V3DMatrix> matrixPtr)
         {
             lightMatrix = ReadMatrix(matrixPtr);
+            system.GraphicDriver.LightMatrix3D = lightMatrix;
         }
     }
 }

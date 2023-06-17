@@ -18,8 +18,8 @@ using System;
 
 namespace Nofun.Util
 {
-    public interface ICacheEntry
+    public abstract class ICacheEntry
     {
-        public DateTime LastAccessed { get; set; }
+        public abstract DateTime LastAccessed { get; set; }
     }
 }

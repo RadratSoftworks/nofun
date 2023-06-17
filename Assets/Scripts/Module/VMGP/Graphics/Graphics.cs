@@ -168,5 +168,17 @@ namespace Nofun.Module.VMGP
         {
 
         }
+
+        [ModuleCall]
+        private ushort vGetPixel(short x, short y)
+        {
+            return 0;
+        }
+
+        [ModuleCall]
+        private void vCopyRect()
+        {
+            
+        }
     }
 }

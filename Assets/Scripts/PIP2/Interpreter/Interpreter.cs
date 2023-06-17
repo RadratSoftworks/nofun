@@ -36,7 +36,7 @@ namespace Nofun.PIP2.Interpreter
                 null, null, I(ADD), I(AND), I(MUL), I(DIV), I(DIVU), I(OR),    // 0x00
                 I(XOR), I(SUB), I(SLL), I(SRA), I(SRL), I(NOT), I(NEG), I(EXSB),    // 0x08
                 I(EXSH), I(MOV), I(ADDB), I(SUBB), I(ANDB), I(ORB), I(MOVB), I(ADDH),    // 0x10
-                I(SUBH), null, I(ORH), I(MOVH), I(SLLi), I(SRAi), I(SRLi), I(ADDQ),    // 0x18
+                I(SUBH), I(ANDH), I(ORH), I(MOVH), I(SLLi), I(SRAi), I(SRLi), I(ADDQ),    // 0x18
                 I(MULQ), I(ADDBi), I(ANDBi), I(ORBi), I(SLLB), I(SRLB), I(SRAB), I(ADDHi),    // 0x20
                 I(ANDHi), I(SLLH), I(SRLH), I(SRAH), I(BEQI), I(BNEI), I(BGEI), null,    // 0x28
                 I(BGTI), I(BGTUI), I(BLEI), I(BLEUI), I(BLTI), I(BLTUI), I(BEQIB), I(BNEIB),    // 0x30

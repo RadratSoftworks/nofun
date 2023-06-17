@@ -15,7 +15,9 @@
         TextureBlendMode = 11,
         AlphaEnable = 12,
         FilterMode = 13,
+        WrapMode = 14,
         TransparentEnable = 15,
+        SpecularEnable = 16,
         LightingEnable = 17,
         ColorBufferBlendMode = 20
     }

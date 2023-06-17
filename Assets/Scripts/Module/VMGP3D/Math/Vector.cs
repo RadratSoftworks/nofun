@@ -18,8 +18,10 @@ using Nofun.Driver.Unity.Graphics;
 using Nofun.Util;
 using Nofun.VM;
 using System;
+using System.Collections.Generic;
 
 using UnityEngine;
+using NoAlloq;
 
 namespace Nofun.Module.VMGP3D
 {
@@ -35,6 +37,18 @@ namespace Nofun.Module.VMGP3D
             for (int i = 0; i < count; i++)
             {
                 destSpan[i] = currentMatrix.MultiplyPoint3x4(sourceSpan[i].ToUnity()).ToMophun();
+            }
+        }
+
+        [ModuleCall]
+        private void vVectorTransformV4(VMPtr<NativeVector4D> destination, VMPtr<NativeVector3D> source, int count)
+        {
+            Span<NativeVector3D> sourceSpan = source.AsSpan(system.Memory, count);
+            Span<NativeVector4D> destSpan = destination.AsSpan(system.Memory, count);
+        
+            for (int i = 0; i < count; i++)
+            {
+                destSpan[i] = (currentMatrix * sourceSpan[i].ToUnity4D()).ToMophun();
             }
         }
 
@@ -166,18 +180,13 @@ namespace Nofun.Module.VMGP3D
             }
         }
 
-        [ModuleCall]
-        private void vVectorProjectV3(VMPtr<NativeVector4D> destPtr, VMPtr<NativeVector3D> sourcePtr, int count)
+        private void VectorProjectImpl(Span<NativeVector4D> dest, List<Vector4> source)
         {
-            Span<NativeVector3D> source = sourcePtr.AsSpan(system.Memory, count);
-            Span<NativeVector4D> dest = destPtr.AsSpan(system.Memory, count);
-
             NRectangle viewportRect = system.GraphicDriver.Viewport;
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < dest.Length; i++)
             {
-                Vector3 sourceV3 = source[i].ToUnity();
-                Vector4 projected = projectionMatrix * new Vector4(sourceV3.x, sourceV3.y, sourceV3.z, 1.0f);
+                Vector4 projected = projectionMatrix * source[i];
 
                 // Map to 0..1
                 if (projected.w == 0.0f)
@@ -204,6 +213,24 @@ namespace Nofun.Module.VMGP3D
                     dest[i].fixedW = FixedUtil.FloatToFixed(final.w);
                 }
             }
+        }
+
+        [ModuleCall]
+        private void vVectorProjectV3(VMPtr<NativeVector4D> destPtr, VMPtr<NativeVector3D> sourcePtr, int count)
+        {
+            Span<NativeVector3D> source = sourcePtr.AsSpan(system.Memory, count);
+            Span<NativeVector4D> dest = destPtr.AsSpan(system.Memory, count);
+
+            VectorProjectImpl(dest, source.Select(x => x.ToUnity4D()).ToList());
+        }
+        
+        [ModuleCall]
+        private void vVectorProjectV4(VMPtr<NativeVector4D> destPtr, VMPtr<NativeVector4D> sourcePtr, int count)
+        {
+            Span<NativeVector4D> source = sourcePtr.AsSpan(system.Memory, count);
+            Span<NativeVector4D> dest = destPtr.AsSpan(system.Memory, count);
+
+            VectorProjectImpl(dest, source.Select(x => x.ToUnity()).ToList());
         }
     }
 }

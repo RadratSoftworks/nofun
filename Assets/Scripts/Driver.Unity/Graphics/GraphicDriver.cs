@@ -37,12 +37,30 @@ namespace Nofun.Driver.Unity.Graphics
         private const string BlackTransparentUniformName = "_Black_Transparent";
         private const string MainTexUniformName = "_MainTex";
 
-        private const string UnlitZTestUniformName = "_ZTest";
-        private const string UnlitCullUniformName = "_Cull";
-        private const string UnlitBlendSourceFactorUniformName = "_SourceBlendFactor";
-        private const string UnlitBlendDestFactorUniformName = "_DestBlendFactor";
-        private const string UnlitTexturelessUniformName = "_Textureless";
-        private const string UnlitTextureBlendModeUniformName = "_TextureBlendMode";
+        private const string Render3DZTestUniformName = "_ZTest";
+        private const string Render3DCullUniformName = "_Cull";
+        private const string Render3DBlendSourceFactorUniformName = "_SourceBlendFactor";
+        private const string Render3DBlendDestFactorUniformName = "_DestBlendFactor";
+        private const string Render3DTexturelessUniformName = "_Textureless";
+        private const string Render3DTextureBlendModeUniformName = "_TextureBlendMode";
+        private const string Render3DLightCountUniformName = "_LightCount";
+        private const string Render3DLightPosUniformName = "_LightPos";
+        private const string Render3DLightDirUniformName = "_LightDir";
+        private const string Render3DLightDiffuseUniformName = "_LightDiffuse";
+        private const string Render3DLightSpecularUniformName = "_LightSpecular";
+        private const string Render3DLightRRangeUniformName = "_LightRRange";
+        private const string Render3DLightExponentUniformName = "_LightExponent";
+        private const string Render3DLightCutoffUniformName = "_LightCutoff";
+        private const string Render3DLightTypeUniformName = "_LightType";
+        private const string Render3DGlobalAmbientUniformName = "_GlobalAmbient";
+        private const string Render3DLightMatrixUniformName = "_LightMatrix";
+        private const string Render3DMaterialDiffuseUniformName = "_MaterialDiffuse";
+        private const string Render3DMaterialSpecularUniformName = "_MaterialSpecular";
+        private const string Render3DMaterialAmbientUniformName = "_MaterialAmbient";
+        private const string Render3DMaterialEmissionUniformName = "_MaterialEmission";
+        private const string Render3DMaterialShininessUniformName = "_MaterialShininess";
+        private const string Render3DCameraPosUniformName = "_CameraPos";
+        private const string Render3DTransparentTestUniformName = "_TransparentTest";
 
         private const string ZClearValueUniformName = "_ClearValue";
 
@@ -80,7 +98,7 @@ namespace Nofun.Driver.Unity.Graphics
         private Material mophunDrawTextureMaterial;
 
         [SerializeField]
-        private Material mophunUnlitMaterial;
+        private Material mophunMaterial;
 
         [SerializeField]
         private Material clearZMaterial;
@@ -92,7 +110,7 @@ namespace Nofun.Driver.Unity.Graphics
         private Mesh quadMesh;
 
         private List<TMPro.TMP_Text> textRenderInternals;
-        private Dictionary<ulong, Material> unlitMaterialCache;
+        private Dictionary<ulong, Material> materialCache;
 
         private List<BufferPusher> bufferPushers;
         private int bufferPusherInUse;
@@ -123,6 +141,19 @@ namespace Nofun.Driver.Unity.Graphics
         private int currentFps = 0;
 
         public int Fps => fps;
+
+        private bool rebuildLightParams = true;
+
+        private Vector4[] lightPoses;
+        private Vector4[] lightDirs;
+        private Vector4[] lightDiffuses;
+        private Vector4[] lightSpeculars;
+        private float[] lightRRanges;
+        private float[] lightExponents;
+        private float[] lightCutoffAngles;
+        private float[] lightTypes;
+        private int lightCount;
+        private bool billboarding = false;
 
         private Tuple<Mesh, int> GetPushedSubMesh(Func<BufferPusher, int> pushAction)
         {
@@ -182,24 +213,24 @@ namespace Nofun.Driver.Unity.Graphics
             }
         }
 
-        private void PrepareUnlitMaterial()
+        private void Prepare3DMaterial()
         {
             if (fixedStateChanged)
             {
                 ulong stateIdentifier = serverSideState.MaterialIdentifier;
-                if (!unlitMaterialCache.ContainsKey(stateIdentifier))
+                if (!materialCache.ContainsKey(stateIdentifier))
                 {
-                    Material mat = new Material(mophunUnlitMaterial);
-                    mat.SetFloat(UnlitCullUniformName, (float)serverSideState.cullMode.ToUnity());
-                    mat.SetFloat(UnlitZTestUniformName, (float)serverSideState.depthCompareFunc.ToUnity());
+                    Material mat = new Material(mophunMaterial);
+                    mat.SetFloat(Render3DCullUniformName, (float)serverSideState.cullMode.ToUnity());
+                    mat.SetFloat(Render3DZTestUniformName, (float)serverSideState.depthCompareFunc.ToUnity());
 
                     Tuple<BlendMode, BlendMode> blendFactors = serverSideState.blendMode.ToUnity();
-                    mat.SetFloat(UnlitBlendSourceFactorUniformName, (float)blendFactors.Item1);
-                    mat.SetFloat(UnlitBlendDestFactorUniformName, (float)blendFactors.Item2);
+                    mat.SetFloat(Render3DBlendSourceFactorUniformName, (float)blendFactors.Item1);
+                    mat.SetFloat(Render3DBlendDestFactorUniformName, (float)blendFactors.Item2);
 
-                    unlitMaterialCache.Add(stateIdentifier, mat);
+                    materialCache.Add(stateIdentifier, mat);
                 }
-                currentMaterial = unlitMaterialCache[stateIdentifier];
+                currentMaterial = materialCache[stateIdentifier];
                 fixedStateChanged = false;
             }
         }
@@ -234,6 +265,8 @@ namespace Nofun.Driver.Unity.Graphics
 
                     if (billboard)
                     {
+                        this.billboarding = true;
+
                         Matrix4x4 rotScaleMat = serverSideState.viewMatrix3D;
                         for (int i = 0; i < 3; i++)
                         {
@@ -253,11 +286,12 @@ namespace Nofun.Driver.Unity.Graphics
                         commandBuffer.SetViewMatrix(rotScaleMat);
                     }
 
-                    commandBuffer.DrawMesh(subMesh.Item1, Matrix4x4.identity, currentMaterial, subMesh.Item2, 0, UnlitPropertyBlock);
+                    commandBuffer.DrawMesh(subMesh.Item1, Matrix4x4.identity, currentMaterial, subMesh.Item2, 0, Render3DPropertyBlock);
 
                     if (billboard)
                     {
                         commandBuffer.SetViewMatrix(serverSideState.viewMatrix3D);
+                        this.billboarding = false;
                     }
                 });
             }
@@ -316,7 +350,7 @@ namespace Nofun.Driver.Unity.Graphics
                 return;
             }
 
-            if (mode != currentBatching)
+            if ((mode != currentBatching) || (meshBatcher.ShouldFlush))
             {
                 FlushBatch();
 
@@ -476,7 +510,7 @@ namespace Nofun.Driver.Unity.Graphics
             displayImage.texture = screenTextureBackBuffer;
 
             meshBatcher = new();
-            unlitMaterialCache = new();
+            materialCache = new();
             measuredCache = new();
             clientSideState = new();
             serverSideState = new();
@@ -636,7 +670,7 @@ namespace Nofun.Driver.Unity.Graphics
                     UpdateRenderMode();
                 }
 
-                PrepareUnlitMaterial();
+                Prepare3DMaterial();
                 return;
             }
 
@@ -664,7 +698,7 @@ namespace Nofun.Driver.Unity.Graphics
             in3DMode = !mode2D;
 
             UpdateRenderMode();
-            PrepareUnlitMaterial();
+            Prepare3DMaterial();
         }
 
         public void EndFrame()
@@ -1038,36 +1072,112 @@ namespace Nofun.Driver.Unity.Graphics
                     return new Vector2(0.5f, 0.5f);
 
                 case BillboardPivot.Top:
-                    return new Vector2(0.5f, 0.0f);
-
-                case BillboardPivot.TopLeft:
-                    return new Vector2(0.0f, 0.0f);
-
-                case BillboardPivot.TopRight:
-                    return new Vector2(1.0f, 0.0f);
-
-                case BillboardPivot.BottomLeft:
-                    return new Vector2(0.0f, 1.0f);
-
-                case BillboardPivot.Bottom:
                     return new Vector2(0.5f, 1.0f);
 
-                case BillboardPivot.BottomRight:
+                case BillboardPivot.TopLeft:
+                    return new Vector2(0.0f, 1.0f);
+
+                case BillboardPivot.TopRight:
                     return new Vector2(1.0f, 1.0f);
+
+                case BillboardPivot.BottomLeft:
+                    return new Vector2(0.0f, 0.0f);
+
+                case BillboardPivot.Bottom:
+                    return new Vector2(0.5f, 0.0f);
+
+                case BillboardPivot.BottomRight:
+                    return new Vector2(1.0f, 0.0f);
+
+                case BillboardPivot.Left:
+                    return new Vector2(0.0f, 0.5f);
+
+                case BillboardPivot.Right:
+                    return new Vector2(1.0f, 0.5f);
 
                 default:
                     throw new ArgumentException($"Unhandled pivot value: {pivot}");
             }
         }
 
-        private MaterialPropertyBlock UnlitPropertyBlock
+        private MaterialPropertyBlock Render3DPropertyBlock
         {
             get
             {
                 MaterialPropertyBlock block = new MaterialPropertyBlock();
                 block.SetTexture(MainTexUniformName, serverSideState.textureMode ? serverSideState.mainTexture.NativeTexture : whiteTexture);
-                block.SetFloat(UnlitTexturelessUniformName, serverSideState.textureMode ? 0.0f : 1.0f);
-                block.SetFloat(UnlitTextureBlendModeUniformName, (float)serverSideState.blendMode + 0.5f);
+                block.SetFloat(Render3DTexturelessUniformName, serverSideState.textureMode ? 0.0f : 1.0f);
+                block.SetFloat(Render3DTextureBlendModeUniformName, (float)serverSideState.textureBlendMode + 0.5f);
+                if (serverSideState.lighting && !billboarding)
+                {
+                    if (rebuildLightParams)
+                    {
+                        if (lightPoses == null)
+                        {
+                            lightPoses = new Vector4[ClientState.MaximumLight];
+                            lightDirs = new Vector4[ClientState.MaximumLight];
+                            lightDiffuses = new Vector4[ClientState.MaximumLight];
+                            lightSpeculars = new Vector4[ClientState.MaximumLight];
+                            lightRRanges = new float[ClientState.MaximumLight];
+                            lightExponents = new float[ClientState.MaximumLight];
+                            lightCutoffAngles = new float[ClientState.MaximumLight];
+                            lightTypes = new float[ClientState.MaximumLight];
+                        }
+
+                        lightCount = 0;
+                        for (int i = 0; i < ClientState.MaximumLight; i++)
+                        {
+                            if (serverSideState.lights[i].lightSourceType != MpLightSourceType.Undefined)
+                            {
+                                lightPoses[lightCount] = serverSideState.lights[i].pos.ToUnity();
+                                lightDirs[lightCount] = serverSideState.lights[i].dir.ToUnity();
+                                lightDiffuses[lightCount] = serverSideState.lights[i].diffuse.ToUnityColor();
+                                lightSpeculars[lightCount] = serverSideState.lights[i].specular.ToUnityColor();
+                                lightRRanges[lightCount] = serverSideState.lights[i].lightRange;
+                                lightExponents[lightCount] = serverSideState.lights[i].exponent;
+                                lightCutoffAngles[lightCount] = serverSideState.lights[i].cutoff;
+                                lightTypes[lightCount] = (float)serverSideState.lights[i].lightSourceType + 0.5f;
+
+                                lightCount++;
+                            }
+                        }
+                        
+                        rebuildLightParams = false;
+                    }
+
+                    block.SetInt(Render3DLightCountUniformName, lightCount);
+                    block.SetVectorArray(Render3DLightPosUniformName, lightPoses);
+                    block.SetVectorArray(Render3DLightDirUniformName, lightDirs);
+                    block.SetVectorArray(Render3DLightDiffuseUniformName, lightDiffuses);
+                    block.SetVectorArray(Render3DLightSpecularUniformName, lightSpeculars);
+                    block.SetFloatArray(Render3DLightRRangeUniformName, lightRRanges);
+                    block.SetFloatArray(Render3DLightExponentUniformName, lightExponents);
+                    block.SetFloatArray(Render3DLightCutoffUniformName, lightCutoffAngles);
+                    block.SetFloatArray(Render3DLightTypeUniformName, lightTypes);
+
+                    block.SetColor(Render3DGlobalAmbientUniformName, serverSideState.globalAmbient.ToUnityColor());
+                    block.SetMatrix(Render3DLightMatrixUniformName, serverSideState.lightMatrix3D);
+                    block.SetVector(Render3DMaterialAmbientUniformName, serverSideState.extendedMaterial.ambient.ToUnityColor());
+                    block.SetVector(Render3DMaterialDiffuseUniformName, serverSideState.extendedMaterial.diffuse.ToUnityColor());
+                    block.SetVector(Render3DMaterialSpecularUniformName, serverSideState.extendedMaterial.specular.ToUnityColor());
+                    block.SetVector(Render3DMaterialEmissionUniformName, serverSideState.extendedMaterial.emission.ToUnityColor());
+                    block.SetFloat(Render3DMaterialShininessUniformName, serverSideState.extendedMaterial.shininess);
+
+                    if (!serverSideState.specular || (serverSideState.cameraPosition == null))
+                    {
+                        block.SetVector(Render3DCameraPosUniformName, new Vector4(0, 0, 0, -1));
+                    }
+                    else
+                    {
+                        block.SetVector(Render3DCameraPosUniformName, new Vector4(serverSideState.cameraPosition.x, serverSideState.cameraPosition.y, serverSideState.cameraPosition.z, 1.0f));
+                    }
+                }
+                else
+                {
+                    block.SetInt(Render3DLightCountUniformName, -1);
+                }
+                block.SetFloat(Render3DTransparentTestUniformName, serverSideState.transparentTest ? 1.0f : 0.0f);
+
                 return block;
             }
         }
@@ -1079,6 +1189,7 @@ namespace Nofun.Driver.Unity.Graphics
             MpCullMode previousCull = Cull;
             Cull = MpCullMode.CounterClockwise;
 
+            // We need to calculate the position in the world of the billboard
             Matrix4x4 rotScaleMat = clientSideState.viewMatrix3D;
             rotScaleMat.SetColumn(3, new Vector4(0, 0, 0, 1));
 
@@ -1087,12 +1198,9 @@ namespace Nofun.Driver.Unity.Graphics
             Vector3 posMoved = new Vector3(FixedUtil.FixedToFloat(billboard.position.fixedX), FixedUtil.FixedToFloat(billboard.position.fixedY), zFloat);
             Vector2 size = new Vector2(FixedUtil.FixedToFloat(billboard.fixedWidth), FixedUtil.FixedToFloat(billboard.fixedHeight));
 
-            Vector3 center = size * GetPivotMultiplier((BillboardPivot)billboard.rotationPointFlag);
             posMoved = rotScaleMat * posMoved;
 
-            posMoved -= center;
-            posMoved.y -= size.y;
-
+            Vector3 center = size * GetPivotMultiplier((BillboardPivot)billboard.rotationPointFlag);
             Rect destRect = new Rect(posMoved.x, posMoved.y, size.x, size.y);
 
             Vector2[] uvs = new Vector2[]
@@ -1103,15 +1211,25 @@ namespace Nofun.Driver.Unity.Graphics
                 billboard.uv1.ToUnity(),
             };
 
-            Color[] colors = new Color[]
-            {
+            // NOTE: Skipping billboard colors for now since they seems to not even be affected by lighting either,
+            // and sometimes the passed color seems not right
+            // The original order:
+            /*
                 billboard.color3.ToUnity(),
                 billboard.color2.ToUnity(),
                 billboard.color0.ToUnity(),
                 billboard.color1.ToUnity()
+            */
+            Color[] colors = new Color[]
+            {
+                Color.white,
+                Color.white,
+                Color.white,
+                Color.white
             };
 
-            DrawRectBoardGeneral(destRect, uvs, center.x, center.y, FixedUtil.Fixed11PointToFloat(billboard.rotation) * VMGP3D.FullCircleDegrees, colors, z: posMoved.z);
+            // Need to flip the center, the 3D here is normal, no need to flip Y like 2D (DrawRectBoard is designed for drawing 2d texture)
+            DrawRectBoardGeneral(destRect, uvs, center.x, -center.y, FixedUtil.Fixed11PointToFloat(billboard.rotation) * VMGP3D.FullCircleDegrees, colors, z: posMoved.z);
             Cull = previousCull;
         }
 
@@ -1133,9 +1251,57 @@ namespace Nofun.Driver.Unity.Graphics
                 JobScheduler.Instance.PostponeToUnityThread(() =>
                 {
                     BeginRender(mode2D: false);
-                    commandBuffer.DrawMesh(identifier.Item1, Matrix4x4.identity, currentMaterial, identifier.Item2, 0, UnlitPropertyBlock);
+                    commandBuffer.DrawMesh(identifier.Item1, Matrix4x4.identity, currentMaterial, identifier.Item2, 0, Render3DPropertyBlock);
                 });
             }
+        }
+        
+        public void ClearLights()
+        {
+            bool clearedYet = true;
+            for (int i = 0; i < clientSideState.lights.Length; i++)
+            {
+                if (clientSideState.lights[i].lightSourceType != MpLightSourceType.Undefined)
+                {
+                    clientSideState.lights[i].lightSourceType = MpLightSourceType.Undefined;
+                    clearedYet = false;
+                }
+            }
+
+            if (!clearedYet)
+            {
+                JobScheduler.Instance.PostponeToUnityThread(() =>
+                {
+                    for (int i = 0; i < serverSideState.lights.Length; i++)
+                    {
+                        if (serverSideState.lights[i].lightSourceType != MpLightSourceType.Undefined)
+                        {
+                            serverSideState.lights[i].lightSourceType = MpLightSourceType.Undefined;
+                        }
+                    }
+                });
+            }
+        }
+
+        public bool SetLight(int index, MpLight light)
+        {
+            if (index < 0 || index >= ClientState.MaximumLight)
+            {
+                return false;
+            }
+
+            if (!clientSideState.lights[index].Equals(light))
+            {
+                clientSideState.lights[index] = light;
+
+                JobScheduler.Instance.PostponeToUnityThread(() =>
+                {
+                    serverSideState.lights[index] = light;
+                    rebuildLightParams = true;
+                });
+            }
+
+            return true;
         }
 
         public MpCullMode Cull
@@ -1315,6 +1481,24 @@ namespace Nofun.Driver.Unity.Graphics
             }
         }
 
+        public Matrix4x4 LightMatrix3D
+        {
+            get => clientSideState.lightMatrix3D;
+            set
+            {
+                if (clientSideState.lightMatrix3D != value)
+                {
+                    clientSideState.lightMatrix3D = value;
+                    HandleFixedStateChangedClient();
+
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
+                    {
+                        serverSideState.lightMatrix3D = value;
+                    });
+                }
+            }
+        }
+
         public ITexture MainTexture
         {
             get => clientSideState.mainTexture;
@@ -1355,5 +1539,134 @@ namespace Nofun.Driver.Unity.Graphics
         public int ScreenWidth => (int)screenSize.x;
 
         public int ScreenHeight => (int)screenSize.y;
+
+        public bool Lighting
+        {
+            get => clientSideState.lighting;
+            set
+            {
+                if (clientSideState.lighting != value)
+                {
+                    clientSideState.lighting = value;
+                    HandleFixedStateChangedClient();
+
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
+                    {
+                        serverSideState.lighting = value;
+                    });
+                }
+            }
+        }
+
+        public bool Specular
+        {
+            get => clientSideState.specular;
+            set
+            {
+                if (clientSideState.specular != value)
+                {
+                    clientSideState.specular = value;
+                    HandleFixedStateChangedClient();
+                    
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
+                    {
+                        serverSideState.specular = value;
+                    });
+                }
+            }
+        }
+
+        public bool TransparentTest
+        {
+            get => clientSideState.transparentTest;
+            set
+            {
+                if (clientSideState.transparentTest != value)
+                {
+                    clientSideState.transparentTest = value;
+                    HandleFixedStateChangedClient();
+                    
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
+                    {
+                        serverSideState.transparentTest = value;
+                    });
+                }
+            }
+        }
+
+        public bool Fog
+        {
+            get => clientSideState.fog;
+            set
+            {
+                if (clientSideState.fog != value)
+                {
+                    clientSideState.fog = value;
+                    HandleFixedStateChangedClient();
+                    
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
+                    {
+                        serverSideState.fog = value;
+                    });
+                }
+            }
+        }
+
+        public MpExtendedMaterial Material
+        {
+            get => clientSideState.extendedMaterial;
+            set
+            {
+                if (!clientSideState.extendedMaterial.Equals(value))
+                {
+                    clientSideState.extendedMaterial = value;
+                    HandleFixedStateChangedClient();
+
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
+                    {
+                        serverSideState.extendedMaterial = value;
+                    });
+                }
+            }
+        }
+
+        public SColor GlobalAmbient
+        {
+            get => clientSideState.globalAmbient;
+            set
+            {
+                if (!clientSideState.globalAmbient.Equals(value))
+                {
+                    clientSideState.globalAmbient = value;
+                    HandleFixedStateChangedClient();
+
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
+                    {
+                        serverSideState.globalAmbient = value;
+                    });
+                }
+            }
+        }
+        
+        public NativeVector3D CameraPosition
+        {
+            get => clientSideState.cameraPosition.ToMophun();
+            set
+            {
+                Vector3 uValue = value.ToUnity();
+                if (clientSideState.cameraPosition != uValue)
+                {
+                    clientSideState.cameraPosition = uValue;
+                    HandleFixedStateChangedClient();
+
+                    JobScheduler.Instance.PostponeToUnityThread(() =>
+                    {
+                        serverSideState.cameraPosition = uValue;
+                    });
+                }
+            }
+        }
+
+        public int MaxLights => ClientState.MaximumLight;
     } 
 }

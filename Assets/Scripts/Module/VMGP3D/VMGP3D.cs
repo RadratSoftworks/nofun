@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-using NoAlloq;
 using Nofun.Driver.Graphics;
 using Nofun.Util;
 using Nofun.Util.Logging;
 using Nofun.VM;
-using System;
 
 namespace Nofun.Module.VMGP3D
 {
     [Module]
     public partial class VMGP3D
     {
-        private const int MaximumLight = 8;
-
         private VMSystem system;
 
         /// <summary>
@@ -40,20 +36,13 @@ namespace Nofun.Module.VMGP3D
         /// </summary>
         private ITexture activeTexture;
 
-        private SimpleObjectManager<ITexture> managedTextures;
-
         private MpCompareFunc previousCompareFunc = MpCompareFunc.Less;
-
-        private NativeMaterial2 material;
-        private SColor globalAmbientColour;
 
         public VMGP3D(VMSystem system)
         {
             this.system = system;
             this.textureCache = new();
             this.managedTextures = new();
-
-            material = new();
         }
 
         [ModuleCall]
@@ -116,16 +105,36 @@ namespace Nofun.Module.VMGP3D
 
                     break;
 
+                case RenderState.WrapMode:
+                    if (activeTexture != null)
+                    {
+                        activeTexture.Wrap = (MpTextureWrapMode)value;
+                    }
+
+                    break;
+
                 case RenderState.TextureBlendMode:
                     system.GraphicDriver.TextureBlendMode = (MpTextureBlendMode)value;
                     break;
 
                 case RenderState.LightingEnable:
+                    system.GraphicDriver.Lighting = (value != 0);
+                    break;
+
+                case RenderState.SpecularEnable:
+                    system.GraphicDriver.Specular = (value != 0);
+                    break;
+
+                case RenderState.FogEnable:
+                    system.GraphicDriver.Fog = (value != 0);
+                    break;
+
+                case RenderState.TransparentEnable:
+                    system.GraphicDriver.TransparentTest = (value != 0);
                     break;
 
                 // These are ignorable
                 case RenderState.PerspectiveEnable:
-                case RenderState.TransparentEnable:
                 case RenderState.AlphaEnable:
                     break;
 
@@ -162,69 +171,6 @@ namespace Nofun.Module.VMGP3D
         [ModuleCall]
         private void vFreeTexture(int handle)
         {
-            if (handle <= 0)
-            {
-                return;
-            }
-
-            managedTextures.Remove(handle);
-        }
-
-        [ModuleCall]
-        private int vCreateTexture(VMPtr<NativeTexture> tex)
-        {
-            NativeTexture texValue = tex.Read(system.Memory);
-            
-            int textureWidth = 1 << (int)texValue.lodX;
-            int textureHeight = 1 << (int)texValue.lodY;
-            TextureFormat format = (TextureFormat)texValue.textureFormat;
-
-            long texSize = TextureUtil.GetTextureSizeInBytes(textureWidth, textureHeight, format);
-            SColor[] palettes = null;
-            bool zeroAsTrans = true;
-            
-            if (TextureUtil.IsPaletteFormat(format))
-            {
-                if (TextureUtil.IsPaletteSelfProvidedInTexture(format))
-                {
-                    bool argb = TextureUtil.IsPaletteARGB8(format);
-
-                    palettes = texValue.palette.AsSpan(system.Memory, (int)texValue.paletteCount).Select(
-                        color => argb ? SColor.FromArgb8888SW(color) : SColor.FromRgb888(color)).ToArray();
-                    zeroAsTrans = false;
-                }
-                else
-                {
-                    palettes = system.VMGPModule.ScreenPalette;
-                }
-            }
-
-            Span<byte> data = texValue.textureData.AsSpan(system.Memory, (int)texSize);
-            ITexture texDriver = system.GraphicDriver.CreateTexture(data.ToArray(), textureWidth, textureHeight,
-                (int)texValue.mipmapCount + 1, format, palettes, zeroAsTrans);
-
-            return managedTextures.Add(texDriver);
-        }
-
-        [ModuleCall]
-        private void vDeleteTexture(int handle)
-        {
-            managedTextures.Remove(handle);
-        }
-
-        [ModuleCall]
-        private void vSetActiveTexture(int index)
-        {
-            ITexture refer = managedTextures.Get(index);
-            if (refer == null)
-            {
-                Logger.Error(LogClass.VMGP3D, $"Setting a null texture with handle {index}");
-            }
-            else
-            {
-                activeTexture = refer;
-                system.GraphicDriver.MainTexture = activeTexture;
-            }
         }
 
         [ModuleCall]
@@ -291,7 +237,7 @@ namespace Nofun.Module.VMGP3D
             switch ((InternalStateType)key)
             {
                 case InternalStateType.MaxLights:
-                    value.Write(system.Memory, MaximumLight);
+                    value.Write(system.Memory, (uint)system.GraphicDriver.MaxLights);
                     break;
 
                 case InternalStateType.MaxVertices:
@@ -320,54 +266,6 @@ namespace Nofun.Module.VMGP3D
             }
 
             return 1;
-        }
-
-        [ModuleCall]
-        private void vSetMaterial2(VMPtr<NativeMaterial2> materialPtr)
-        {
-            material = materialPtr.Read(system.Memory);
-        }
-
-        [ModuleCall]
-        private void vSetMaterial(VMPtr<NativeMaterial> materialPtr)
-        {
-            NativeMaterial materialLegacy = materialPtr.Read(system.Memory);
-
-            material.diffuse = materialLegacy.diffuse;
-            material.specular = materialLegacy.specular;
-            material.fixedShininess = FixedUtil.FloatToFixed(4.0f);
-            material.ambient = new NativeDiffuseColor()
-            {
-                r = 255,
-                g = 255,
-                b = 255,
-                a = 255
-            };
-            material.emission = new NativeDiffuseColor()
-            {
-                r = 0,
-                g = 0,
-                b = 0,
-                a = 0
-            };
-        }
-
-        [ModuleCall]
-        private void vResetLights()
-        {
-
-        }
-
-        [ModuleCall]
-        private void vSetFogColor()
-        {
-
-        }
-
-        [ModuleCall]
-        private void vSetLight()
-        {
-
         }
 
         [ModuleCall]
@@ -411,12 +309,6 @@ namespace Nofun.Module.VMGP3D
 
             system.GraphicDriver.ViewMatrix3D = currentMatrix;
             system.GraphicDriver.DrawPrimitives(meshMp);
-        }
-
-        [ModuleCall]
-        private void vSetAmbientLight(uint colour)
-        {
-            globalAmbientColour = SColor.FromRgb888(colour);
         }
     }
 }

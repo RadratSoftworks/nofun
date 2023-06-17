@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using Nofun.Driver.Graphics;
 using Nofun.VM;
 using System;
 

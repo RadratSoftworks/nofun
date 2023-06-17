@@ -20,7 +20,7 @@
                 <ui:Button text="Set screen size to device screen size" display-tooltip-when-elided="true" name="SyncSizeButton" style="font-size: 23px; margin-top: 10px;" />
             </ui:GroupBox>
             <ui:GroupBox name="AboutGroup" text="About">
-                <ui:Label text="(C) 2023- Radrat Softworks. Source code is released on Github under Apache License 2.0." display-tooltip-when-elided="true" />
+                <ui:Label text="(C) 2023- Radrat Softworks. Source code is released on Github under Apache License 2.0.&#10;&#10;Thanks Mr. JaGoTu for providing decompression algorithm.&#10;&#10;Thanks Mr. 1upus for helping with games&apos; encryption.&#10;&#10;Thanks for the effort of Kahvibreak server for preserving needed resources." display-tooltip-when-elided="true" style="white-space: normal;" />
                 <ui:Button text="Go to source code" display-tooltip-when-elided="true" name="SourceCodeButton" />
             </ui:GroupBox>
         </ui:ScrollView>

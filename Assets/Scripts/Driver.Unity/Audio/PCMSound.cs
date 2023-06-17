@@ -37,11 +37,6 @@ namespace Nofun.Driver.Unity.Audio
 
             if (isAdpcm)
             {
-                if (bitsPerSample != 16)
-                {
-                    throw new ArgumentException("Sample bits must be 16 bits for ADPCM audio!");
-                }
-
                 clip = AudioClip.Create("ADPCM sound", audioData.Length * 2 / channels, channels,
                     frequency, false);
 

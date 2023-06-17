@@ -31,7 +31,7 @@ namespace Nofun.Driver.Unity.Graphics
             public List<Vector2> uvs;
             public List<Vector3> normals;
             public List<Color> colors;
-
+            public List<Color> specularColors;
             public List<int> indicies;
 
             public BatchedInfo()
@@ -39,6 +39,7 @@ namespace Nofun.Driver.Unity.Graphics
                 normals = new();
                 uvs = new();
                 colors = new();
+                specularColors = new();
                 indicies = new();
                 vertices = new();
             }
@@ -58,6 +59,11 @@ namespace Nofun.Driver.Unity.Graphics
             return mesh.vertices.Length <= 128;
         }
 
+        private void Clear()
+        {
+            currentBatch = new();
+        }
+
         public void AddBasic(Span<Vector3> vertices, Span<Vector2> uvs, Span<Color> colors, Span<int> indicies)
         {
             int verticesCount = vertices.Length;
@@ -65,7 +71,8 @@ namespace Nofun.Driver.Unity.Graphics
             currentBatch.indicies.AddRange(indicies.Select(i => i + currentBatch.vertices.Count).ToList());
             currentBatch.vertices.AddRange(vertices.ToArray());
             currentBatch.colors.AddRange(colors.ToArray());
-            currentBatch.normals.AddRange(Enumerable.Repeat(Vector3.zero, verticesCount));
+            currentBatch.normals.AddRange(Enumerable.Repeat(Vector3.forward, verticesCount));
+            currentBatch.specularColors.AddRange(Enumerable.Repeat(Color.white, verticesCount));
             currentBatch.uvs.AddRange(uvs.ToArray());
         }
 
@@ -110,7 +117,18 @@ namespace Nofun.Driver.Unity.Graphics
             {
                 currentBatch.colors.AddRange(mesh.diffuses.Select(color => color.ToUnity()).ToList());
             }
+
+            if (mesh.speculars.IsEmpty)
+            {
+                currentBatch.specularColors.AddRange(Enumerable.Repeat(Color.white, verticesCount));
+            }
+            else
+            {
+                currentBatch.specularColors.AddRange(mesh.speculars.Select(color => color.ToUnity()).ToList());
+            }
         }
+
+        public bool ShouldFlush => (currentBatch.vertices.Count > 8000) || (currentBatch.indicies.Count > 20000);
 
         public bool Flush()
         {
@@ -137,7 +155,7 @@ namespace Nofun.Driver.Unity.Graphics
                 batch = doneBatches.Peek();
             }
 
-            int val = pusher.Push(batch.vertices, batch.uvs, batch.normals, batch.colors, batch.indicies);
+            int val = pusher.Push(batch.vertices, batch.uvs, batch.normals, batch.colors, batch.specularColors, batch.indicies);
             if (val >= 0)
             {
                 lock (doneBatches)

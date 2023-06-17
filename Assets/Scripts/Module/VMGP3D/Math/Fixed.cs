@@ -48,6 +48,12 @@ namespace Nofun.Module.VMGP3D
         }
 
         [ModuleCall]
+        private int vTan(int fixedV)
+        {
+            return FixedUtil.FloatToFixed((float)Math.Tan(FixedUtil.Fixed11PointToFloat((short)fixedV) * FullCircleRads));
+        }
+
+        [ModuleCall]
         private int vCos(int fixedV)
         {
             return FixedUtil.FloatToFixed((float)Math.Cos(FixedUtil.Fixed11PointToFloat((short)fixedV) * FullCircleRads));

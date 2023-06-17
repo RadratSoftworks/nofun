@@ -21,6 +21,8 @@ using Nofun.Util;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using System.IO.Hashing;
+using System.Runtime.InteropServices;
 
 namespace Nofun.Module.VMGP
 {
@@ -31,7 +33,6 @@ namespace Nofun.Module.VMGP
         private const int CharPerAtlasRow = 16;
         private const int CharPerAtlasColumn = 16;
 
-        private ITexture atlas;
         private VMGPFont nativeFont;
 
         private Dictionary<char, int> charIndexInAtlas;
@@ -42,6 +43,9 @@ namespace Nofun.Module.VMGP
         private int AtlasHeight => nativeFont.height * CharPerAtlasColumn;
         private int AtlasByteWidth => AtlasWidth * 4;
         public VMGPFont NativeFont => nativeFont;
+        private HashSet<int> usedPalettes = new();
+        private int largestCharIndex = 0;
+        private LTUGeneralFixedCapCache<ITexture> atlasCache;
 
         public Font(VMGPFont nativeFont, SColor[] palette)
         {
@@ -53,8 +57,29 @@ namespace Nofun.Module.VMGP
             this.nativeFont = nativeFont;
             this.palette = palette;
             this.charIndexInAtlas = new();
+            this.atlasCache = new();
 
             textureData = new byte[AtlasByteWidth * AtlasHeight];
+        }
+
+        private UInt32 GetCurrentUseHash(VMMemory memory)
+        {
+            XxHash32 hasher = new();
+
+            if (nativeFont.bpp > 1)
+            {
+                foreach (var index in usedPalettes)
+                {
+                    hasher.Append(MemoryMarshal.Cast<SColor, byte>(MemoryMarshal.CreateReadOnlySpan(ref palette[index], 1)));
+                }
+            }
+
+            // Hash the bitmap data
+            int charSize = MemoryUtil.AlignUp(nativeFont.width * nativeFont.height * nativeFont.bpp, 8) / 8;
+            int dataHashSize = charSize * (largestCharIndex + 1);
+
+            hasher.Append(nativeFont.fontData.AsSpan(memory, dataHashSize));
+            return BitConverter.ToUInt32(hasher.GetCurrentHash());
         }
 
         private void UpdateAtlasData2BitPalette(Span<byte> charData, int destCharIndex)
@@ -72,6 +97,8 @@ namespace Nofun.Module.VMGP
                 {
                     int paletteIndex = (charData[(pixelIterated * 2) >> 3] >> ((pixelIterated & 3) * 2)) & 0b11;
                     SColor color = palette[paletteIndex + nativeFont.paletteOffset];
+
+                    usedPalettes.Add(paletteIndex + nativeFont.paletteOffset);
 
                     textureData[destLine * AtlasByteWidth + destColumnTemp * 4] = (byte)((paletteIndex == 0) ? 0 : 255);
                     textureData[destLine * AtlasByteWidth + destColumnTemp * 4 + 1] = (byte)(color.r * 255);
@@ -123,7 +150,42 @@ namespace Nofun.Module.VMGP
                 destCharIndex);
         }
 
-        private void UpdateAtlas(IGraphicDriver driver, VMMemory memory, string updateCharList)
+        private void RefreshAtlasImpl(VMMemory memory)
+        {
+            usedPalettes.Clear();
+
+            foreach (var charUpdateAndInnerIndex in charIndexInAtlas)
+            {
+                byte charIndex = nativeFont.charIndexTable[charUpdateAndInnerIndex.Key].Read(memory);
+                if (charIndex != 0xFF)
+                {
+                    largestCharIndex = Math.Max(largestCharIndex, charIndex);
+
+                    if (nativeFont.bpp == 1)
+                    {
+                        UpdateAtlasDataMonochrome(memory, charIndex, charUpdateAndInnerIndex.Value);
+                    }
+                    else if (nativeFont.bpp == 2)
+                    {
+                        UpdateAtlasData2BitPalette(memory, charIndex, charUpdateAndInnerIndex.Value);
+                    } else
+                    {
+                        // Palette font
+                        throw new Exception("Unhandled 4-bit palette font!");
+                    }
+                }
+            }
+        }
+
+        private ITexture RefreshAtlas(IGraphicDriver driver, VMMemory memory)
+        {
+            RefreshAtlasImpl(memory);
+            ITexture result = driver.CreateTexture(textureData, AtlasWidth, AtlasHeight, 1, TextureFormat.ARGB8888);
+
+            return result;
+        }
+
+        private ITexture UpdateAtlas(IGraphicDriver driver, VMMemory memory, string updateCharList)
         {
             foreach (var charToUpdate in updateCharList)
             {
@@ -135,6 +197,8 @@ namespace Nofun.Module.VMGP
                 byte charIndex = nativeFont.charIndexTable[charToUpdate].Read(memory);
                 if (charIndex != 0xFF)
                 {
+                    largestCharIndex = Math.Max(largestCharIndex, charIndex);
+
                     if (nativeFont.bpp == 1)
                     {
                         UpdateAtlasDataMonochrome(memory, charIndex, charIndexInAtlas.Count);
@@ -152,15 +216,7 @@ namespace Nofun.Module.VMGP
                 charIndexInAtlas.Add(charToUpdate, charIndexInAtlas.Count);
             }
 
-            if (atlas == null)
-            {
-                atlas = driver.CreateTexture(textureData, AtlasWidth, AtlasHeight, 1, TextureFormat.ARGB8888);
-            }
-            else
-            {
-                atlas.SetData(textureData, 0);
-                atlas.Apply();
-            }
+            return driver.CreateTexture(textureData, AtlasWidth, AtlasHeight, 1, TextureFormat.ARGB8888);
         }
 
         public void DrawText(IGraphicDriver driver, VMMemory memory, int posx, int posy, string text,
@@ -175,9 +231,28 @@ namespace Nofun.Module.VMGP
                 }
             }
 
+            ITexture atlas = null;
+
             if (notInAtlasChar.Length > 0)
             {
-                UpdateAtlas(driver, memory, notInAtlasChar);
+                // Purge all existing entries in cache
+                atlasCache.Clear();
+
+                RefreshAtlasImpl(memory);
+                atlas = UpdateAtlas(driver, memory, notInAtlasChar);
+
+                atlasCache.Add(GetCurrentUseHash(memory), atlas);
+            }
+            else
+            {
+                UInt32 hash = GetCurrentUseHash(memory);
+                atlas = atlasCache.Get(hash);
+
+                if (atlas == null)
+                {
+                    atlas = RefreshAtlas(driver, memory);
+                    atlasCache.Add(hash, atlas);
+                }
             }
 
             List<int> positions = new();
@@ -193,7 +268,7 @@ namespace Nofun.Module.VMGP
             }
 
             driver.DrawText(posx, posy, nativeFont.width, nativeFont.height, positions, atlas,
-                TextDirection.Horizontal, foregroundColor);
+                TextDirection.Horizontal, (nativeFont.bpp > 1) ? SColor.White : foregroundColor);
         }
     }
 }

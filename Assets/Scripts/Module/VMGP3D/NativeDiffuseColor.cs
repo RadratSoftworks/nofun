@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+using Nofun.Driver.Graphics;
+
 namespace Nofun.Module.VMGP3D
 {
     public struct NativeDiffuseColor
@@ -22,5 +24,10 @@ namespace Nofun.Module.VMGP3D
         public byte g;
         public byte r;
         public byte a;
+
+        public static implicit operator SColor(NativeDiffuseColor color)
+        {
+            return new SColor(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
+        }
     }
 }
