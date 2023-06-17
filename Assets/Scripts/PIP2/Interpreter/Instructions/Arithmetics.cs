@@ -201,6 +201,11 @@ namespace Nofun.PIP2.Interpreter
             Reg[encoding.d] = Reg[encoding.s] & (uint)FetchImmediate();
         }
 
+        private void ANDH(TwoSourcesEncoding encoding)
+        {
+            Reg16[encoding.d] = (ushort)(Reg16[encoding.s] & Reg16[encoding.t]);
+        }
+
         private void ANDHi(TwoSourcesEncoding encoding)
         {
             Reg16[encoding.d] = (ushort)(Reg16[encoding.s] & encoding.t);

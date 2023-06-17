@@ -27,6 +27,7 @@ namespace Nofun.Driver.Unity.Graphics
         private Driver.Graphics.TextureFormat format;
         private int mipCount;
         private MpFilterMode cachedFilter;
+        private MpTextureWrapMode cachedWrapMode;
         private UnityEngine.FilterMode cachedUnityFilter;
         private Vector2 cachedSize;
 
@@ -77,60 +78,6 @@ namespace Nofun.Driver.Unity.Graphics
             // Gurantee that this is in byte-unit.
             if (!needTransform)
             {
-                if (DoesMappableNeedCheckAlpha(format))
-                {
-                    // According to docs, if the top bit on, it's transparent, lol
-                    // At least, that's what it's with software rendering, which is used by almost all games...
-                    switch (format)
-                    {
-                        case Driver.Graphics.TextureFormat.ARGB4444:
-                            {
-                                for (int y = 0; y < height; y++)
-                                {
-                                    for (int x = 0; x < width; x++)
-                                    {
-                                        byte ar = data[y * width * 2 + x * 2 + 1];
-
-                                        if ((ar & (1 << 7)) == 0)
-                                        {
-                                            ar |= 0xF0;
-                                        }
-                                        else
-                                        {
-                                            ar = (byte)(ar & ~0xF0);
-                                        }
-
-                                        data[y * width * 2 + x * 2 + 1] = ar;
-                                    }
-                                }
-
-                                break;
-                            }
-
-                        case Driver.Graphics.TextureFormat.ARGB8888:
-                            {
-                                for (int y = 0; y < height; y++)
-                                {
-                                    for (int x = 0; x < width; x++)
-                                    {
-                                        byte a = data[y * width * 4 + x * 4 + 3];
-
-                                        if ((a & (1 << 7)) != 0)
-                                        {
-                                            data[y * width * 4 + x * 4 + 3] = 0;
-                                        }
-                                        else
-                                        {
-                                            data[y * width * 4 + x * 4 + 3] = 255;
-                                        }
-                                    }
-                                }
-
-                                break;
-                            }
-                    }
-                }
-
                 // Still need to fiddle with data a bit if it has transform
                 uTexture.SetPixelData(data, mipLevel, offset);
             }
@@ -220,6 +167,7 @@ namespace Nofun.Driver.Unity.Graphics
 
             cachedUnityFilter = FilterMode.Point;
             cachedFilter = MpFilterMode.MipNearest;
+            cachedWrapMode = MpTextureWrapMode.Wrap;
         }
 
         public void SetData(byte[] data, int mipLevel, Memory<SColor> palettes, bool zeroAsTransparent = false)
@@ -273,6 +221,21 @@ namespace Nofun.Driver.Unity.Graphics
                         uTexture.filterMode = unityFilter;
                     });
                 }
+            }
+        }
+        
+        public MpTextureWrapMode Wrap
+        {
+            get => cachedWrapMode;
+            set
+            {
+                cachedWrapMode = value;
+
+                TextureWrapMode unityWrap = value.ToUnity();
+                JobScheduler.Instance.PostponeToUnityThread(() =>
+                {
+                    uTexture.wrapMode = unityWrap;
+                });
             }
         }
     }

@@ -27,11 +27,11 @@ namespace Nofun.Module.VMGP3D
     {
         private Vector4 MakePlane(Vector3 p1, Vector3 p2, Vector3 p3)
         {
-            Vector3 edge1 = p2 - p1;
-            Vector3 edge2 = p3 - p1;
+            Vector3 edge1 = p1 - p3;
+            Vector3 edge2 = p2 - p3;
 
-            Vector3 normal = Vector3.Cross(edge1, edge2);
-            float dist = -Vector3.Dot(normal, p1);
+            Vector3 normal = Vector3.Cross(edge1, edge2).normalized;
+            float dist = Vector3.Dot(normal, p1);
 
             return new Vector4(normal.x, normal.y, normal.z, dist);
         }
@@ -60,6 +60,12 @@ namespace Nofun.Module.VMGP3D
             VMPtr<NativeVector3D> polygonVPtr, VMPtr<NativePlane> planePtr)
         {
             Vector4 plane;
+            Span<NativeVector3D> polygonV = null;
+
+            if (!polygonVPtr.IsNull)
+            {
+                polygonV = polygonVPtr.AsSpan(system.Memory, 3);
+            }
 
             if (!planePtr.IsNull)
             {
@@ -69,7 +75,11 @@ namespace Nofun.Module.VMGP3D
             }
             else
             {
-                Span<NativeVector3D> polygonV = polygonVPtr.AsSpan(system.Memory, 3);
+                if (polygonV == null)
+                {
+                    return 0;
+                }
+
                 plane = MakePlane(polygonV[0].ToUnity(), polygonV[1].ToUnity(), polygonV[2].ToUnity());
             }
 
@@ -78,9 +88,9 @@ namespace Nofun.Module.VMGP3D
             Vector3 lineThrough = lineVs[0].ToUnity();
 
             float multiplier = Vector3.Dot(dir, plane);
-            float otherSide = -plane.w - Vector3.Dot(plane, lineThrough);
+            float otherSide = plane.w - Vector3.Dot(plane, lineThrough);
 
-            if (multiplier == 0.0f)
+            if (Math.Abs(multiplier) <= Mathf.Epsilon)
             {
                 return 0;
             }
@@ -88,8 +98,30 @@ namespace Nofun.Module.VMGP3D
             float t = otherSide / multiplier;
             Vector3 collisionPoint = lineThrough + dir * t;
 
-            collisionPosPtr.Write(system.Memory, collisionPoint.ToMophun());
+            if (!polygonVPtr.IsNull)
+            {
+                // We can check if it's inside 3d polygon
+                // https://gdbooks.gitbooks.io/3dcollisions/content/Chapter4/point_in_triangle.html
+                Vector3 p0 = polygonV[0].ToUnity() - collisionPoint;
+                Vector3 p1 = polygonV[1].ToUnity() - collisionPoint;
+                Vector3 p2 = polygonV[2].ToUnity() - collisionPoint;
 
+                Vector3 u = Vector3.Cross(p1, p2);
+                Vector3 v = Vector3.Cross(p2, p0);
+                Vector3 w = Vector3.Cross(p0, p1);
+
+                if (Vector3.Dot(u, v) < 0.0f)
+                {
+                    return 0;
+                }
+
+                if (Vector3.Dot(v, w) < 0.0f)
+                {
+                    return 0;
+                }
+            }
+
+            collisionPosPtr.Write(system.Memory, collisionPoint.ToMophun());
             return 1;
         }
 
@@ -100,6 +132,7 @@ namespace Nofun.Module.VMGP3D
             NativeBBox boxValue = box.Read(system.Memory);
 
             bool hit = (boxValue.min <= pointValue) && (pointValue <= boxValue.max);
+
             return (short)(hit ? 1 : 0);
         }
 
@@ -119,53 +152,7 @@ namespace Nofun.Module.VMGP3D
         [ModuleCall]
         private short vCollisionVectorPlane(VMPtr<NativeVector3D> collisionPointPtr, VMPtr<NativeVector3D> linePointsPtr, VMPtr<NativePlane> planePtr)
         {
-            NativePlane plane = planePtr.Read(system.Memory);
-            Span<NativeVector3D> points = linePointsPtr.AsSpan(system.Memory, 2);
-
-            float pointX = FixedUtil.FixedToFloat(points[0].fixedX);
-            float pointY = FixedUtil.FixedToFloat(points[0].fixedY);
-            float pointZ = FixedUtil.FixedToFloat(points[0].fixedZ);
-
-            float lineX = FixedUtil.FixedToFloat(points[0].fixedX - points[1].fixedX);
-            float lineY = FixedUtil.FixedToFloat(points[0].fixedY - points[1].fixedY);
-            float lineZ = FixedUtil.FixedToFloat(points[0].fixedZ - points[1].fixedZ);
-
-            // Vector equation
-            // x = x0 + lineX * t
-            // y = y0 + lineY * t
-            // z = z0 + lineZ * t
-            // where (x0, y0, z0) is one of the point
-            // solve t and apply to vector equation to get the intersection point
-
-            // Plane equation
-            // nx * x + ny * y + nz * z + d = 0
-            // nx * x0 + nx * lineX * t + ny * y0 + ny * lineY * t + nz * z0 + nz * lineZ * t + d = 0
-            // t * (nx * lineX + ny * lineY + nz * lineZ) = -d - nx * x0 - ny * y0 - nz * z0
-            float normalX = FixedUtil.FixedToFloat(plane.normal.fixedX);
-            float normalY = FixedUtil.FixedToFloat(plane.normal.fixedY);
-            float normalZ = FixedUtil.FixedToFloat(plane.normal.fixedZ);
-
-            float dist = FixedUtil.FixedToFloat(plane.fixedDistance);
-
-            float rhs = -dist - normalX * pointX - normalY * pointY - normalZ * pointZ;
-            float lhsMul = normalX * lineX * normalY * lineY * normalZ * lineZ;
-
-            if (lhsMul == 0)
-            {
-                return 0;
-            }
-
-            float t = rhs / lhsMul;
-
-            NativeVector3D collisionPoint = new NativeVector3D()
-            {
-                fixedX = FixedUtil.FloatToFixed(pointX + lineX * t),
-                fixedY = FixedUtil.FloatToFixed(pointY + lineY * t),
-                fixedZ = FixedUtil.FloatToFixed(pointZ + lineZ * t),
-            };
-
-            collisionPointPtr.Write(system.Memory, collisionPoint);
-            return 1;
+            return vCollisionVectorPoly(collisionPointPtr, linePointsPtr, VMPtr<NativeVector3D>.Null, planePtr);
         }
 
         [ModuleCall]

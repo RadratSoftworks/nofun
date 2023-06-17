@@ -28,6 +28,7 @@ namespace Nofun.Driver.Input
         PointerAltDown = 0x80,
         Fire2 = 0x100,
 
-        SEJoystickPush = 0xD6
+        SEJoystickPush = 0xD6,
+        MovementKeyMask = 0b1111
     }
 }

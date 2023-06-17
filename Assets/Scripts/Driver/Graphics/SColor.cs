@@ -20,6 +20,9 @@ namespace Nofun.Driver.Graphics
 {
     public struct SColor
     {
+        public static readonly SColor Black = new SColor(0, 0, 0);
+        public static readonly SColor White = new SColor(1, 1, 1);
+
         public float r;
         public float g;
         public float b;

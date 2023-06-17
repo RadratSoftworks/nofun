@@ -58,7 +58,7 @@ namespace Nofun.VM
         private string gameName;
 
         public GameSetting GameSetting { get; set; }
-        public SystemVersion Version { get; set; }
+        public SystemVersion Version => GameSetting.systemVersion;
 
         public VMMemory Memory => memory;
         public Processor Processor => processor;

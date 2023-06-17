@@ -56,6 +56,8 @@ namespace Nofun.Driver.Graphics
         #region 3D draw
         void DrawBillboard(NativeBillboard billboard);
         void DrawPrimitives(MpMesh meshToDraw);
+        void ClearLights();
+        bool SetLight(int index, MpLight light);
         #endregion
 
         #region State manipulation
@@ -69,12 +71,22 @@ namespace Nofun.Driver.Graphics
 
         Matrix4x4 ProjectionMatrix3D { get; set;}
         Matrix4x4 ViewMatrix3D { get; set; }
+        Matrix4x4 LightMatrix3D { get; set; }
 
         ITexture MainTexture { get; set; }
+
+        bool Lighting { get; set; }
+        bool Specular { get; set; }
+        bool Fog { get; set; }
+        bool TransparentTest { get; set; }
+        MpExtendedMaterial Material { get; set; }
+        SColor GlobalAmbient { get; set; }
+        NativeVector3D CameraPosition { get; set; }
         #endregion
 
         /// Other properties
         int ScreenWidth { get; }
         int ScreenHeight { get; }
+        int MaxLights { get; }
     };
 }

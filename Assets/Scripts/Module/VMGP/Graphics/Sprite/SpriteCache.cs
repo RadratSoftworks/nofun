@@ -26,7 +26,7 @@ namespace Nofun.Module.VMGP
     {
         public ITexture texture;
 
-        public DateTime LastAccessed { get; set; }
+        public override DateTime LastAccessed { get; set; }
     }
 
     internal class SpriteCache : LTUFixedCapCache<SpriteCacheEntry>

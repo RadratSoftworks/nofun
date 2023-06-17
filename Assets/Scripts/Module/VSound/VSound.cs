@@ -82,7 +82,7 @@ namespace Nofun.Module.VSound
         [ModuleCall]
         private int vSoundDisposeHandle(int handle)
         {
-            if (handle == 0)
+            if (handle <= 0)
             {
                 return SND_OK;
             }
@@ -110,7 +110,7 @@ namespace Nofun.Module.VSound
             {
                 if (DoesControlRequireInstance(control))
                 {
-                    Logger.Error(LogClass.VSound, $"Sound handle={handle} is invalid! Control failed!");
+                    Logger.Error(LogClass.VSound, $"Sound handle={handle} is invalid! Control {control} failed!");
                     return SND_ERR;
                 }
             }

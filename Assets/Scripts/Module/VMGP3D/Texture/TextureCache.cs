@@ -11,7 +11,7 @@ namespace Nofun.Module.VMGP3D
     public class TextureCacheEntry : ICacheEntry
     {
         public ITexture nativeTexture;
-        public DateTime LastAccessed { get; set; }
+        public override DateTime LastAccessed { get; set; }
     }
 
     /// <summary>
@@ -21,9 +21,12 @@ namespace Nofun.Module.VMGP3D
     {
         private static ITexture Upload(IGraphicDriver driver, Span<byte> textureData, TextureFormat format, uint lods, uint mipCount, Memory<SColor> palettes)
         {
-            // Indicies format will not admit 0 as transparent, but RGB332 would according to doc
-            bool zeroAsTransparent = (format == TextureFormat.RGB332);
-            return driver.CreateTexture(textureData.ToArray(), 1 << (int)(lods & 0xFF), 1 << (int)((lods >> 8) & 0xFF), (int)mipCount, format, palettes, zeroAsTransparent);
+            byte[] dataFinal = textureData.ToArray();
+            int width = 1 << (int)(lods & 0xFF);
+            int height = 1 << (int)((lods >> 8) & 0xFF);
+
+            VMGP3D.ResolveMophunSWTransparency(dataFinal, width, height, (int)mipCount, format);
+            return driver.CreateTexture(dataFinal, width, height, (int)mipCount, format, palettes, true);
         }
 
         public static ITexture Upload(IGraphicDriver driver, VMPtr<byte> dataPtr, VMMemory memory, TextureFormat format, uint lods, uint mipCount, Memory<SColor> palettes)

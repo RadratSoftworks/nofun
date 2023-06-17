@@ -26,7 +26,7 @@ namespace Nofun.Module.VMGP
         public bool invalidated = false;
 
         public ITexture texture;
-        public DateTime LastAccessed { get; set; }
+        public override DateTime LastAccessed { get; set; }
     }
 
     /// <summary>
@@ -115,20 +115,14 @@ namespace Nofun.Module.VMGP
                 }
             }
 
-            if (resultTexture != null)
-            {
-                resultTexture.SetData(dataUpload, 0, palettes, zeroAsTransparent);
-                resultTexture.Apply();
-            }
-            else
-            {
-                resultTexture = driver.CreateTexture(dataUpload, 256, 64, 1, tileMapFormat, palettes, zeroAsTransparent);
-            }
-
+            // Maybe i'm hallucinating but there's a bug in Unity atm that SetData will not work after Apply in 25f1
+            resultTexture = driver.CreateTexture(dataUpload, 256, 64, 1, tileMapFormat, palettes, zeroAsTransparent);
+            
             if (entry != null)
             {
                 entry.invalidated = false;
                 entry.tileCount = (uint)tileMaxCount;
+                entry.texture = resultTexture;
             }
             else
             {

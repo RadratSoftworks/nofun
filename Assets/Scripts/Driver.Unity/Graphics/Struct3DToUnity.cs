@@ -32,6 +32,11 @@ namespace Nofun.Driver.Unity.Graphics
             return new Vector3(FixedUtil.FixedToFloat(v.fixedX), FixedUtil.FixedToFloat(v.fixedY), FixedUtil.FixedToFloat(v.fixedZ));
         }
 
+        public static Vector4 ToUnity4D(this NativeVector3D v)
+        {
+            return new Vector4(FixedUtil.FixedToFloat(v.fixedX), FixedUtil.FixedToFloat(v.fixedY), FixedUtil.FixedToFloat(v.fixedZ), 1.0f);
+        }
+
         public static Vector4 ToUnity(this NativeVector4D v)
         {
             return new Vector4(FixedUtil.FixedToFloat(v.fixedX), FixedUtil.FixedToFloat(v.fixedY), FixedUtil.FixedToFloat(v.fixedZ), FixedUtil.FixedToFloat(v.fixedW));
@@ -40,6 +45,11 @@ namespace Nofun.Driver.Unity.Graphics
         public static Color ToUnity(this NativeDiffuseColor color)
         {
             return new Color(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
+        }
+
+        public static Color ToUnity(this NativeSpecularColor color)
+        {
+            return new Color(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.f / 255.0f);
         }
 
         public static Rect ToUnity(this NRectangle rect)

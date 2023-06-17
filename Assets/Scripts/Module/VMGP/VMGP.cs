@@ -51,6 +51,11 @@ namespace Nofun.Module.VMGP
         }
 
         [ModuleCall]
+        private void vSprintf(VMPtr<byte> buf, VMString message)
+        {
+        }
+
+        [ModuleCall]
         private uint vGetVMGPInfo()
         {
             return ((uint)MajorAPIVersion << 16) | ((system.Version == SystemVersion.Version150) ? MinorAPIVersion50 : MinorAPIVersion30);
