@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="root" style="flex-grow: 1; font-size: 14px;">
+        <ui:TextField picking-mode="Ignore" label="Search" value="filler text" name="SearchBar" style="margin-top: 30px; margin-right: 30px; margin-bottom: 30px; margin-left: 30px;" />
+        <ui:ScrollView scroll-deceleration-rate="0,135" elasticity="0,1" name="ScrollView" style="flex-grow: 18; flex-shrink: 18;">
+            <ui:VisualElement name="GameList" style="flex-grow: 1; flex-direction: row; flex-wrap: wrap;" />
+        </ui:ScrollView>
+        <ui:Button text="+" parse-escape-sequences="true" display-tooltip-when-elided="true" name="InstallButton" style="position: absolute; bottom: 40px; right: 40px; opacity: 1; font-size: 80px; border-top-left-radius: 80px; border-top-right-radius: 80px; border-bottom-right-radius: 80px; border-bottom-left-radius: 80px; width: 128px; height: 128px; background-color: rgb(219, 138, 46);" />
+    </ui:VisualElement>
+</ui:UXML>

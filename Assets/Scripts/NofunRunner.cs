@@ -38,32 +38,22 @@ namespace Nofun
 {
     public class NofunRunner: MonoBehaviour
     {
-        [SerializeField]
-        private InputDriver inputDriver;
-
-        [SerializeField]
-        private AudioDriver audioDriver;
-
-        [SerializeField]
-        private GraphicDriver graphicDriver;
-
-        [SerializeField]
-        private UIDriver uiDriver;
-
-        [SerializeField]
-        private GameObject messageBoxPrefab;
-
-        [SerializeField]
-        private AudioSource messageBoxSfx;
-
-        [SerializeField]
-        private SettingDocumentController settingDocument;
-
+        [Header("Drivers")]
+        [SerializeField] private InputDriver inputDriver;
+        [SerializeField] private AudioDriver audioDriver;
+        [SerializeField] private GraphicDriver graphicDriver;
+        [SerializeField] private UIDriver uiDriver;
         private TimeDriver timeDriver;
 
-        [Range(1, 60)]
-        [SerializeField]
-        private int fpsLimit = 30;
+        [Header("UI")]
+        [SerializeField] private GameObject messageBoxPrefab;
+        [SerializeField] private AudioSource messageBoxSfx;
+        [SerializeField] private SettingDocumentController settingDocument;
+
+        [Header("Settings")]
+        [Range(1, 60)][SerializeField] private int fpsLimit = 30;
+        [SerializeField] private string executableFilePath = "E:\\spacebox.mpn";
+
 
         private VMGPExecutable executable;
         private VMSystem system;
@@ -81,9 +71,6 @@ namespace Nofun
 
         private System.IntPtr currentWindow;
 #endif
-
-        [SerializeField]
-        private string executableFilePath = "E:\\spacebox.mpn";
 
         private void SetupLogger()
         {
@@ -214,7 +201,7 @@ namespace Nofun
                     system.Run();
                 }
             }));
-            
+
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
             currentWindow = GetActiveWindow();
 #endif
