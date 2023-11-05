@@ -128,26 +128,7 @@ namespace Nofun.VM
 
         private void GetMetadataInfoAndSetupPersonalFolder(string inputFileName)
         {
-            Span<byte> magic = stackalloc byte[4];
-
-            for (int i = 0; i < executable.ResourceCount; i++)
-            {
-                executable.ReadResourceData((uint)i, magic, 0);
-                if (VMMetaInfoReader.IsMetadataMagic(magic))
-                {
-                    byte[] wholeMetadata = new byte[executable.GetResourceSize((uint)i)];
-                    executable.ReadResourceData((uint)i, wholeMetadata, 0);
-
-                    using (MemoryStream stream = new MemoryStream(wholeMetadata))
-                    {
-                        using (BinaryReader reader = new BinaryReader(stream))
-                        {
-                            metaInfoReader = new VMMetaInfoReader(reader);
-                            break;
-                        }
-                    }
-                }
-            }
+            metaInfoReader = executable.GetMetaInfo();
 
             gameName = metaInfoReader?.Get("Title");
 

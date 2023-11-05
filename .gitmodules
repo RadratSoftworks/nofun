@@ -1,3 +1,6 @@
 [submodule "Native/TSFMidiRender/tsf"]
 	path = Native/TSFMidiRender/tsf
 	url = https://github.com/schellingb/TinySoundFont/
+[submodule "Native/nativefiledialog-extended"]
+	path = Native/nativefiledialog-extended
+	url = https://github.com/btzy/nativefiledialog-extended

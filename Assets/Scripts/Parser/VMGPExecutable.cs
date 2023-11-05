@@ -37,7 +37,6 @@ namespace Nofun.Parser
 
         protected VMGPHeader header;
         protected BinaryReader reader;
-        protected BinaryWriter writer;
 
         private UInt32 codeSectionOffset;
         private UInt32 dataSectionOffset;
@@ -56,7 +55,7 @@ namespace Nofun.Parser
             codeSectionOffset = VMGPHeader.TotalSize;
             dataSectionOffset = codeSectionOffset + header.codeSize;
             resourceSectionOffset = dataSectionOffset + header.dataSize;
-            
+
             UInt32 poolSectionOffset = resourceSectionOffset + header.resourceSize;
             reader.BaseStream.Seek(poolSectionOffset, SeekOrigin.Begin);
 
@@ -98,8 +97,6 @@ namespace Nofun.Parser
         {
             reader = new BinaryReader(fileStream);
             header = new VMGPHeader(reader);
-
-            writer = new BinaryWriter(fileStream);
         }
 
         public void GetCodeSection(Span<byte> codeSection)

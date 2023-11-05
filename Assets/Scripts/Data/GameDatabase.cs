@@ -29,9 +29,16 @@ namespace Nofun.Data
             _connection.CreateTable<Model.GameInfo>();
         }
 
-        public void AddGame(Model.GameInfo game)
+        public bool AddGame(Model.GameInfo game)
         {
-            _connection.Insert(game);
+            if (_connection.Insert(game) == 0)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         }
 
         public void RemoveGame(Model.GameInfo game)

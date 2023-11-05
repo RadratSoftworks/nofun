@@ -21,7 +21,7 @@ namespace Nofun.Data.Model
     public class GameInfo
     {
         [PrimaryKey, AutoIncrement]
-        public long Id { get; set; }
+        public int Id { get; set; }
 
         [Unique]
         public string Name { get; set; }
@@ -49,5 +49,7 @@ namespace Nofun.Data.Model
             Minor = minor;
             Revision = revision;
         }
+
+        public string GameFileName => $"{Id:X8}.mpn";
     }
 }
