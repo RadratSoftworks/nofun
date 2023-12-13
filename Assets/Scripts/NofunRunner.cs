@@ -54,7 +54,6 @@ namespace Nofun
         [Range(1, 60)][SerializeField] private int fpsLimit = 30;
         [SerializeField] private string executableFilePath = "E:\\spacebox.mpn";
 
-
         private VMGPExecutable executable;
         private VMSystem system;
         private GameSettingsManager settingManager;
@@ -112,6 +111,17 @@ namespace Nofun
         }
 
         private void Start()
+        {
+            // StartGameImpl()
+        }
+
+        public void Launch(string gamePath)
+        {
+            executableFilePath = gamePath;
+            StartGameImpl();
+        }
+
+        public void StartGameImpl()
         {
             Application.targetFrameRate = 60;
 

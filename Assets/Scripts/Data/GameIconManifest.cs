@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System;
 using UnityEngine;
 
 namespace Nofun.Data.Model
@@ -22,5 +23,11 @@ namespace Nofun.Data.Model
     public class GameIconManifest : ScriptableObject
     {
         public GameIcon[] Icons;
+
+        public GameIcon FindGameIcon(string gameName)
+        {
+            gameName = gameName.Trim();
+            return Array.Find(Icons, icon => icon.GameName == gameName);
+        }
     };
 }

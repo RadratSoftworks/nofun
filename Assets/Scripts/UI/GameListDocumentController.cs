@@ -34,32 +34,94 @@ namespace Nofun.UI
 
         private UIDocument _document;
         private Button _installButton;
+        private VisualElement _gameList;
         private GameDatabase _gameDatabase;
 
         [Header("UI")]
         [SerializeField] private GameObject messageBoxPrefab;
 
+        [SerializeField] private VisualTreeAsset gameEntryTemplate;
+        [SerializeField] private GameIconManifest gameIconManifest;
+
+        [Header("Runner")]
+        [SerializeField] private NofunRunner runner;
+
         private string GamePathRoot => $"{Application.persistentDataPath}/__Games";
 
-        private string GetGamePath(GameInfo gameInfo)
+        private string GetGamePath(string gameFileName)
         {
-            return $"{GamePathRoot}/{gameInfo.GameFileName}";
+            return $"{GamePathRoot}/{gameFileName}";
         }
+
+        private string GetGamePath(GameInfo gameInfo) => GetGamePath(gameInfo.GameFileName);
 
         private void Awake()
         {
             _document = GetComponent<UIDocument>();
             _installButton = _document.rootVisualElement.Q<Button>("InstallButton");
+            _gameList = _document.rootVisualElement.Q<VisualElement>("GameList");
             _gameDatabase = new GameDatabase(GameDatabasePath);
 
             Directory.CreateDirectory(GamePathRoot);
 
             _installButton.clicked += OnInstallButtonClicked;
+
+            LoadGameList();
         }
 
         private void OnDestroy()
         {
             _installButton.clicked -= OnInstallButtonClicked;
+        }
+
+        private void OnGameIconClicked(string gameFileName)
+        {
+            if (runner != null)
+            {
+                if (!runner.isActiveAndEnabled)
+                {
+                    string gamePath = GetGamePath(gameFileName);
+                    if (!File.Exists(gamePath))
+                    {
+                        NofunMessageBoxController.Show(messageBoxPrefab, IUIDriver.Severity.Error,
+                            IUIDriver.ButtonType.OK, "Error", "The game file is missing or corrupted. Please delete this game!", null);
+
+                        return;
+                    }
+
+                    runner.gameObject.SetActive(true);
+                    runner.Launch(gamePath);
+
+                    gameObject.SetActive(false);
+                }
+            }
+        }
+
+        private void LoadGameList()
+        {
+            foreach (var child in _gameList.Children())
+            {
+                if (child.userData is GameInfoEntryController controller)
+                {
+                    controller.OnGameInfoChoosen -= OnGameIconClicked;
+                }
+            }
+
+            _gameList.Clear();
+
+            var gameInfos = _gameDatabase.AllGames;
+
+            foreach (var gameInfo in gameInfos)
+            {
+                var gameInfoEntry = gameEntryTemplate.Instantiate();
+                var gameInfoEntryBinder = new GameInfoEntryController(gameIconManifest);
+
+                gameInfoEntryBinder.SetVisualElement(gameInfoEntry);
+                gameInfoEntryBinder.BindData(gameInfo);
+                gameInfoEntryBinder.OnGameInfoChoosen += OnGameIconClicked;
+
+                _gameList.Add(gameInfoEntry);
+            }
         }
 
         private void InstallGame(string path)
@@ -116,6 +178,8 @@ namespace Nofun.UI
 
                         NofunMessageBoxController.Show(messageBoxPrefab, IUIDriver.Severity.Info,
                             IUIDriver.ButtonType.OK, "Success", "Game has been installed!", null);
+
+                        LoadGameList();
                     }
                 }
                 else

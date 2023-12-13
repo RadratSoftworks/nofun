@@ -1,0 +1,16 @@
+.game-entry:hover
+{
+    background-color: #3699d6;
+    transition-property: background-color;
+    transition-duration: 0.2s;
+}
+
+.game-entry
+{
+    background-color: transparent;
+}
+
+.unity-label
+{
+    text-overflow: ellipsis;
+}

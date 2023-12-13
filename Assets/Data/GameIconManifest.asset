@@ -12,4 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 94abc201a959efa46bd17d98658843ec, type: 3}
   m_Name: GameIconManifest
   m_EditorClassIdentifier: 
-  Icons: []
+  Icons:
+  - GameName: Carmageddon Mobile 3D
+    Icon: {fileID: 21300000, guid: a9b67a74c38a4e84eb82630f4eb42de0, type: 3}
+  - GameName: Da Vinci Code 3D
+    Icon: {fileID: 21300000, guid: c591dd54b61c5694ba2b2f7a34dedddd, type: 3}
+  - GameName: 'Honey Cave '
+    Icon: {fileID: 21300000, guid: ddf1392bb242d0d42b71ba6f3742f8d4, type: 3}
+  - GameName: HoneyCave2
+    Icon: {fileID: 21300000, guid: 80f42cd73fa9a604a8b0d444bdd13e82, type: 3}
+  - GameName: CourierBob
+    Icon: {fileID: 21300000, guid: bb7326f1675efb949a5393a4c77d5e47, type: 3}
