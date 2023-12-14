@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5be51871efa6c3e4eae1703925c8f5ac, type: 3}
+  m_Name: nofun
+  m_EditorClassIdentifier: 
+  m_SharedTableData: {fileID: 11400000, guid: 198be8f0d9d907049947f8336106f789, type: 2}
+  m_Tables:
+  - {fileID: 11400000, guid: a45e3544cfb1e4a4282dd17d0970ca88, type: 2}
+  - {fileID: 11400000, guid: 55d66cf9c8730bb478563394b1525c26, type: 2}
+  m_Extensions:
+  - rid: 161019407151136794
+  m_Group: String Table
+  references:
+    version: 2
+    RefIds:
+    - rid: 161019407151136794
+      type: {class: GoogleSheetsExtension, ns: UnityEditor.Localization.Plugins.Google, asm: Unity.Localization.Editor}
+      data:
+        m_Collection: {fileID: 11400000}
+        m_SheetsServiceProvider: {fileID: 11400000, guid: e25de202059b8174c91b3dbda43a8d1f, type: 2}
+        m_SpreadsheetId: 15l7yJOsj-LKm7sxuUJju2olB3P7w2ECvMXRdtDgund0
+        m_SheetId: 1246794052
+        m_Columns:
+        - rid: 161019407151136796
+        - rid: 161019407151136797
+        - rid: 161019407151136798
+        m_RemoveMissingPulledKeys: 1
+    - rid: 161019407151136796
+      type: {class: KeyColumn, ns: UnityEditor.Localization.Plugins.Google.Columns, asm: Unity.Localization.Editor}
+      data:
+        m_Column: A
+    - rid: 161019407151136797
+      type: {class: LocaleColumn, ns: UnityEditor.Localization.Plugins.Google.Columns, asm: Unity.Localization.Editor}
+      data:
+        m_Column: B
+        m_LocaleIdentifier:
+          m_Code: en-US
+        m_IncludeComments: 0
+    - rid: 161019407151136798
+      type: {class: LocaleColumn, ns: UnityEditor.Localization.Plugins.Google.Columns, asm: Unity.Localization.Editor}
+      data:
+        m_Column: C
+        m_LocaleIdentifier:
+          m_Code: vi-VN
+        m_IncludeComments: 0

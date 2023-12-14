@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: nofun Shared Data
+  m_EditorClassIdentifier: 
+  m_TableCollectionName: nofun
+  m_TableCollectionNameGuidString: 198be8f0d9d907049947f8336106f789
+  m_Entries:
+  - m_Id: 256887201792
+    m_Key: Error
+    m_Metadata:
+      m_Items: []
+  - m_Id: 995877429248
+    m_Key: Error_Description_NoGameFileFound
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665693204480
+    m_Key: Error_Description_NoGameInfo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665693204481
+    m_Key: Error_Description_NoGameTitle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398784
+    m_Key: Error_Description_GameAlreadyInstalled
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398785
+    m_Key: Success
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398786
+    m_Key: Success_Description_Install
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398787
+    m_Key: Error_Description_NotMophun
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398788
+    m_Key: Settings_Saved
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398789
+    m_Key: Settings_Saved_Details
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398790
+    m_Key: Request_DragGameFileToEmulator
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398791
+    m_Key: Error_Description_GameNotCompatible
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 161019407151136792
+  references:
+    version: 2
+    RefIds:
+    - rid: 161019407151136792
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1702551051634
