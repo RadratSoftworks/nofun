@@ -63,6 +63,70 @@ MonoBehaviour:
     m_Key: Error_Description_GameNotCompatible
     m_Metadata:
       m_Items: []
+  - m_Id: 99190687911936
+    m_Key: Settings_Graphics
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849920
+    m_Key: Settings_ScreenMode
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849921
+    m_Key: Settings_ScreenSize
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849922
+    m_Key: Settings_FPS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849923
+    m_Key: Settings_SoftwareScissor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849924
+    m_Key: Settings_System
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849925
+    m_Key: Settings_Device
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849926
+    m_Key: Settings_Version
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849927
+    m_Key: Settings_SetScreenSizeToDeviceSize
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849928
+    m_Key: Settings_About
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849929
+    m_Key: Settings_About_Details
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100390619566080
+    m_Key: Settings_Orientation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100827875758080
+    m_Key: Settings_Orientation_Potrait
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100827875758081
+    m_Key: Settings_Orientation_Landscape
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113751688204288
+    m_Key: Settings_GoToSourceCode
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113751738535936
+    m_Key: GameList_Search
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

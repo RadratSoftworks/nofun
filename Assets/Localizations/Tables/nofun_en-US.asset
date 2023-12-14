@@ -67,6 +67,73 @@ MonoBehaviour:
       & decompressed!
     m_Metadata:
       m_Items: []
+  - m_Id: 99190687911936
+    m_Localized: Graphics
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849920
+    m_Localized: Screen mode
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849921
+    m_Localized: Screen size
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849922
+    m_Localized: FPS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849923
+    m_Localized: Software scissor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849924
+    m_Localized: System
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849925
+    m_Localized: Device
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849926
+    m_Localized: Version
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849927
+    m_Localized: Set screen size to device size
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849928
+    m_Localized: About
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849929
+    m_Localized: (C) 2023- Radrat Softworks. Source code is released on Github under
+      Apache License 2.0.<br><br>Thanks Mr. JaGoTu for providing decompression algorithm.<br><br>Thanks
+      Mr. 1upus for helping with games' encryption.<br><br>Thanks for the effort
+      of Kahvibreak server for preserving needed resources.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100390619566080
+    m_Localized: Orientation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100827875758080
+    m_Localized: Potrait
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100827875758081
+    m_Localized: Landscape
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113751688204288
+    m_Localized: Go to source code
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113751738535936
+    m_Localized: Search
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
