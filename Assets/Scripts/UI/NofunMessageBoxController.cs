@@ -37,10 +37,16 @@ namespace Nofun.UI
 
         private Action<int> pendingAction;
 
-        public static void Show(GameObject boxPrefab, IUIDriver.Severity severity, IUIDriver.ButtonType buttonType, string title, string content, Action<int> buttonSubmitAct)
+        public static void Show(GameObject boxPrefab, IUIDriver.Severity severity, IUIDriver.ButtonType buttonType, string title, string content, Action<int> buttonSubmitAct, float? customSortingOrder = null)
         {
             GameObject messageBox = Instantiate(boxPrefab);
             NofunMessageBoxController messageBoxController = messageBox.GetComponent<NofunMessageBoxController>();
+
+            if (customSortingOrder != null)
+            {
+                UIDocument document = messageBox.GetComponent<UIDocument>();
+                document.sortingOrder = customSortingOrder.Value;
+            }
 
             messageBoxController.Show(severity, title, content, buttonType,
                 value => {
@@ -54,7 +60,7 @@ namespace Nofun.UI
             base.Awake();
 
             root = document.rootVisualElement;
-            
+
             titleLabel = root.Q<Label>("TitleValue");
             contentLabel = root.Q<Label>("TextValue");
 
@@ -118,7 +124,7 @@ namespace Nofun.UI
                 titleLabel.text = title;
                 titleLabel.style.display = DisplayStyle.Flex;
             }
-            else 
+            else
             {
                 titleLabel.style.display = DisplayStyle.None;
             }

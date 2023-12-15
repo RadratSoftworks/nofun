@@ -22,8 +22,10 @@ using Nofun.Data.Model;
 using Nofun.Driver.UI;
 using Nofun.Parser;
 using Nofun.Plugins;
+using Nofun.Services;
 using UnityEngine;
 using UnityEngine.UIElements;
+using VContainer;
 
 namespace Nofun.UI
 {
@@ -38,13 +40,14 @@ namespace Nofun.UI
         private GameDatabase _gameDatabase;
 
         [Header("UI")]
-        [SerializeField] private GameObject messageBoxPrefab;
-
         [SerializeField] private VisualTreeAsset gameEntryTemplate;
         [SerializeField] private GameIconManifest gameIconManifest;
 
         [Header("Runner")]
         [SerializeField] private NofunRunner runner;
+
+        private ITranslationService translationService;
+        private IDialogService dialogService;
 
         private string GamePathRoot => $"{Application.persistentDataPath}/__Games";
 
@@ -57,6 +60,9 @@ namespace Nofun.UI
 
         private void Awake()
         {
+            translationService = EmulatorLifetimeScope.ContainerInstance.Resolve<ITranslationService>();
+            dialogService = EmulatorLifetimeScope.ContainerInstance.Resolve<IDialogService>();
+
             _document = GetComponent<UIDocument>();
             _installButton = _document.rootVisualElement.Q<Button>("InstallButton");
             _gameList = _document.rootVisualElement.Q<VisualElement>("GameList");
@@ -83,8 +89,11 @@ namespace Nofun.UI
                     string gamePath = GetGamePath(gameFileName);
                     if (!File.Exists(gamePath))
                     {
-                        NofunMessageBoxController.Show(messageBoxPrefab, IUIDriver.Severity.Error,
-                            IUIDriver.ButtonType.OK, "Error", "The game file is missing or corrupted. Please delete this game!", null);
+                        dialogService.Show(IUIDriver.Severity.Error,
+                            IUIDriver.ButtonType.OK,
+                            translationService.Translate("Error"),
+                            translationService.Translate("Error_Description_NoGameFileFound"),
+                            null);
 
                         return;
                     }
@@ -128,14 +137,18 @@ namespace Nofun.UI
         {
             using (var executableFile = File.OpenRead(path))
             {
-                VMGPExecutable executable = new VMGPExecutable(executableFile);
-                if (executable != null)
+                try
                 {
+                    VMGPExecutable executable = new VMGPExecutable(executableFile);
+
                     VMMetaInfoReader metaInfoReader = executable.GetMetaInfo();
                     if (metaInfoReader == null)
                     {
-                        NofunMessageBoxController.Show(messageBoxPrefab, IUIDriver.Severity.Error,
-                            IUIDriver.ButtonType.OK, "Error", "Can't find game information in this file!", null);
+                        dialogService.Show(IUIDriver.Severity.Error,
+                            IUIDriver.ButtonType.OK,
+                            translationService.Translate("Error"),
+                            translationService.Translate("Error_Description_NoGameInfo"),
+                            null);
 
                         return;
                     }
@@ -148,8 +161,11 @@ namespace Nofun.UI
 
                     if (titleName == null)
                     {
-                        NofunMessageBoxController.Show(messageBoxPrefab, IUIDriver.Severity.Error,
-                            IUIDriver.ButtonType.OK, "Error", "Can't find game title in this file!", null);
+                        dialogService.Show(IUIDriver.Severity.Error,
+                            IUIDriver.ButtonType.OK,
+                            translationService.Translate("Error"),
+                            translationService.Translate("Error_Description_NoGameTitle"),
+                            null);
 
                         return;
                     }
@@ -162,8 +178,11 @@ namespace Nofun.UI
 
                     if (!_gameDatabase.AddGame(gameInfo))
                     {
-                        NofunMessageBoxController.Show(messageBoxPrefab, IUIDriver.Severity.Error,
-                            IUIDriver.ButtonType.OK, "Error", "Game has already been installed!", null);
+                        dialogService.Show(IUIDriver.Severity.Error,
+                            IUIDriver.ButtonType.OK,
+                            translationService.Translate("Error"),
+                            translationService.Translate("Error_Description_GameAlreadyInstalled"),
+                            null);
 
                         return;
                     }
@@ -176,16 +195,22 @@ namespace Nofun.UI
                             executableFile.CopyTo(storedFile);
                         }
 
-                        NofunMessageBoxController.Show(messageBoxPrefab, IUIDriver.Severity.Info,
-                            IUIDriver.ButtonType.OK, "Success", "Game has been installed!", null);
+                        dialogService.Show(IUIDriver.Severity.Info,
+                            IUIDriver.ButtonType.OK,
+                            translationService.Translate("Success"),
+                            translationService.Translate("Success_Description_Install"),
+                            null);
 
                         LoadGameList();
                     }
                 }
-                else
+                catch
                 {
-                    NofunMessageBoxController.Show(messageBoxPrefab, IUIDriver.Severity.Error,
-                        IUIDriver.ButtonType.OK, "Error", "Not mophun file!", null);
+                    dialogService.Show(IUIDriver.Severity.Error,
+                        IUIDriver.ButtonType.OK,
+                        translationService.Translate("Error"),
+                        translationService.Translate("Error_Description_NotMophun"),
+                        null);
                 }
             }
         }

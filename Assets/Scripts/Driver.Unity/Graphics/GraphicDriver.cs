@@ -27,6 +27,7 @@ using Nofun.Module.VMGP3D;
 using System.Linq;
 using Unity.VisualScripting;
 using System.Collections;
+using VContainer;
 
 namespace Nofun.Driver.Unity.Graphics
 {
@@ -63,8 +64,9 @@ namespace Nofun.Driver.Unity.Graphics
         private const string Render3DTransparentTestUniformName = "_TransparentTest";
 
         private const string ZClearValueUniformName = "_ClearValue";
-
         private const int TMPSpawnPerAlloc = 5;
+
+        private ScreenManager screenManager;
 
         private RenderTexture screenTextureBackBuffer;
 
@@ -154,6 +156,12 @@ namespace Nofun.Driver.Unity.Graphics
         private float[] lightTypes;
         private int lightCount;
         private bool billboarding = false;
+
+        [Inject]
+        public void Construct(ScreenManager injectScreenManager)
+        {
+            screenManager = injectScreenManager;
+        }
 
         private Tuple<Mesh, int> GetPushedSubMesh(Func<BufferPusher, int> pushAction)
         {
@@ -430,7 +438,7 @@ namespace Nofun.Driver.Unity.Graphics
         {
             yield return null;
 
-            RawImage displayImage = ScreenManager.Instance.CurrentDisplay;
+            RawImage displayImage = screenManager.CurrentDisplay;
             RectTransform imageTransform = displayImage.GetComponent<RectTransform>();
 
             if (displayImage.texture != screenTextureBackBuffer)
@@ -439,7 +447,7 @@ namespace Nofun.Driver.Unity.Graphics
                 if (!fullscreen)
                 {
                     AspectRatioFitter fitter = displayImage.AddComponent<AspectRatioFitter>();
-                    PrepareNonFullscreenFitDisplay(imageTransform, fitter, screenSize, ScreenManager.Instance.ScreenOrientation);
+                    PrepareNonFullscreenFitDisplay(imageTransform, fitter, screenSize, screenManager.ScreenOrientation);
                 }
                 else
                 {
@@ -461,10 +469,10 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void Initialize(Vector2 size, bool softwareScissor = false)
         {
-            ScreenManager.Instance.ScreenOrientationChanged += OnOrientationChanged;
+            screenManager.ScreenOrientationChanged += OnOrientationChanged;
 
-            RawImage displayImage = ScreenManager.Instance.CurrentDisplay;
-            Canvas canvas = ScreenManager.Instance.CurrentCanvas;
+            RawImage displayImage = screenManager.CurrentDisplay;
+            Canvas canvas = screenManager.CurrentCanvas;
 
             RectTransform transform = displayImage.GetComponent<RectTransform>();
 
@@ -489,7 +497,7 @@ namespace Nofun.Driver.Unity.Graphics
                 // May take few more frames, but don't risk it
                 if (Application.isMobilePlatform)
                 {
-                    if (ScreenManager.Instance.ScreenOrientation != Settings.ScreenOrientation.Potrait)
+                    if (screenManager.ScreenOrientation != Settings.ScreenOrientation.Potrait)
                     {
                         size = new Vector2(size.y, size.x);
                     }
@@ -504,7 +512,7 @@ namespace Nofun.Driver.Unity.Graphics
             if (!fullscreen)
             {
                 AspectRatioFitter fitter = displayImage.AddComponent<AspectRatioFitter>();
-                PrepareNonFullscreenFitDisplay(transform, fitter, size, ScreenManager.Instance.ScreenOrientation);
+                PrepareNonFullscreenFitDisplay(transform, fitter, size, screenManager.ScreenOrientation);
             }
 
             displayImage.texture = screenTextureBackBuffer;
@@ -693,7 +701,7 @@ namespace Nofun.Driver.Unity.Graphics
 
             commandBuffer.SetRenderTarget(screenTextureBackBuffer);
             commandBuffer.SetViewport(GetUnityScreenRect(serverSideState.viewportRect));
-            
+
             began = true;
             in3DMode = !mode2D;
 
@@ -1141,7 +1149,7 @@ namespace Nofun.Driver.Unity.Graphics
                                 lightCount++;
                             }
                         }
-                        
+
                         rebuildLightParams = false;
                     }
 
@@ -1255,7 +1263,7 @@ namespace Nofun.Driver.Unity.Graphics
                 });
             }
         }
-        
+
         public void ClearLights()
         {
             bool clearedYet = true;
@@ -1567,7 +1575,7 @@ namespace Nofun.Driver.Unity.Graphics
                 {
                     clientSideState.specular = value;
                     HandleFixedStateChangedClient();
-                    
+
                     JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.specular = value;
@@ -1585,7 +1593,7 @@ namespace Nofun.Driver.Unity.Graphics
                 {
                     clientSideState.transparentTest = value;
                     HandleFixedStateChangedClient();
-                    
+
                     JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.transparentTest = value;
@@ -1603,7 +1611,7 @@ namespace Nofun.Driver.Unity.Graphics
                 {
                     clientSideState.fog = value;
                     HandleFixedStateChangedClient();
-                    
+
                     JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.fog = value;
@@ -1647,7 +1655,7 @@ namespace Nofun.Driver.Unity.Graphics
                 }
             }
         }
-        
+
         public NativeVector3D CameraPosition
         {
             get => clientSideState.cameraPosition.ToMophun();
@@ -1668,5 +1676,5 @@ namespace Nofun.Driver.Unity.Graphics
         }
 
         public int MaxLights => ClientState.MaximumLight;
-    } 
+    }
 }

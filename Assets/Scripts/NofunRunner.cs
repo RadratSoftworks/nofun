@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System;
 using Nofun.Driver.Unity.Audio;
 using Nofun.Driver.Unity.Graphics;
 using Nofun.Driver.Unity.Input;
@@ -29,6 +30,8 @@ using System.Threading;
 using Nofun.UI;
 using Nofun.Settings;
 using System.Collections;
+using Nofun.Services;
+using VContainer;
 
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
 using System.Runtime.InteropServices;
@@ -46,8 +49,6 @@ namespace Nofun
         private TimeDriver timeDriver;
 
         [Header("UI")]
-        [SerializeField] private GameObject messageBoxPrefab;
-        [SerializeField] private AudioSource messageBoxSfx;
         [SerializeField] private SettingDocumentController settingDocument;
 
         [Header("Settings")]
@@ -62,6 +63,10 @@ namespace Nofun
         private bool failed = false;
         private bool settingActive = false;
 
+        private ScreenManager screenManager;
+        private IDialogService dialogService;
+        private ITranslationService translationService;
+
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
         [DllImport("user32.dll", EntryPoint = "SetWindowText")]
         public static extern bool SetWindowText(System.IntPtr hwnd, System.String lpString);
@@ -70,6 +75,12 @@ namespace Nofun
 
         private System.IntPtr currentWindow;
 #endif
+
+        [Inject]
+        public void Construct(ScreenManager injectScreenManager)
+        {
+            screenManager = injectScreenManager;
+        }
 
         private void SetupLogger()
         {
@@ -93,7 +104,7 @@ namespace Nofun
 
                     if (setting.Value.screenMode != ScreenMode.Fullscreen)
                     {
-                        ScreenManager.Instance.ScreenOrientation = setting.Value.orientation;
+                        screenManager.ScreenOrientation = setting.Value.orientation;
                     }
                 }
 
@@ -108,6 +119,12 @@ namespace Nofun
         public void OnGameScreenCogButtonPressed()
         {
             OpenGameSetting();
+        }
+
+        private void Awake()
+        {
+            translationService = EmulatorLifetimeScope.ContainerInstance.Resolve<ITranslationService>();
+            dialogService = EmulatorLifetimeScope.ContainerInstance.Resolve<IDialogService>();
         }
 
         private void Start()
@@ -146,7 +163,6 @@ namespace Nofun
                 NofunMessageBoxController.Show(messageBoxPrefab, Driver.UI.IUIDriver.Severity.Info, Driver.UI.IUIDriver.ButtonType.OK,
                     null, "Please open the .mpn file in a file explorer for now!", value => Application.Quit());
 
-                messageBoxSfx.Play();
                 failed = true;
 
                 return;
@@ -164,10 +180,11 @@ namespace Nofun
 #if UNITY_EDITOR || !UNITY_ANDROID
             if (targetExecutable == null)
             {
-                NofunMessageBoxController.Show(messageBoxPrefab, Driver.UI.IUIDriver.Severity.Info, Driver.UI.IUIDriver.ButtonType.OK,
-                    null, "Please drag and drop your mpn file to the emulator shortcut/executable!", value => Application.Quit());
+                dialogService.Show(Driver.UI.IUIDriver.Severity.Info, Driver.UI.IUIDriver.ButtonType.OK,
+                    null,
+                    translationService.Translate("Request_DragGameFileToEmulator"),
+                    value => Application.Quit());
 
-                messageBoxSfx.Play();
                 failed = true;
 
                 return;
@@ -188,10 +205,11 @@ namespace Nofun
             }
             catch (System.Exception _)
             {
-                NofunMessageBoxController.Show(messageBoxPrefab, Driver.UI.IUIDriver.Severity.Info, Driver.UI.IUIDriver.ButtonType.OK,
-                    null, "The game is not compatible with the emulator! Make sure it is decrypted & decompressed!", value => Application.Quit());
+                dialogService.Show(Driver.UI.IUIDriver.Severity.Info, Driver.UI.IUIDriver.ButtonType.OK,
+                    null,
+                    translationService.Translate("Error_Description_GameNotCompatible"),
+                    value => Application.Quit());
 
-                messageBoxSfx.Play();
                 failed = true;
 
                 return;
@@ -234,7 +252,7 @@ namespace Nofun
             system.GameSetting = setting.Value;
 
             // Change orientation first
-            ScreenManager.Instance.ScreenOrientation = setting.Value.orientation;
+            screenManager.ScreenOrientation = setting.Value.orientation;
 
             graphicDriver.Initialize((setting.Value.screenMode == ScreenMode.CustomSize) ?
                 new Vector2(setting.Value.screenSizeX, setting.Value.screenSizeY) :

@@ -46,7 +46,6 @@ namespace Nofun
         [SerializeField]
         private PanelSettings potraitPanelSettings;
 
-        public static ScreenManager Instance { get; private set; }
         private Settings.ScreenOrientation screenOrientation;
 
         public event System.Action<Settings.ScreenOrientation> ScreenOrientationChanged;
@@ -99,11 +98,6 @@ namespace Nofun
 
         private void Awake()
         {
-            if (Instance == null)
-            {
-                Instance = this;
-            }
-
 #if !UNITY_EDITOR
             if (Application.isMobilePlatform)
             {

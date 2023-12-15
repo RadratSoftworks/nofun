@@ -16,16 +16,18 @@
 
 using UnityEngine;
 using UnityEngine.UIElements;
+using VContainer;
 
 namespace Nofun.UI
 {
     public class FlexibleUIDocumentController : MonoBehaviour
     {
+        private ScreenManager screenManager;
         protected UIDocument document;
 
         private void UpdatePanelSettings()
         {
-            document.panelSettings = ScreenManager.Instance.CurrentPanelSettings;
+            document.panelSettings = screenManager.CurrentPanelSettings;
         }
 
         private void OnOrientationChanged(Settings.ScreenOrientation newOrientation)
@@ -35,13 +37,14 @@ namespace Nofun.UI
 
         public virtual void Awake()
         {
+            screenManager = EmulatorLifetimeScope.ContainerInstance.Resolve<ScreenManager>();
             document = GetComponent<UIDocument>();
         }
 
         public virtual void Start()
         {
             UpdatePanelSettings();
-            ScreenManager.Instance.ScreenOrientationChanged += OnOrientationChanged;
+            screenManager.ScreenOrientationChanged += OnOrientationChanged;
         }
     }
 }
