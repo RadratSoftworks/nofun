@@ -23,12 +23,6 @@ namespace Nofun
     public class ScreenManager: MonoBehaviour
     {
         [SerializeField]
-        private Canvas canvasPotrait;
-
-        [SerializeField]
-        private Canvas canvasLandscape;
-
-        [SerializeField]
         private GameObject controlMobilePotrait;
 
         [SerializeField]
@@ -62,21 +56,9 @@ namespace Nofun
         public RawImage CurrentDisplay => (screenOrientation == Settings.ScreenOrientation.Potrait) ? displayPotrait : displayLandscape;
 
         public PanelSettings CurrentPanelSettings => (screenOrientation == Settings.ScreenOrientation.Potrait) ? potraitPanelSettings : landscapePanelSettings;
-        public Canvas CurrentCanvas => (screenOrientation == Settings.ScreenOrientation.Potrait) ? canvasPotrait : canvasLandscape;
 
         private void UpdateCanvasOrientation()
         {
-            if (screenOrientation == Settings.ScreenOrientation.Potrait)
-            {
-                canvasPotrait.gameObject.SetActive(true);
-                canvasLandscape.gameObject.SetActive(false);
-            }
-            else
-            {
-                canvasPotrait.gameObject.SetActive(false);
-                canvasLandscape.gameObject.SetActive(true);
-            }
-
             ScreenOrientationChanged?.Invoke(screenOrientation);
         }
 

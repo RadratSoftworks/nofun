@@ -48,6 +48,7 @@ namespace Nofun.UI
 
         private ITranslationService translationService;
         private IDialogService dialogService;
+        private ILayoutService layoutService;
 
         private string GamePathRoot => $"{Application.persistentDataPath}/__Games";
 
@@ -62,6 +63,7 @@ namespace Nofun.UI
         {
             translationService = EmulatorLifetimeScope.ContainerInstance.Resolve<ITranslationService>();
             dialogService = EmulatorLifetimeScope.ContainerInstance.Resolve<IDialogService>();
+            layoutService = EmulatorLifetimeScope.ContainerInstance.Resolve<ILayoutService>();
 
             _document = GetComponent<UIDocument>();
             _installButton = _document.rootVisualElement.Q<Button>("InstallButton");
@@ -73,6 +75,16 @@ namespace Nofun.UI
             _installButton.clicked += OnInstallButtonClicked;
 
             LoadGameList();
+        }
+
+        private void OnEnable()
+        {
+            layoutService.SetVisibility(false);
+        }
+
+        private void OnDisable()
+        {
+            layoutService.SetVisibility(true);
         }
 
         private void OnDestroy()

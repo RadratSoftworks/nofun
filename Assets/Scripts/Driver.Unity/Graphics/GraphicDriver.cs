@@ -27,6 +27,8 @@ using Nofun.Module.VMGP3D;
 using System.Linq;
 using Unity.VisualScripting;
 using System.Collections;
+using Nofun.Services;
+using Nofun.UI;
 using VContainer;
 
 namespace Nofun.Driver.Unity.Graphics
@@ -67,6 +69,7 @@ namespace Nofun.Driver.Unity.Graphics
         private const int TMPSpawnPerAlloc = 5;
 
         private ScreenManager screenManager;
+        private ILayoutService layoutService;
 
         private RenderTexture screenTextureBackBuffer;
 
@@ -158,9 +161,10 @@ namespace Nofun.Driver.Unity.Graphics
         private bool billboarding = false;
 
         [Inject]
-        public void Construct(ScreenManager injectScreenManager)
+        public void Construct(ScreenManager injectScreenManager, ILayoutService injectLayoutService)
         {
             screenManager = injectScreenManager;
+            layoutService = injectLayoutService;
         }
 
         private Tuple<Mesh, int> GetPushedSubMesh(Func<BufferPusher, int> pushAction)
@@ -472,7 +476,7 @@ namespace Nofun.Driver.Unity.Graphics
             screenManager.ScreenOrientationChanged += OnOrientationChanged;
 
             RawImage displayImage = screenManager.CurrentDisplay;
-            Canvas canvas = screenManager.CurrentCanvas;
+            Canvas canvas = layoutService.Canvas;
 
             RectTransform transform = displayImage.GetComponent<RectTransform>();
 

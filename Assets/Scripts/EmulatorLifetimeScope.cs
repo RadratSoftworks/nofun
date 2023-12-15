@@ -17,6 +17,7 @@ namespace Nofun
             Instance = this;
 
             builder.RegisterComponentInHierarchy<ScreenManager>();
+            builder.RegisterComponentInHierarchy<LayoutService>().AsImplementedInterfaces();
             builder.RegisterComponentInHierarchy<DialogService>().AsImplementedInterfaces();
             builder.Register<ITranslationService, TranslationService>(Lifetime.Scoped);
         }

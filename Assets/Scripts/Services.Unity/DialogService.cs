@@ -19,7 +19,7 @@ namespace Nofun.Services.Unity
             NofunMessageBoxController.Show(dialogPrefab, severity, buttonType, title, details, (button) =>
             {
                 orderStackCount--;
-                onButtonSubmit(button);
+                onButtonSubmit?.Invoke(button);
             }, BaseSortOrder + orderStackCount);
         }
     }
