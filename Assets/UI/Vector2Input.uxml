@@ -1,7 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Assets/UI/Stylesheet/Vector2Input.uss?fileID=7433441132597879392&amp;guid=56aa81409e4c70b41b0e06d858cb608b&amp;type=3#Vector2Input" />
     <ui:VisualElement name="ScreenSizeInput" class="Vector2Input">
-        <ui:Label display-tooltip-when-elided="true" name="Description" class="Vector2Name" style="flex-grow: 2; flex-shrink: 2;">
+        <ui:Label display-tooltip-when-elided="true" name="Description" text="Screen size" class="Vector2Name" style="flex-grow: 2; flex-shrink: 2;">
             <Bindings>
                 <UnityEngine.Localization.LocalizedString property="text" table="GUID:198be8f0d9d907049947f8336106f789" entry="Id(99190880849921)" />
             </Bindings>
