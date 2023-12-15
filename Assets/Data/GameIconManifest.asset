@@ -23,3 +23,9 @@ MonoBehaviour:
     Icon: {fileID: 21300000, guid: 80f42cd73fa9a604a8b0d444bdd13e82, type: 3}
   - GameName: CourierBob
     Icon: {fileID: 21300000, guid: bb7326f1675efb949a5393a4c77d5e47, type: 3}
+  - GameName: Lock'n Load 2
+    Icon: {fileID: -270132878271066313, guid: 68aeb8543b5edda44910eaac1ade7754, type: 3}
+  - GameName: Fatal Arena
+    Icon: {fileID: -7374314148417076423, guid: 7218b25965ad0124e8622cc30856360e, type: 3}
+  - GameName: RallyProContest
+    Icon: {fileID: -1872090724945983828, guid: 30fc99a1895c0f543b88903e954241c0, type: 3}
