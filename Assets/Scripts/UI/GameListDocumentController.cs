@@ -190,10 +190,7 @@ namespace Nofun.UI
                     {
                         // Save the game into the persistent data folder
                         string gamePath = GetGamePath(gameInfo);
-                        using (FileStream storedFile = File.OpenWrite(gamePath))
-                        {
-                            executableFile.CopyTo(storedFile);
-                        }
+                        File.Copy(path, gamePath, true);
 
                         dialogService.Show(IUIDriver.Severity.Info,
                             IUIDriver.ButtonType.OK,
