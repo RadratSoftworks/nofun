@@ -47,5 +47,12 @@ namespace Nofun.Data
         }
 
         public Model.GameInfo[] AllGames => _connection.Table<Model.GameInfo>().ToArray();
+
+
+        public Model.GameInfo[] GamesByKeyword(string keyword)
+        {
+            var table = _connection.Table<Model.GameInfo>();
+            return table.Where(x => x.Name.Contains(keyword)).ToArray();
+        }
     }
 }

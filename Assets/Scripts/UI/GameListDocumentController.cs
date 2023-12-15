@@ -34,10 +34,11 @@ namespace Nofun.UI
         private static readonly string GameDatabaseFileName = "games.db";
         private string GameDatabasePath => $"{Application.streamingAssetsPath}/{GameDatabaseFileName}";
 
-        private UIDocument _document;
-        private Button _installButton;
-        private VisualElement _gameList;
-        private GameDatabase _gameDatabase;
+        private UIDocument document;
+        private Button installButton;
+        private VisualElement gameList;
+        private GameDatabase gameDatabase;
+        private TextField searchBar;
 
         [Header("UI")]
         [SerializeField] private VisualTreeAsset gameEntryTemplate;
@@ -65,14 +66,16 @@ namespace Nofun.UI
             dialogService = EmulatorLifetimeScope.ContainerInstance.Resolve<IDialogService>();
             layoutService = EmulatorLifetimeScope.ContainerInstance.Resolve<ILayoutService>();
 
-            _document = GetComponent<UIDocument>();
-            _installButton = _document.rootVisualElement.Q<Button>("InstallButton");
-            _gameList = _document.rootVisualElement.Q<VisualElement>("GameList");
-            _gameDatabase = new GameDatabase(GameDatabasePath);
+            document = GetComponent<UIDocument>();
+            installButton = document.rootVisualElement.Q<Button>("InstallButton");
+            gameList = document.rootVisualElement.Q<VisualElement>("GameList");
+            searchBar = document.rootVisualElement.Q<TextField>("SearchBar");
+            gameDatabase = new GameDatabase(GameDatabasePath);
 
             Directory.CreateDirectory(GamePathRoot);
 
-            _installButton.clicked += OnInstallButtonClicked;
+            installButton.clicked += OnInstallButtonClicked;
+            searchBar.RegisterValueChangedCallback(OnSearchBarContentChanged);
 
             LoadGameList();
         }
@@ -89,7 +92,12 @@ namespace Nofun.UI
 
         private void OnDestroy()
         {
-            _installButton.clicked -= OnInstallButtonClicked;
+            installButton.clicked -= OnInstallButtonClicked;
+        }
+
+        private void OnSearchBarContentChanged(ChangeEvent<string> newValue)
+        {
+            LoadGameList(newValue.newValue);
         }
 
         private void OnGameIconClicked(string gameFileName)
@@ -118,9 +126,15 @@ namespace Nofun.UI
             }
         }
 
-        private void LoadGameList()
+        private void LoadGameList(string filter = "")
         {
-            foreach (var child in _gameList.Children())
+            var gameInfos = string.IsNullOrEmpty(filter) ? gameDatabase.AllGames : gameDatabase.GamesByKeyword(filter);
+            RebuildGameList(gameInfos);
+        }
+
+        private void RebuildGameList(GameInfo[] gameInfos)
+        {
+            foreach (var child in gameList.Children())
             {
                 if (child.userData is GameInfoEntryController controller)
                 {
@@ -128,9 +142,7 @@ namespace Nofun.UI
                 }
             }
 
-            _gameList.Clear();
-
-            var gameInfos = _gameDatabase.AllGames;
+            gameList.Clear();
 
             foreach (var gameInfo in gameInfos)
             {
@@ -141,7 +153,7 @@ namespace Nofun.UI
                 gameInfoEntryBinder.BindData(gameInfo);
                 gameInfoEntryBinder.OnGameInfoChoosen += OnGameIconClicked;
 
-                _gameList.Add(gameInfoEntry);
+                gameList.Add(gameInfoEntry);
             }
         }
 
@@ -188,7 +200,7 @@ namespace Nofun.UI
                         versionNumbers != null && versionNumbers.Length >= 2 ? versionNumbers[1] : 0,
                         versionNumbers != null && versionNumbers.Length >= 3 ? versionNumbers[2] : 0);
 
-                    if (!_gameDatabase.AddGame(gameInfo))
+                    if (!gameDatabase.AddGame(gameInfo))
                     {
                         dialogService.Show(IUIDriver.Severity.Error,
                             IUIDriver.ButtonType.OK,
