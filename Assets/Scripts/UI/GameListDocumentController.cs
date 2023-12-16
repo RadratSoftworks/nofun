@@ -20,6 +20,7 @@ using System.Linq;
 using Nofun.Data;
 using Nofun.Data.Model;
 using Nofun.Driver.UI;
+using Nofun.DynamicIcons;
 using Nofun.Parser;
 using Nofun.Plugins;
 using Nofun.Services;
@@ -43,6 +44,7 @@ namespace Nofun.UI
         [Header("UI")]
         [SerializeField] private VisualTreeAsset gameEntryTemplate;
         [SerializeField] private GameIconManifest gameIconManifest;
+        [SerializeField] private Transform dynamicIconRendererContainer;
 
         [Header("Runner")]
         [SerializeField] private NofunRunner runner;
@@ -50,6 +52,7 @@ namespace Nofun.UI
         private ITranslationService translationService;
         private IDialogService dialogService;
         private ILayoutService layoutService;
+        private DynamicIconsProvider dynamicIconsProvider;
 
         private string GamePathRoot => $"{Application.persistentDataPath}/__Games";
 
@@ -71,13 +74,17 @@ namespace Nofun.UI
             gameList = document.rootVisualElement.Q<VisualElement>("GameList");
             searchBar = document.rootVisualElement.Q<TextField>("SearchBar");
             gameDatabase = new GameDatabase(GameDatabasePath);
+            dynamicIconsProvider = new DynamicIconsProvider(dynamicIconRendererContainer);
 
             Directory.CreateDirectory(GamePathRoot);
 
             installButton.clicked += OnInstallButtonClicked;
             searchBar.RegisterValueChangedCallback(OnSearchBarContentChanged);
 
-            LoadGameList();
+            gameList.RegisterCallback<GeometryChangedEvent>((_) =>
+            {
+                LoadGameList();
+            });
         }
 
         private void OnEnable()
@@ -88,6 +95,7 @@ namespace Nofun.UI
         private void OnDisable()
         {
             layoutService.SetVisibility(true);
+            dynamicIconsProvider.Cleanup();
         }
 
         private void OnDestroy()
@@ -147,7 +155,7 @@ namespace Nofun.UI
             foreach (var gameInfo in gameInfos)
             {
                 var gameInfoEntry = gameEntryTemplate.Instantiate();
-                var gameInfoEntryBinder = new GameInfoEntryController(gameIconManifest);
+                var gameInfoEntryBinder = new GameInfoEntryController(gameIconManifest, dynamicIconsProvider);
 
                 gameInfoEntryBinder.SetVisualElement(gameInfoEntry);
                 gameInfoEntryBinder.BindData(gameInfo);

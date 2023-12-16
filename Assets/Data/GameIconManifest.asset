@@ -29,3 +29,7 @@ MonoBehaviour:
     Icon: {fileID: -7374314148417076423, guid: 7218b25965ad0124e8622cc30856360e, type: 3}
   - GameName: RallyProContest
     Icon: {fileID: -1872090724945983828, guid: 30fc99a1895c0f543b88903e954241c0, type: 3}
+  DynamicIcons:
+  - GameName: Joe's Treasure Quest
+    Icon: {fileID: 8400000, guid: 9c2e5fc86f0e2ca4d83382f6ab561a58, type: 2}
+    Renderer: {fileID: 3962013735876728981, guid: 10e1e424db8288d48bc3b5bb2f1a3b04, type: 3}

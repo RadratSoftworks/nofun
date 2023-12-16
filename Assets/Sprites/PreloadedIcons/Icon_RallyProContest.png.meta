@@ -158,7 +158,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Icon_RallyProContest_0: -1872090724945983828
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -24,4 +24,12 @@ namespace Nofun.Data.Model
         public string GameName;
         public Sprite Icon;
     }
+
+    [System.Serializable]
+    public class DynamicGameIcon
+    {
+        public string GameName;
+        public RenderTexture Icon;
+        public GameObject Renderer;
+    }
 }

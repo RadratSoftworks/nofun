@@ -1,5 +1,6 @@
 ﻿using System;
 using Nofun.Data.Model;
+using Nofun.DynamicIcons;
 using UnityEngine.UIElements;
 
 namespace Nofun.UI
@@ -9,13 +10,15 @@ namespace Nofun.UI
         private VisualElement _iconElement;
         private Label _gameNameLabel;
         private GameIconManifest _gameIconManifest;
+        private DynamicIconsProvider _dynamicIconsProvider;
         private string _gamePath;
 
         public event Action<string> OnGameInfoChoosen;
 
-        public GameInfoEntryController(GameIconManifest gameIconManifest)
+        public GameInfoEntryController(GameIconManifest gameIconManifest, DynamicIconsProvider dynamicIconsProvider)
         {
             _gameIconManifest = gameIconManifest;
+            _dynamicIconsProvider = dynamicIconsProvider;
         }
 
         public void SetVisualElement(VisualElement visualElement)
@@ -36,6 +39,15 @@ namespace Nofun.UI
             if (preloadedGameIcon != null)
             {
                 _iconElement.style.backgroundImage = new StyleBackground(preloadedGameIcon.Icon);
+            }
+            else
+            {
+                var preloadedDynamicGameIcon = _gameIconManifest.FindDynamicGameIcon(gameInfo.Name);
+                if (preloadedDynamicGameIcon != null)
+                {
+                    var dynamicGameIcon = _dynamicIconsProvider.GetIcon(preloadedDynamicGameIcon);
+                    _iconElement.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(dynamicGameIcon));
+                }
             }
         }
     }

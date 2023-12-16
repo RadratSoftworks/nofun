@@ -7,6 +7,7 @@
     "com.unity.inputsystem": "1.8.0-pre.2",
     "com.unity.localization": "1.5.0-pre.5",
     "com.unity.mobile.android-logcat": "1.4.0",
+    "com.unity.render-pipelines.universal": "17.0.1",
     "com.unity.test-framework": "1.4.1",
     "com.unity.timeline": "1.8.6",
     "com.unity.ugui": "2.0.0",

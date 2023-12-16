@@ -158,7 +158,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Icon_FatalArena_0: -7374314148417076423
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

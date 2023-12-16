@@ -158,7 +158,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Icon_LockNLoad2_0: -270132878271066313
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

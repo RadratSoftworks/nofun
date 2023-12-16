@@ -167,6 +167,29 @@ namespace Nofun.Driver.Unity.Graphics
             layoutService = injectLayoutService;
         }
 
+        private void Awake()
+        {
+            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
+        }
+
+        private void OnDestroy()
+        {
+            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+        }
+
+        private void OnBeginCameraRendering(ScriptableRenderContext renderContext, Camera camera)
+        {
+            if (camera == mophunCamera)
+            {
+                commandBuffer.SetRenderTarget(camera.targetTexture);
+
+                renderContext.ExecuteCommandBuffer(commandBuffer);
+                CommandBufferPool.Release(commandBuffer);
+
+                commandBuffer = null;
+            }
+        }
+
         private Tuple<Mesh, int> GetPushedSubMesh(Func<BufferPusher, int> pushAction)
         {
             int result = pushAction(bufferPushers[bufferPusherInUse]);
@@ -688,17 +711,7 @@ namespace Nofun.Driver.Unity.Graphics
 
             if (commandBuffer == null)
             {
-                commandBuffer = new CommandBuffer();
-                commandBuffer.name = "Mophun render buffer";
-            }
-
-            if (mophunCamera.renderingPath == RenderingPath.DeferredShading)
-            {
-                mophunCamera.RemoveCommandBuffer(CameraEvent.AfterGBuffer, commandBuffer);
-            }
-            else
-            {
-                mophunCamera.RemoveCommandBuffer(CameraEvent.AfterForwardOpaque, commandBuffer);
+                commandBuffer = CommandBufferPool.Get("Mophun render buffer");
             }
 
             commandBuffer.Clear();
@@ -876,7 +889,7 @@ namespace Nofun.Driver.Unity.Graphics
         {
             DateTime currentTime = DateTime.Now;
 
-#region Calculate FPS
+            #region Calculate FPS
             currentFps++;
 
             if ((previousTime == null) || ((currentTime - previousTime).TotalSeconds > 1.0f))
@@ -886,7 +899,7 @@ namespace Nofun.Driver.Unity.Graphics
 
                 previousTime = currentTime;
             }
-#endregion
+            #endregion
 
             FlushBatch();
 
@@ -900,14 +913,7 @@ namespace Nofun.Driver.Unity.Graphics
             {
                 if (began)
                 {
-                    if (mophunCamera.renderingPath == RenderingPath.DeferredShading)
-                    {
-                        mophunCamera.AddCommandBuffer(CameraEvent.AfterGBuffer, commandBuffer);
-                    }
-                    else
-                    {
-                        mophunCamera.AddCommandBuffer(CameraEvent.AfterForwardOpaque, commandBuffer);
-                    }
+                    mophunCamera.Render();
 
                     fontMeshUsed = 0;
                     meshBatcher.Reset();

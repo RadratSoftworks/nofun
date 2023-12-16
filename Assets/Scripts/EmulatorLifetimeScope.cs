@@ -1,4 +1,5 @@
-﻿using Nofun.Services;
+﻿using Nofun.DynamicIcons;
+using Nofun.Services;
 using Nofun.Services.Unity;
 using UnityEngine;
 using VContainer;
