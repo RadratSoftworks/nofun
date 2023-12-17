@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#if UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX
 using System;
 using System.Runtime.InteropServices;
 
@@ -110,3 +111,4 @@ namespace Nofun.Plugins.Private
         }
     }
 }
+#endif

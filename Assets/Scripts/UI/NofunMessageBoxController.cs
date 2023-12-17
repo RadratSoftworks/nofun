@@ -20,6 +20,7 @@ using UnityEngine.UIElements;
 using System;
 using Nofun.Driver.UI;
 using DG.Tweening;
+using Nofun.Services;
 
 namespace Nofun.UI
 {
@@ -37,7 +38,7 @@ namespace Nofun.UI
 
         private Action<int> pendingAction;
 
-        public static void Show(GameObject boxPrefab, IUIDriver.Severity severity, IUIDriver.ButtonType buttonType, string title, string content, Action<int> buttonSubmitAct, float? customSortingOrder = null)
+        public static void Show(GameObject boxPrefab, Severity severity, ButtonType buttonType, string title, string content, Action<int> buttonSubmitAct, float? customSortingOrder = null)
         {
             GameObject messageBox = Instantiate(boxPrefab);
             NofunMessageBoxController messageBoxController = messageBox.GetComponent<NofunMessageBoxController>();
@@ -49,7 +50,8 @@ namespace Nofun.UI
             }
 
             messageBoxController.Show(severity, title, content, buttonType,
-                value => {
+                value =>
+                {
                     Destroy(messageBox);
                     buttonSubmitAct?.Invoke(value);
                 });
@@ -106,7 +108,7 @@ namespace Nofun.UI
             SubmitAndClose(0);
         }
 
-        public void Show(IUIDriver.Severity severity, string title, string message, IUIDriver.ButtonType buttonType, Action<int> buttonPressed)
+        public void Show(Severity severity, string title, string message, ButtonType buttonType, Action<int> buttonPressed)
         {
             if (buttonPressed == null)
             {
@@ -133,53 +135,53 @@ namespace Nofun.UI
 
             switch (buttonType)
             {
-                case IUIDriver.ButtonType.OK:
-                {
-                    leftFarButton.style.display = DisplayStyle.None;
-                    leftButton.style.display = DisplayStyle.None;
-                    rightButton.style.display = DisplayStyle.Flex;
+                case ButtonType.OK:
+                    {
+                        leftFarButton.style.display = DisplayStyle.None;
+                        leftButton.style.display = DisplayStyle.None;
+                        rightButton.style.display = DisplayStyle.Flex;
 
-                    rightButton.text = "OK";
-                    break;
-                }
+                        rightButton.text = "OK";
+                        break;
+                    }
 
-                case IUIDriver.ButtonType.OKCancel:
-                {
-                    leftFarButton.style.display = DisplayStyle.None;
-                    leftButton.style.display = DisplayStyle.Flex;
-                    rightButton.style.display = DisplayStyle.Flex;
+                case ButtonType.OKCancel:
+                    {
+                        leftFarButton.style.display = DisplayStyle.None;
+                        leftButton.style.display = DisplayStyle.Flex;
+                        rightButton.style.display = DisplayStyle.Flex;
 
-                    leftButton.text = "Cancel";
-                    rightButton.text = "OK";
-                    break;
-                }
+                        leftButton.text = "Cancel";
+                        rightButton.text = "OK";
+                        break;
+                    }
 
-                case IUIDriver.ButtonType.YesNo:
-                {
-                    leftFarButton.style.display = DisplayStyle.None;
-                    leftButton.style.display = DisplayStyle.Flex;
-                    rightButton.style.display = DisplayStyle.Flex;
+                case ButtonType.YesNo:
+                    {
+                        leftFarButton.style.display = DisplayStyle.None;
+                        leftButton.style.display = DisplayStyle.Flex;
+                        rightButton.style.display = DisplayStyle.Flex;
 
-                    leftButton.text = "No";
-                    rightButton.text = "Yes";
-                    break;
-                }
+                        leftButton.text = "No";
+                        rightButton.text = "Yes";
+                        break;
+                    }
 
-                case IUIDriver.ButtonType.YesNoCancel:
-                {
-                    leftFarButton.style.display = DisplayStyle.Flex;
-                    leftButton.style.display = DisplayStyle.Flex;
-                    rightButton.style.display = DisplayStyle.Flex;
+                case ButtonType.YesNoCancel:
+                    {
+                        leftFarButton.style.display = DisplayStyle.Flex;
+                        leftButton.style.display = DisplayStyle.Flex;
+                        rightButton.style.display = DisplayStyle.Flex;
 
-                    leftButton.text = "Cancel";
-                    rightButton.text = "Yes";
-                    break;
-                }
+                        leftButton.text = "Cancel";
+                        rightButton.text = "Yes";
+                        break;
+                    }
 
                 default:
-                {
-                    throw new ArgumentException("Invalid button type");
-                }
+                    {
+                        throw new ArgumentException("Invalid button type");
+                    }
             }
 
             root.style.display = DisplayStyle.Flex;

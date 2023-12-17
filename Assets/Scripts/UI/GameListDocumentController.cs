@@ -19,23 +19,21 @@ using System.IO;
 using System.Linq;
 using Nofun.Data;
 using Nofun.Data.Model;
-using Nofun.Driver.UI;
 using Nofun.DynamicIcons;
 using Nofun.Parser;
-using Nofun.Plugins;
 using Nofun.Services;
+using Nofun.Plugins;
 using UnityEngine;
 using UnityEngine.UIElements;
 using VContainer;
 
 namespace Nofun.UI
 {
-    public class GameListDocumentController : MonoBehaviour
+    public class GameListDocumentController : FlexibleUIDocumentController
     {
         private static readonly string GameDatabaseFileName = "games.db";
         private string GameDatabasePath => $"{Application.streamingAssetsPath}/{GameDatabaseFileName}";
 
-        private UIDocument document;
         private Button installButton;
         private VisualElement gameList;
         private GameDatabase gameDatabase;
@@ -49,9 +47,9 @@ namespace Nofun.UI
         [Header("Runner")]
         [SerializeField] private NofunRunner runner;
 
-        private ITranslationService translationService;
-        private IDialogService dialogService;
-        private ILayoutService layoutService;
+        [Inject] private ITranslationService translationService;
+        [Inject] private IDialogService dialogService;
+        [Inject] private ILayoutService layoutService;
         private DynamicIconsProvider dynamicIconsProvider;
 
         private string GamePathRoot => $"{Application.persistentDataPath}/__Games";
@@ -63,13 +61,10 @@ namespace Nofun.UI
 
         private string GetGamePath(GameInfo gameInfo) => GetGamePath(gameInfo.GameFileName);
 
-        private void Awake()
+        public override void Awake()
         {
-            translationService = EmulatorLifetimeScope.ContainerInstance.Resolve<ITranslationService>();
-            dialogService = EmulatorLifetimeScope.ContainerInstance.Resolve<IDialogService>();
-            layoutService = EmulatorLifetimeScope.ContainerInstance.Resolve<ILayoutService>();
+            base.Awake();
 
-            document = GetComponent<UIDocument>();
             installButton = document.rootVisualElement.Q<Button>("InstallButton");
             gameList = document.rootVisualElement.Q<VisualElement>("GameList");
             searchBar = document.rootVisualElement.Q<TextField>("SearchBar");
@@ -117,8 +112,8 @@ namespace Nofun.UI
                     string gamePath = GetGamePath(gameFileName);
                     if (!File.Exists(gamePath))
                     {
-                        dialogService.Show(IUIDriver.Severity.Error,
-                            IUIDriver.ButtonType.OK,
+                        dialogService.Show(Severity.Error,
+                            ButtonType.OK,
                             translationService.Translate("Error"),
                             translationService.Translate("Error_Description_NoGameFileFound"),
                             null);
@@ -176,8 +171,8 @@ namespace Nofun.UI
                     VMMetaInfoReader metaInfoReader = executable.GetMetaInfo();
                     if (metaInfoReader == null)
                     {
-                        dialogService.Show(IUIDriver.Severity.Error,
-                            IUIDriver.ButtonType.OK,
+                        dialogService.Show(Severity.Error,
+                            ButtonType.OK,
                             translationService.Translate("Error"),
                             translationService.Translate("Error_Description_NoGameInfo"),
                             null);
@@ -193,8 +188,8 @@ namespace Nofun.UI
 
                     if (titleName == null)
                     {
-                        dialogService.Show(IUIDriver.Severity.Error,
-                            IUIDriver.ButtonType.OK,
+                        dialogService.Show(Severity.Error,
+                            ButtonType.OK,
                             translationService.Translate("Error"),
                             translationService.Translate("Error_Description_NoGameTitle"),
                             null);
@@ -210,8 +205,8 @@ namespace Nofun.UI
 
                     if (!gameDatabase.AddGame(gameInfo))
                     {
-                        dialogService.Show(IUIDriver.Severity.Error,
-                            IUIDriver.ButtonType.OK,
+                        dialogService.Show(Severity.Error,
+                            ButtonType.OK,
                             translationService.Translate("Error"),
                             translationService.Translate("Error_Description_GameAlreadyInstalled"),
                             null);
@@ -224,8 +219,8 @@ namespace Nofun.UI
                         string gamePath = GetGamePath(gameInfo);
                         File.Copy(path, gamePath, true);
 
-                        dialogService.Show(IUIDriver.Severity.Info,
-                            IUIDriver.ButtonType.OK,
+                        dialogService.Show(Severity.Info,
+                            ButtonType.OK,
                             translationService.Translate("Success"),
                             translationService.Translate("Success_Description_Install"),
                             null);
@@ -235,8 +230,8 @@ namespace Nofun.UI
                 }
                 catch
                 {
-                    dialogService.Show(IUIDriver.Severity.Error,
-                        IUIDriver.ButtonType.OK,
+                    dialogService.Show(Severity.Error,
+                        ButtonType.OK,
                         translationService.Translate("Error"),
                         translationService.Translate("Error_Description_NotMophun"),
                         null);

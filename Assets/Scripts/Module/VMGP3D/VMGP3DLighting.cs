@@ -33,10 +33,10 @@ namespace Nofun.Module.VMGP3D
 
             system.GraphicDriver.Material = new MpExtendedMaterial()
             {
-                ambient = materialCopy.ambient,
-                diffuse = materialCopy.diffuse,
-                specular = materialCopy.specular,
-                emission = materialCopy.emission,
+                ambient = materialCopy.ambient.ToSColor(),
+                diffuse = materialCopy.diffuse.ToSColor(),
+                specular = materialCopy.specular.ToSColor(),
+                emission = materialCopy.emission.ToSColor(),
                 shininess = FixedUtil.FixedToFloat(materialCopy.fixedShininess)
             };
         }
@@ -49,8 +49,8 @@ namespace Nofun.Module.VMGP3D
             system.GraphicDriver.Material = new MpExtendedMaterial()
             {
                 ambient = new SColor(1.0f, 1.0f, 1.0f, 1.0f),
-                diffuse = materialLegacyCopy.diffuse,
-                specular = materialLegacyCopy.specular,
+                diffuse = materialLegacyCopy.diffuse.ToSColor(),
+                specular = materialLegacyCopy.specular.ToSColor(),
                 emission = new SColor(0.0f, 0.0f, 0.0f, 0.0f),
                 shininess = 4.0f
             };
@@ -95,7 +95,7 @@ namespace Nofun.Module.VMGP3D
                 specular = new SColor(lightCopy.sr / 255.0f, lightCopy.sg / 255.0f, lightCopy.sb / 255.0f),
                 lightRange = FixedUtil.FixedToFloat(lightCopy.fixedRange),
                 exponent = lightCopy.exponent,
-                cutoff = (float)(FixedUtil.Fixed11PointToFloat((short)lightCopy.cutoff) * FullCircleRads)
+                cutoff = (float)(FixedUtil.Fixed11PointToFloat((short)lightCopy.cutoff) * MathUtil.FullCircleRads)
             };
 
             if (!system.GraphicDriver.SetLight(index, lightDriver))

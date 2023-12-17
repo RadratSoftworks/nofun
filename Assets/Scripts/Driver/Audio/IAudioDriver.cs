@@ -16,6 +16,7 @@
 
 using System;
 using System.IO;
+using Nofun.Module.VMGPCaps;
 
 namespace Nofun.Driver.Audio
 {

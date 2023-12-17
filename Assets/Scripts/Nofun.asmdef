@@ -1,0 +1,30 @@
+{
+    "name": "Nofun",
+    "rootNamespace": "",
+    "references": [
+        "Nofun.Services",
+        "VContainer",
+        "Nofun.Util",
+        "Nofun.Util.Unity",
+        "Nofun.Driver",
+        "Nofun.Driver.Unity",
+        "Nofun.Settings",
+        "Nofun.Runtime",
+        "Nofun.VM",
+        "Nofun.Parser",
+        "Nofun.Module.Shared",
+        "Unity.Mathematics",
+        "FilePicker"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "DOTween.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

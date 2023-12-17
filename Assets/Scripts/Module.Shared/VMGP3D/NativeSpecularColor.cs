@@ -1,4 +1,4 @@
-/*
+﻿/*
  * (C) 2023 Radrat Softworks
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-using Nofun.Driver.Audio;
-
-namespace Nofun.Module.VMGPCaps
+namespace Nofun.Module.VMGP3D
 {
-    public struct SoundCaps
+    public struct NativeSpecularColor
     {
-        public ushort size;
-        public ushort flags;
-        public SoundConfig config;
+        public byte b;
+        public byte g;
+        public byte r;
+        public byte f;
     }
 }

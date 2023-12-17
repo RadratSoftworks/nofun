@@ -22,7 +22,7 @@ namespace Nofun.UI
 {
     public class FlexibleUIDocumentController : MonoBehaviour
     {
-        private ScreenManager screenManager;
+        [Inject] protected ScreenManager screenManager;
         protected UIDocument document;
 
         private void UpdatePanelSettings()
@@ -37,7 +37,6 @@ namespace Nofun.UI
 
         public virtual void Awake()
         {
-            screenManager = EmulatorLifetimeScope.ContainerInstance.Resolve<ScreenManager>();
             document = GetComponent<UIDocument>();
         }
 

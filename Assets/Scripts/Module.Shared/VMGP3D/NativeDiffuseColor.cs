@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-namespace Nofun.Driver.Audio
+namespace Nofun.Module.VMGP3D
 {
-    public struct SoundConfig
+    public struct NativeDiffuseColor
     {
-        public ushort sampleFrequency;
-        public ushort numChannels;
-        public ushort bitsPerSample;
-        public ushort numMixerChannels;
+        public byte b;
+        public byte g;
+        public byte r;
+        public byte a;
     }
 }

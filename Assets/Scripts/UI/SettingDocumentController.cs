@@ -22,7 +22,6 @@ using DG.Tweening;
 using System;
 using System.Collections.Generic;
 using Nofun.Services;
-using Nofun.Services.Unity;
 using VContainer;
 
 namespace Nofun.UI
@@ -66,8 +65,8 @@ namespace Nofun.UI
         private string gameName;
         private bool isFirst = false;
 
-        private ITranslationService translationService;
-        private IDialogService dialogService;
+        [Inject] private ITranslationService translationService;
+        [Inject] private IDialogService dialogService;
 
         private Button confirmButton;
 
@@ -84,9 +83,6 @@ namespace Nofun.UI
             base.Awake();
 
             DOTween.Init();
-
-            dialogService = EmulatorLifetimeScope.ContainerInstance.Resolve<IDialogService>();
-            translationService = EmulatorLifetimeScope.ContainerInstance.Resolve<ITranslationService>();
 
             VisualElement root = document.rootVisualElement;
             root.style.display = DisplayStyle.None;
@@ -212,11 +208,12 @@ namespace Nofun.UI
                     if (saveAgain)
                     {
                         dialogService.Show(
-                            Driver.UI.IUIDriver.Severity.Info,
-                            Driver.UI.IUIDriver.ButtonType.OK,
+                            Severity.Info,
+                            ButtonType.OK,
                             translationService.Translate("Settings_Saved"),
                             translationService.Translate("Settings_Saved_Details"),
-                            value => {
+                            value =>
+                            {
                                 Finished?.Invoke();
                             });
                     }

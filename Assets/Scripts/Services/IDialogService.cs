@@ -1,11 +1,26 @@
 ﻿using System;
-using Nofun.Driver.UI;
 
 namespace Nofun.Services
 {
+    public enum ButtonType
+    {
+        OK,
+        OKCancel,
+        YesNo,
+        YesNoCancel
+    };
+
+    public enum Severity
+    {
+        Error,
+        Warning,
+        Info,
+        Question
+    };
+
     public interface IDialogService
     {
-        public void Show(IUIDriver.Severity severity, IUIDriver.ButtonType buttonType, string title, string details,
+        public void Show(Severity severity, ButtonType buttonType, string title, string details,
             Action<int> onButtonSubmit);
     }
 }

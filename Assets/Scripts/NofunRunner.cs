@@ -39,7 +39,7 @@ using System.Runtime.InteropServices;
 
 namespace Nofun
 {
-    public class NofunRunner: MonoBehaviour
+    public class NofunRunner : MonoBehaviour
     {
         [Header("Drivers")]
         [SerializeField] private InputDriver inputDriver;
@@ -63,9 +63,9 @@ namespace Nofun
         private bool failed = false;
         private bool settingActive = false;
 
-        private ScreenManager screenManager;
-        private IDialogService dialogService;
-        private ITranslationService translationService;
+        [Inject] private ScreenManager screenManager;
+        [Inject] private IDialogService dialogService;
+        [Inject] private ITranslationService translationService;
 
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
         [DllImport("user32.dll", EntryPoint = "SetWindowText")]
@@ -121,12 +121,6 @@ namespace Nofun
             OpenGameSetting();
         }
 
-        private void Awake()
-        {
-            translationService = EmulatorLifetimeScope.ContainerInstance.Resolve<ITranslationService>();
-            dialogService = EmulatorLifetimeScope.ContainerInstance.Resolve<IDialogService>();
-        }
-
         private void Start()
         {
             // StartGameImpl()
@@ -160,7 +154,7 @@ namespace Nofun
             }
             catch (System.Exception ex)
             {
-                NofunMessageBoxController.Show(messageBoxPrefab, Driver.UI.IUIDriver.Severity.Info, Driver.UI.IUIDriver.ButtonType.OK,
+                NofunMessageBoxController.Show(messageBoxPrefab, Driver.UI.Severity.Info, Driver.UI.ButtonType.OK,
                     null, "Please open the .mpn file in a file explorer for now!", value => Application.Quit());
 
                 failed = true;
@@ -180,7 +174,7 @@ namespace Nofun
 #if UNITY_EDITOR || !UNITY_ANDROID
             if (targetExecutable == null)
             {
-                dialogService.Show(Driver.UI.IUIDriver.Severity.Info, Driver.UI.IUIDriver.ButtonType.OK,
+                dialogService.Show(Severity.Info, ButtonType.OK,
                     null,
                     translationService.Translate("Request_DragGameFileToEmulator"),
                     value => Application.Quit());
@@ -205,7 +199,7 @@ namespace Nofun
             }
             catch (System.Exception _)
             {
-                dialogService.Show(Driver.UI.IUIDriver.Severity.Info, Driver.UI.IUIDriver.ButtonType.OK,
+                dialogService.Show(Severity.Info, ButtonType.OK,
                     null,
                     translationService.Translate("Error_Description_GameNotCompatible"),
                     value => Application.Quit());

@@ -17,23 +17,23 @@
 using System;
 using UnityEngine;
 
-using Nofun.UI;
 using Nofun.Driver.UI;
 using System.Threading;
+using Nofun.Services;
+using VContainer;
 
 namespace Nofun.Driver.Unity.UI
 {
     public class UIDriver : MonoBehaviour, IUIDriver
     {
-        [SerializeField]
-        private NofunMessageBoxController messageBoxDialog;
+        [Inject] private IDialogService dialogService;
 
-        public void Show(IUIDriver.Severity severity, string title, string message, IUIDriver.ButtonType buttonType, Action<int> buttonPressed)
+        public void Show(Severity severity, string title, string message, ButtonType buttonType, Action<int> buttonPressed)
         {
             int passingValue = 0;
             AutoResetEvent evt = new AutoResetEvent(false);
 
-            JobScheduler.Instance.RunOnUnityThread(() => messageBoxDialog.Show(severity, title, message, buttonType, (int value) =>
+            JobScheduler.Instance.RunOnUnityThread(() => dialogService.Show(severity, buttonType, title, message, (int value) =>
             {
                 passingValue = value;
                 evt.Set();

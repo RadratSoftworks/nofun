@@ -1,0 +1,22 @@
+{
+    "name": "Nofun.Driver",
+    "rootNamespace": "",
+    "references": [
+        "Nofun.Util",
+        "Nofun.Module.Shared",
+        "Nofun.Services"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "NoAlloq.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

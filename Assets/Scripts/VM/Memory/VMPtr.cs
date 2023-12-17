@@ -36,7 +36,7 @@ namespace Nofun.VM
             this.address = address;
         }
 
-        public static VMPtr<T> operator + (VMPtr<T> lhs, int rhs)
+        public static VMPtr<T> operator +(VMPtr<T> lhs, int rhs)
         {
             return new VMPtr<T>(lhs.address + (uint)(rhs * Marshal.SizeOf<T>()));
         }
@@ -71,12 +71,12 @@ namespace Nofun.VM
             return lhs.address != addr;
         }
 
-        public static bool operator == (VMPtr<T> lhs, VMPtr<T> rhs)
+        public static bool operator ==(VMPtr<T> lhs, VMPtr<T> rhs)
         {
             return lhs.address == rhs.address;
         }
 
-        public static bool operator != (VMPtr<T> lhs, VMPtr<T> rhs)
+        public static bool operator !=(VMPtr<T> lhs, VMPtr<T> rhs)
         {
             return lhs.address != rhs.address;
         }
@@ -104,7 +104,7 @@ namespace Nofun.VM
             return memory.GetMemoryMemory((int)address + startOffset, Marshal.SizeOf<T>() * count);
         }
 
-        public unsafe byte *AsPointer(VMMemory memory, int startOffset = 0)
+        public unsafe byte* AsPointer(VMMemory memory, int startOffset = 0)
         {
             return memory.GetMemoryPointer((int)address + startOffset);
         }

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-using Nofun.Util.Logging;
 using System;
 using System.Buffers.Binary;
 
@@ -55,7 +54,7 @@ namespace Nofun.VM
 
         public unsafe byte* GetMemoryPointer(int offset)
         {
-            fixed (byte *unmanagedPtr = memory)
+            fixed (byte* unmanagedPtr = memory)
             {
                 return unmanagedPtr + offset;
             }

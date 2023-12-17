@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
+using System;
+
 namespace Nofun.Util
 {
     public static class MathUtil
     {
+        public const int FullCircleDegrees = 360;
+        public const double FullCircleRads = Math.PI * 2;
+
         public static uint NextPowerOfTwo(uint value)
         {
             value--;
@@ -33,7 +38,7 @@ namespace Nofun.Util
 
         public static float RadToDegs(float radians)
         {
-            return radians * 180.0f / (float) System.Math.PI;
+            return radians * 180.0f / (float)System.Math.PI;
         }
 
         public static float Degs2Rad(float degs)

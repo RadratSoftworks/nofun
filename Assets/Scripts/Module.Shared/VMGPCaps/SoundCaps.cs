@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-using Nofun.Driver.Audio;
-
 namespace Nofun.Module.VMGPCaps
 {
-    public struct SoundCapsLegacy
+    public struct SoundConfig
+    {
+        public ushort sampleFrequency;
+        public ushort numChannels;
+        public ushort bitsPerSample;
+        public ushort numMixerChannels;
+    }
+
+    public struct SoundCaps
     {
         public ushort size;
         public ushort flags;
+        public SoundConfig config;
     }
 }

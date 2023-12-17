@@ -18,6 +18,7 @@ using Nofun.VM;
 using Nofun.Driver.UI;
 using Nofun.Util;
 using Nofun.Util.Logging;
+using Nofun.Services;
 
 namespace Nofun.Module.VMGP
 {
@@ -28,45 +29,45 @@ namespace Nofun.Module.VMGP
         [ModuleCall]
         private int vMsgBox(uint flags, VMString message, VMString optionalTitle)
         {
-            IUIDriver.Severity boxSeverity;
+            Severity boxSeverity;
             switch (true)
             {
                 case true when BitUtil.FlagSet(flags, MessageBoxFlags.Error):
-                    boxSeverity = IUIDriver.Severity.Error;
+                    boxSeverity = Severity.Error;
                     break;
 
                 case true when BitUtil.FlagSet(flags, MessageBoxFlags.Warning):
-                    boxSeverity = IUIDriver.Severity.Warning;
+                    boxSeverity = Severity.Warning;
                     break;
 
                 case true when BitUtil.FlagSet(flags, MessageBoxFlags.Info):
-                    boxSeverity = IUIDriver.Severity.Info;
+                    boxSeverity = Severity.Info;
                     break;
 
                 case true when BitUtil.FlagSet(flags, MessageBoxFlags.Question):
-                    boxSeverity = IUIDriver.Severity.Question;
+                    boxSeverity = Severity.Question;
                     break;
 
                 default:
                     Logger.Warning(LogClass.VMGPSystem, "Unknown message box severity, defaulting to info");
-                    boxSeverity = IUIDriver.Severity.Info;
+                    boxSeverity = Severity.Info;
                     break;
             }
 
-            IUIDriver.ButtonType buttonType;
+            ButtonType buttonType;
             switch (true)
             {
                 case true when BitUtil.FlagSet(flags, MessageBoxFlags.OKCancel):
-                    buttonType = IUIDriver.ButtonType.OKCancel;
+                    buttonType = ButtonType.OKCancel;
                     break;
 
                 case true when BitUtil.FlagSet(flags, MessageBoxFlags.YesNo):
-                    buttonType = IUIDriver.ButtonType.YesNo;
+                    buttonType = ButtonType.YesNo;
                     break;
 
                 default:
                     Logger.Warning(LogClass.VMGPSystem, "Unknown message box button type, defaulting to OK");
-                    buttonType = IUIDriver.ButtonType.OK;
+                    buttonType = ButtonType.OK;
                     break;
             }
 

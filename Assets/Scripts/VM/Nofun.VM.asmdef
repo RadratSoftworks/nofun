@@ -1,0 +1,27 @@
+{
+    "name": "Nofun.VM",
+    "rootNamespace": "",
+    "references": [
+        "Nofun.VM.Memory",
+        "Nofun.Module.Shared",
+        "Nofun.Util",
+        "Nofun.Driver",
+        "Nofun.Services",
+        "Nofun.PIP2",
+        "Nofun.Parser",
+        "Nofun.Settings",
+        "ModuleCallBindingGenerator"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "NoAlloq.dll",
+        "System.IO.Hashing.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

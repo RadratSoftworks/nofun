@@ -1,0 +1,16 @@
+{
+    "name": "Nofun.Parser",
+    "rootNamespace": "",
+    "references": [
+        "Nofun.Util"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

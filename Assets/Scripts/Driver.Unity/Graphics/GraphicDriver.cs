@@ -25,10 +25,8 @@ using UnityEngine.UI;
 using UnityEngine.Rendering;
 using Nofun.Module.VMGP3D;
 using System.Linq;
-using Unity.VisualScripting;
 using System.Collections;
 using Nofun.Services;
-using Nofun.UI;
 using VContainer;
 
 namespace Nofun.Driver.Unity.Graphics
@@ -473,7 +471,7 @@ namespace Nofun.Driver.Unity.Graphics
                 displayImage.texture = screenTextureBackBuffer;
                 if (!fullscreen)
                 {
-                    AspectRatioFitter fitter = displayImage.AddComponent<AspectRatioFitter>();
+                    AspectRatioFitter fitter = displayImage.gameObject.AddComponent<AspectRatioFitter>();
                     PrepareNonFullscreenFitDisplay(imageTransform, fitter, screenSize, screenManager.ScreenOrientation);
                 }
                 else
@@ -538,7 +536,7 @@ namespace Nofun.Driver.Unity.Graphics
 
             if (!fullscreen)
             {
-                AspectRatioFitter fitter = displayImage.AddComponent<AspectRatioFitter>();
+                AspectRatioFitter fitter = displayImage.gameObject.AddComponent<AspectRatioFitter>();
                 PrepareNonFullscreenFitDisplay(transform, fitter, size, screenManager.ScreenOrientation);
             }
 
@@ -1247,7 +1245,7 @@ namespace Nofun.Driver.Unity.Graphics
             };
 
             // Need to flip the center, the 3D here is normal, no need to flip Y like 2D (DrawRectBoard is designed for drawing 2d texture)
-            DrawRectBoardGeneral(destRect, uvs, center.x, -center.y, FixedUtil.Fixed11PointToFloat(billboard.rotation) * VMGP3D.FullCircleDegrees, colors, z: posMoved.z);
+            DrawRectBoardGeneral(destRect, uvs, center.x, -center.y, FixedUtil.Fixed11PointToFloat(billboard.rotation) * MathUtil.FullCircleDegrees, colors, z: posMoved.z);
             Cull = previousCull;
         }
 

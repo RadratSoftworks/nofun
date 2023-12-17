@@ -12,7 +12,7 @@ namespace Nofun.Services.Unity
         private const float BaseSortOrder = 8000.0f;
         private float orderStackCount = 0.0f;
 
-        public void Show(IUIDriver.Severity severity, IUIDriver.ButtonType buttonType, string title, string details, Action<int> onButtonSubmit)
+        public void Show(Severity severity, ButtonType buttonType, string title, string details, Action<int> onButtonSubmit)
         {
             orderStackCount++;
 
