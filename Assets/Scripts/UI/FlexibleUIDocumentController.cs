@@ -23,7 +23,11 @@ namespace Nofun.UI
     public class FlexibleUIDocumentController : MonoBehaviour
     {
         [Inject] protected ScreenManager screenManager;
+        [Inject] protected DocumentStackManager documentStackManager;
+
         protected UIDocument document;
+
+        public UIDocument Document => document;
 
         private void UpdatePanelSettings()
         {

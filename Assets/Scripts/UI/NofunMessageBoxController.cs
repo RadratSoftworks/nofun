@@ -38,9 +38,8 @@ namespace Nofun.UI
 
         private Action<int> pendingAction;
 
-        public static void Show(GameObject boxPrefab, Severity severity, ButtonType buttonType, string title, string content, Action<int> buttonSubmitAct, float? customSortingOrder = null)
+        public static void Show(GameObject messageBox, Severity severity, ButtonType buttonType, string title, string content, Action<int> buttonSubmitAct, float? customSortingOrder = null)
         {
-            GameObject messageBox = Instantiate(boxPrefab);
             NofunMessageBoxController messageBoxController = messageBox.GetComponent<NofunMessageBoxController>();
 
             if (customSortingOrder != null)

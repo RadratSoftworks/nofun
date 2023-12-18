@@ -63,18 +63,11 @@ namespace Nofun.UI
 
         private GameSettingsManager settingManager;
         private string gameName;
-        private bool isFirst = false;
 
         [Inject] private ITranslationService translationService;
         [Inject] private IDialogService dialogService;
 
         private Button confirmButton;
-
-        [SerializeField]
-        private GameObject messageBoxPrefab;
-
-        [SerializeField]
-        private float fadeInOutDuration = 0.4f;
 
         public event Action Finished;
 
@@ -137,7 +130,7 @@ namespace Nofun.UI
             root.style.opacity = 0.0f;
             root.style.display = DisplayStyle.Flex;
 
-            DOTween.To(() => root.style.opacity.value, value => root.style.opacity = (float)value, 1.0f, fadeInOutDuration);
+            documentStackManager.Push(this);
         }
 
         public void Load()
@@ -157,7 +150,6 @@ namespace Nofun.UI
 
                 softwareScissorCheck.value = false;
 
-                isFirst = true;
                 confirmButton.text = "Start";
             }
             else
@@ -173,8 +165,6 @@ namespace Nofun.UI
                 systemVersionDropdown.index = (int)setting.Value.systemVersion;
 
                 softwareScissorCheck.value = setting.Value.enableSoftwareScissor;
-
-                isFirst = false;
                 confirmButton.text = "Save";
             }
         }
@@ -200,28 +190,27 @@ namespace Nofun.UI
             VisualElement root = document.rootVisualElement;
             root.style.opacity = 1.0f;
 
-            DOTween.To(() => root.style.opacity.value, value => document.rootVisualElement.style.opacity = (float)value, 0.0f, fadeInOutDuration)
-                .OnComplete(() =>
-                {
-                    root.style.display = DisplayStyle.None;
+            documentStackManager.Pop(this, () =>
+            {
+                root.style.display = DisplayStyle.None;
 
-                    if (saveAgain)
-                    {
-                        dialogService.Show(
-                            Severity.Info,
-                            ButtonType.OK,
-                            translationService.Translate("Settings_Saved"),
-                            translationService.Translate("Settings_Saved_Details"),
-                            value =>
-                            {
-                                Finished?.Invoke();
-                            });
-                    }
-                    else
-                    {
-                        Finished?.Invoke();
-                    }
-                });
+                if (saveAgain)
+                {
+                    dialogService.Show(
+                        Severity.Info,
+                        ButtonType.OK,
+                        translationService.Translate("Settings_Saved"),
+                        translationService.Translate("Settings_Saved_Details"),
+                        value =>
+                        {
+                            Finished?.Invoke();
+                        });
+                }
+                else
+                {
+                    Finished?.Invoke();
+                }
+            });
         }
 
         public void OnSyncSizeButtonClicked()
@@ -233,14 +222,7 @@ namespace Nofun.UI
 
         public void OnCancelButtonClicked()
         {
-            if (isFirst)
-            {
-                Application.Quit();
-            }
-            else
-            {
-                DoCloseAnimation();
-            }
+            DoCloseAnimation();
         }
 
         public void OnOKButtonClicked()

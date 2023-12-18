@@ -1,4 +1,4 @@
-﻿//using UnityEngine.Localization.Settings;
+﻿using UnityEngine.Localization.Settings;
 
 namespace Nofun.Services.Unity
 {
@@ -8,7 +8,7 @@ namespace Nofun.Services.Unity
 
         public string Translate(string key)
         {
-            return "a";
+            return LocalizationSettings.StringDatabase.GetLocalizedString(TableName, key);
         }
     }
 }

@@ -43,6 +43,7 @@ namespace Nofun.UI
         [SerializeField] private VisualTreeAsset gameEntryTemplate;
         [SerializeField] private GameIconManifest gameIconManifest;
         [SerializeField] private Transform dynamicIconRendererContainer;
+        [SerializeField] private GameDetailsDocumentController gameDetailsDocumentController;
 
         [Header("Runner")]
         [SerializeField] private NofunRunner runner;
@@ -74,6 +75,9 @@ namespace Nofun.UI
             Directory.CreateDirectory(GamePathRoot);
 
             installButton.clicked += OnInstallButtonClicked;
+            gameDetailsDocumentController.OnGameInfoChoosen += OnGameIconClicked;
+            gameDetailsDocumentController.OnGameRemovalRequested += RemoveGame;
+
             searchBar.RegisterValueChangedCallback(OnSearchBarContentChanged);
 
             gameList.RegisterCallback<GeometryChangedEvent>((_) =>
@@ -96,6 +100,8 @@ namespace Nofun.UI
         private void OnDestroy()
         {
             installButton.clicked -= OnInstallButtonClicked;
+            gameDetailsDocumentController.OnGameInfoChoosen -= OnGameIconClicked;
+            gameDetailsDocumentController.OnGameRemovalRequested -= RemoveGame;
         }
 
         private void OnSearchBarContentChanged(ChangeEvent<string> newValue)
@@ -107,25 +113,22 @@ namespace Nofun.UI
         {
             if (runner != null)
             {
-                if (!runner.isActiveAndEnabled)
+                string gamePath = GetGamePath(gameFileName);
+                if (!File.Exists(gamePath))
                 {
-                    string gamePath = GetGamePath(gameFileName);
-                    if (!File.Exists(gamePath))
-                    {
-                        dialogService.Show(Severity.Error,
-                            ButtonType.OK,
-                            translationService.Translate("Error"),
-                            translationService.Translate("Error_Description_NoGameFileFound"),
-                            null);
+                    dialogService.Show(Severity.Error,
+                        ButtonType.OK,
+                        translationService.Translate("Error"),
+                        translationService.Translate("Error_Description_NoGameFileFound"),
+                        null);
 
-                        return;
-                    }
-
-                    runner.gameObject.SetActive(true);
-                    runner.Launch(gamePath);
-
-                    gameObject.SetActive(false);
+                    return;
                 }
+
+                runner.gameObject.SetActive(true);
+                runner.Launch(gamePath);
+
+                gameObject.SetActive(false);
             }
         }
 
@@ -150,7 +153,7 @@ namespace Nofun.UI
             foreach (var gameInfo in gameInfos)
             {
                 var gameInfoEntry = gameEntryTemplate.Instantiate();
-                var gameInfoEntryBinder = new GameInfoEntryController(gameIconManifest, dynamicIconsProvider);
+                var gameInfoEntryBinder = new GameInfoEntryController(gameIconManifest, dynamicIconsProvider, gameDetailsDocumentController);
 
                 gameInfoEntryBinder.SetVisualElement(gameInfoEntry);
                 gameInfoEntryBinder.BindData(gameInfo);
@@ -158,6 +161,18 @@ namespace Nofun.UI
 
                 gameList.Add(gameInfoEntry);
             }
+        }
+
+        private void RemoveGame(GameInfo gameInfo)
+        {
+            string gamePath = GetGamePath(gameInfo);
+            if (File.Exists(gamePath))
+            {
+                File.Delete(gamePath);
+            }
+
+            gameDatabase.RemoveGame(gameInfo);
+            LoadGameList();
         }
 
         private void InstallGame(string path)

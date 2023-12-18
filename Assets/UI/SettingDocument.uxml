@@ -1,7 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:Template name="Vector2Input" src="project://database/Assets/UI/Vector2Input.uxml?fileID=9197481963319205126&amp;guid=ed15cd3c56e2f2846bd9ff61c1e85754&amp;type=3#Vector2Input" />
     <Style src="project://database/Assets/UI/Stylesheet/SettingDocument.uss?fileID=7433441132597879392&amp;guid=fd4a887a877cf074bb729d59f2302146&amp;type=3#SettingDocument" />
-    <ui:VisualElement name="Root2" style="width: 100%; height: 100%;">
+    <ui:VisualElement name="Root2" style="width: 100%; height: 100%; background-color: rgba(85, 85, 85, 0.87);">
         <ui:ScrollView name="SettingView" mouse-wheel-scroll-size="500">
             <ui:Label text="Sample game" display-tooltip-when-elided="true" name="GameLabel" />
             <ui:GroupBox name="GraphicsGroup" text="Graphics">
@@ -44,8 +44,7 @@
                         <UnityEngine.Localization.LocalizedString property="label" table="GUID:198be8f0d9d907049947f8336106f789" entry="Id(99190880849926)" />
                     </Bindings>
                 </ui:DropdownField>
-                <ui:Button text="Set screen size to device screen size" name="SyncSizeButton">
-                </ui:Button>
+                <ui:Button text="Set screen size to device screen size" name="SyncSizeButton" />
                 <Bindings>
                     <UnityEngine.Localization.LocalizedString property="text" entry="Id(99190880849924)" />
                 </Bindings>

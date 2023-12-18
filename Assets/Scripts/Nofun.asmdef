@@ -14,7 +14,8 @@
         "Nofun.Parser",
         "Nofun.Module.Shared",
         "Unity.Mathematics",
-        "FilePicker"
+        "FilePicker",
+        "Unity.Localization"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

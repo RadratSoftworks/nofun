@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UIElements;
 using VContainer;
 using ScreenOrientation = Nofun.Settings.ScreenOrientation;
 
@@ -8,6 +9,7 @@ namespace Nofun.Services.Unity
     {
         [SerializeField] private Canvas canvasPotrait;
         [SerializeField] private Canvas canvasLandscape;
+        [SerializeField] private UIDocument blockingInteractionDoc;
 
         private ScreenManager screenManager;
 
@@ -50,6 +52,16 @@ namespace Nofun.Services.Unity
         public void SetVisibility(bool isVisible)
         {
             Canvas.gameObject.SetActive(isVisible);
+        }
+
+        public void BlockInterfaceInteraction()
+        {
+            blockingInteractionDoc.enabled = true;
+        }
+
+        public void UnblockInterfaceInteraction()
+        {
+            blockingInteractionDoc.enabled = false;
         }
     }
 }

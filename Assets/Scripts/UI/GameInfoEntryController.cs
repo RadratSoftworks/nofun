@@ -1,4 +1,5 @@
 ﻿using System;
+using DG.Tweening;
 using Nofun.Data.Model;
 using Nofun.DynamicIcons;
 using UnityEngine.UIElements;
@@ -7,48 +8,89 @@ namespace Nofun.UI
 {
     public class GameInfoEntryController
     {
-        private VisualElement _iconElement;
-        private Label _gameNameLabel;
-        private GameIconManifest _gameIconManifest;
-        private DynamicIconsProvider _dynamicIconsProvider;
-        private string _gamePath;
+        private readonly GameDetailsDocumentController gameDetailsDocumentController;
+
+        private VisualElement iconElement;
+        private Label gameNameLabel;
+        private readonly GameIconManifest gameIconManifest;
+        private readonly DynamicIconsProvider dynamicIconsProvider;
+        private string gamePath;
+        private Sequence holdEvent;
+        private GameInfo gameInfo;
 
         public event Action<string> OnGameInfoChoosen;
 
-        public GameInfoEntryController(GameIconManifest gameIconManifest, DynamicIconsProvider dynamicIconsProvider)
+        public GameInfoEntryController(GameIconManifest gameIconManifest, DynamicIconsProvider dynamicIconsProvider,
+            GameDetailsDocumentController gameDetailsDocumentController)
         {
-            _gameIconManifest = gameIconManifest;
-            _dynamicIconsProvider = dynamicIconsProvider;
+            this.gameIconManifest = gameIconManifest;
+            this.gameDetailsDocumentController = gameDetailsDocumentController;
+            this.dynamicIconsProvider = dynamicIconsProvider;
         }
 
         public void SetVisualElement(VisualElement visualElement)
         {
-            _iconElement = visualElement.Q("Icon");
-            _gameNameLabel = visualElement.Q<Label>("Name");
+            iconElement = visualElement.Q("Icon");
+            gameNameLabel = visualElement.Q<Label>("Name");
 
-            visualElement.RegisterCallback<MouseDownEvent>(_ => OnGameInfoChoosen?.Invoke(_gamePath));
+            visualElement.RegisterCallback<PointerUpEvent>(_ =>
+            {
+                if (holdEvent != null)
+                {
+                    holdEvent.Kill();
+                    holdEvent = null;
+                }
+
+                OnGameInfoChoosen?.Invoke(gamePath);
+            });
+
+            visualElement.RegisterCallback<PointerDownEvent>(_ =>
+            {
+                holdEvent = DOTween.Sequence()
+                    .AppendInterval(0.5f)
+                    .OnComplete(() =>
+                    {
+                        OnGameHeld();
+                        holdEvent = null;
+                    });
+            });
+        }
+
+        private void OnGameHeld()
+        {
+            var icon = ResolveIcon(gameInfo);
+            gameDetailsDocumentController.Show(gameInfo, icon);
+        }
+
+        private StyleBackground ResolveIcon(GameInfo gameInfo)
+        {
+            var preloadedGameIcon = gameIconManifest.FindGameIcon(gameInfo.Name);
+
+            if (preloadedGameIcon != null)
+            {
+                return new StyleBackground(preloadedGameIcon.Icon);
+            }
+            else
+            {
+                var preloadedDynamicGameIcon = gameIconManifest.FindDynamicGameIcon(gameInfo.Name);
+                if (preloadedDynamicGameIcon != null)
+                {
+                    var dynamicGameIcon = dynamicIconsProvider.GetIcon(preloadedDynamicGameIcon);
+                    return new StyleBackground(Background.FromRenderTexture(dynamicGameIcon));
+                }
+            }
+
+            return null;
         }
 
         public void BindData(GameInfo gameInfo)
         {
-            _gameNameLabel.text = gameInfo.Name;
-            _gamePath = gameInfo.GameFileName;
+            this.gameInfo = gameInfo;
 
-            var preloadedGameIcon = _gameIconManifest.FindGameIcon(gameInfo.Name);
+            gameNameLabel.text = gameInfo.Name;
+            gamePath = gameInfo.GameFileName;
 
-            if (preloadedGameIcon != null)
-            {
-                _iconElement.style.backgroundImage = new StyleBackground(preloadedGameIcon.Icon);
-            }
-            else
-            {
-                var preloadedDynamicGameIcon = _gameIconManifest.FindDynamicGameIcon(gameInfo.Name);
-                if (preloadedDynamicGameIcon != null)
-                {
-                    var dynamicGameIcon = _dynamicIconsProvider.GetIcon(preloadedDynamicGameIcon);
-                    _iconElement.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(dynamicGameIcon));
-                }
-            }
+            iconElement.style.backgroundImage = ResolveIcon(gameInfo);
         }
     }
 }

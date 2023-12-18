@@ -50,6 +50,7 @@ namespace Nofun
 
         [Header("UI")]
         [SerializeField] private SettingDocumentController settingDocument;
+        [SerializeField] private GameDetailsDocumentController gameDetailsDocument;
 
         [Header("Settings")]
         [Range(1, 60)][SerializeField] private int fpsLimit = 30;
@@ -62,6 +63,7 @@ namespace Nofun
         private bool started = false;
         private bool failed = false;
         private bool settingActive = false;
+        private bool launchRequested = false;
 
         [Inject] private ScreenManager screenManager;
         [Inject] private IDialogService dialogService;
@@ -121,14 +123,19 @@ namespace Nofun
             OpenGameSetting();
         }
 
-        private void Start()
+        private void Awake()
         {
-            // StartGameImpl()
+            settingManager = new(Application.persistentDataPath);
+            timeDriver = new TimeDriver();
+
+            gameDetailsDocument.Setup(settingManager);
         }
 
         public void Launch(string gamePath)
         {
             executableFilePath = gamePath;
+            launchRequested = true;
+
             StartGameImpl();
         }
 
@@ -187,9 +194,6 @@ namespace Nofun
             gameStream = new FileStream(targetExecutable, FileMode.Open, FileAccess.ReadWrite,
                 FileShare.Read);
 #endif
-
-            settingManager = new(Application.persistentDataPath);
-            timeDriver = new TimeDriver();
 
             try
             {
@@ -260,7 +264,7 @@ namespace Nofun
 
         private void Update()
         {
-            if (settingActive || failed)
+            if (settingActive || failed || !launchRequested)
             {
                 return;
             }

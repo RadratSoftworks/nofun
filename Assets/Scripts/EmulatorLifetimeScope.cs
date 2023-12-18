@@ -1,5 +1,6 @@
 ﻿using Nofun.Services;
 using Nofun.Services.Unity;
+using Nofun.UI;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -14,6 +15,8 @@ namespace Nofun
             builder.RegisterComponentInHierarchy<ScreenManager>();
             builder.RegisterComponentInHierarchy<LayoutService>().AsImplementedInterfaces();
             builder.RegisterComponentInHierarchy<DialogService>().AsImplementedInterfaces();
+            builder.RegisterComponentInHierarchy<DocumentStackManager>();
+
             builder.Register<ITranslationService, TranslationService>(Lifetime.Scoped);
         }
     }
