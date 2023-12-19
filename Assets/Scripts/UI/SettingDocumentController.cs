@@ -69,7 +69,7 @@ namespace Nofun.UI
 
         private Button confirmButton;
 
-        public event Action Finished;
+        public event Action<bool> Finished;
         public event Action ExitGameRequested;
 
         public override void Awake()
@@ -211,7 +211,7 @@ namespace Nofun.UI
                 });
         }
 
-        private void DoCloseAnimation(bool saveAgain = false)
+        private void DoCloseAnimation(bool saveAgain = false, bool isCancel = false)
         {
             VisualElement root = document.rootVisualElement;
             root.style.opacity = 1.0f;
@@ -229,12 +229,12 @@ namespace Nofun.UI
                         translationService.Translate("Settings_Saved_Details"),
                         value =>
                         {
-                            Finished?.Invoke();
+                            Finished?.Invoke(isCancel);
                         });
                 }
                 else
                 {
-                    Finished?.Invoke();
+                    Finished?.Invoke(isCancel);
                 }
             });
         }
@@ -248,7 +248,7 @@ namespace Nofun.UI
 
         public void OnCancelButtonClicked()
         {
-            DoCloseAnimation();
+            DoCloseAnimation(isCancel: true);
         }
 
         public void OnOKButtonClicked()

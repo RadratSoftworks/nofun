@@ -102,16 +102,28 @@ namespace Nofun
             }
         }
 
-        private void FinishSettingDocument()
+        private void FinishSettingDocument(bool isCancel)
         {
-            GameSetting? setting = settingManager.Get(system.GameName);
-            if (setting != null)
+            if (!isCancel)
             {
-                graphicDriver.FpsLimit = setting.Value.fps;
-
-                if (setting.Value.screenMode != ScreenMode.Fullscreen)
+                GameSetting? setting = settingManager.Get(system.GameName);
+                if (setting != null)
                 {
-                    screenManager.ScreenOrientation = setting.Value.orientation;
+                    graphicDriver.FpsLimit = setting.Value.fps;
+
+                    if (setting.Value.screenMode != ScreenMode.Fullscreen)
+                    {
+                        screenManager.ScreenOrientation = setting.Value.orientation;
+                    }
+                }
+            }
+            else
+            {
+                if (!started)
+                {
+                    // Cancel launch
+                    launchRequested = false;
+                    gameListDocumentController.ImmediateShow();
                 }
             }
 
@@ -136,7 +148,7 @@ namespace Nofun
 
         private void OpenGameSetting()
         {
-            settingDocument.Show(showExitGameButton: true);
+            settingDocument.Show(showExitGameButton: started);
 
             settingActive = true;
             JobScheduler.Paused = true;
@@ -210,6 +222,8 @@ namespace Nofun
 
         public void Launch(string gamePath)
         {
+            Reset();
+
             executableFilePath = gamePath;
             launchRequested = true;
 
@@ -219,17 +233,30 @@ namespace Nofun
 
         private void Reset()
         {
-            system.Dispose();
+            bool shouldGc = false;
 
-            system = null;
+            if (system != null)
+            {
+                shouldGc = true;
+
+                system.Dispose();
+                system = null;
+            }
+
             started = false;
             failed = false;
             launchRequested = false;
 
-            executable.Dispose();
-            executable = null;
+            if (executable != null)
+            {
+                executable.Dispose();
+                executable = null;
+            }
 
-            GC.Collect();
+            if (shouldGc)
+            {
+                GC.Collect();
+            }
         }
 
         public void StartGameImpl(Stream gameStream, string targetExecutable)

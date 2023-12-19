@@ -56,6 +56,7 @@ namespace Nofun.Services.Unity
         {
             if (Canvas != null)
             {
+                anyCanvasActivated = true;
                 Canvas.gameObject.SetActive(isVisible);
             }
         }

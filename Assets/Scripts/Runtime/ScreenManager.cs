@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
@@ -43,6 +44,7 @@ namespace Nofun
         private Settings.ScreenOrientation screenOrientation;
 
         public event System.Action<Settings.ScreenOrientation> ScreenOrientationChanged;
+        private Coroutine confirmScreenSizeChangeCoroutine;
 
         public Settings.ScreenOrientation ScreenOrientation
         {
@@ -99,19 +101,49 @@ namespace Nofun
             }
         }
 
+        private IEnumerator ConfirmScreenSizeChange(bool isConfirmingPotrait)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                if (isConfirmingPotrait && (Screen.width > Screen.height))
+                {
+                    yield break;
+                }
+                else if (!isConfirmingPotrait && (Screen.width <= Screen.height))
+                {
+                    yield break;
+                }
+                else
+                {
+                    yield return null;
+                }
+            }
+
+            screenOrientation = Settings.ScreenOrientation.Landscape;
+            UpdateCanvasOrientation();
+        }
+
 #if UNITY_EDITOR || (!UNITY_ANDROID && !UNITY_IOS)
         private void Update()
         {
             if ((Screen.width > Screen.height) && (screenOrientation != Settings.ScreenOrientation.Landscape))
             {
-                screenOrientation = Settings.ScreenOrientation.Landscape;
-                UpdateCanvasOrientation();
+                if (confirmScreenSizeChangeCoroutine != null)
+                {
+                    StopCoroutine(confirmScreenSizeChangeCoroutine);
+                }
+
+                confirmScreenSizeChangeCoroutine = StartCoroutine(ConfirmScreenSizeChange(false));
             }
 
             if ((Screen.width <= Screen.height) && (screenOrientation != Settings.ScreenOrientation.Potrait))
             {
-                screenOrientation = Settings.ScreenOrientation.Potrait;
-                UpdateCanvasOrientation();
+                if (confirmScreenSizeChangeCoroutine != null)
+                {
+                    StopCoroutine(confirmScreenSizeChangeCoroutine);
+                }
+
+                confirmScreenSizeChangeCoroutine = StartCoroutine(ConfirmScreenSizeChange(true));
             }
         }
 #endif

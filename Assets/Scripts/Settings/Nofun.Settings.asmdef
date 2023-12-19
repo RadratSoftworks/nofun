@@ -2,8 +2,8 @@
     "name": "Nofun.Settings",
     "rootNamespace": "",
     "references": [
-        "Nofun.Util",
-        "Nofun.Module.Shared"
+        "GUID:447c4b1f37b75c545b021b573e57d664",
+        "GUID:5af15bc9872bbf94f8b4ddf22d4fb972"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

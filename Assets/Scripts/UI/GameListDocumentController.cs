@@ -174,6 +174,11 @@ namespace Nofun.UI
 
         private void InstallGame(string path)
         {
+            if (string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
             using (var executableFile = File.OpenRead(path))
             {
                 try
@@ -262,7 +267,7 @@ namespace Nofun.UI
                 }
             }, (string path) =>
             {
-                if (path != null)
+                if (!string.IsNullOrEmpty(path))
                 {
                     InstallGame(path);
                 }
