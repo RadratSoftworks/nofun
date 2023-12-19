@@ -196,10 +196,11 @@ namespace Nofun
 #if UNITY_EDITOR
             if (immediatelyRun)
             {
-#endif
                 gameStream = new FileStream(targetExecutable, FileMode.Open, FileAccess.ReadWrite,
                     FileShare.Read);
-
+#endif
+                gameListDocumentController.ImmediateHide();
+                launchRequested = true;
                 StartGameImpl(gameStream, targetExecutable);
 #if UNITY_EDITOR
             }

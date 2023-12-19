@@ -12,6 +12,7 @@ namespace Nofun.Services.Unity
         [SerializeField] private UIDocument blockingInteractionDoc;
 
         private ScreenManager screenManager;
+        private bool anyCanvasActivated = false;
 
         public Canvas Canvas => (screenManager.ScreenOrientation == Settings.ScreenOrientation.Potrait) ? canvasPotrait : canvasLandscape;
 
@@ -27,16 +28,18 @@ namespace Nofun.Services.Unity
 
             if (screenOrientation == Settings.ScreenOrientation.Potrait)
             {
-                currentCanvasVisibile = canvasLandscape.gameObject.activeSelf;
+                currentCanvasVisibile = anyCanvasActivated ? canvasLandscape.gameObject.activeSelf : true;
                 canvasPotrait.gameObject.SetActive(currentCanvasVisibile);
                 canvasLandscape.gameObject.SetActive(false);
             }
             else
             {
-                currentCanvasVisibile = canvasPotrait.gameObject.activeSelf;
+                currentCanvasVisibile = anyCanvasActivated ? canvasPotrait.gameObject.activeSelf : true;
                 canvasPotrait.gameObject.SetActive(false);
                 canvasLandscape.gameObject.SetActive(currentCanvasVisibile);
             }
+
+            anyCanvasActivated = true;
         }
 
         private void OnEnable()
@@ -51,7 +54,10 @@ namespace Nofun.Services.Unity
 
         public void SetVisibility(bool isVisible)
         {
-            Canvas.gameObject.SetActive(isVisible);
+            if (Canvas != null)
+            {
+                Canvas.gameObject.SetActive(isVisible);
+            }
         }
 
         public void BlockInterfaceInteraction()
