@@ -66,14 +66,19 @@ namespace Nofun.UI
         {
             base.Awake();
 
-            installButton = document.rootVisualElement.Q<Button>("InstallButton");
-            gameList = document.rootVisualElement.Q<VisualElement>("GameList");
-            searchBar = document.rootVisualElement.Q<TextField>("SearchBar");
             gameDatabase = new GameDatabase(GameDatabasePath);
             dynamicIconsProvider = new DynamicIconsProvider(dynamicIconRendererContainer);
 
             Directory.CreateDirectory(GamePathRoot);
+        }
 
+        private void OnEnable()
+        {
+            layoutService.SetVisibility(false);
+
+            installButton = document.rootVisualElement.Q<Button>("InstallButton");
+            gameList = document.rootVisualElement.Q<VisualElement>("GameList");
+            searchBar = document.rootVisualElement.Q<TextField>("SearchBar");
             installButton.clicked += OnInstallButtonClicked;
             gameDetailsDocumentController.OnGameInfoChoosen += OnGameIconClicked;
             gameDetailsDocumentController.OnGameRemovalRequested += RemoveGame;
@@ -86,19 +91,11 @@ namespace Nofun.UI
             });
         }
 
-        private void OnEnable()
-        {
-            layoutService.SetVisibility(false);
-        }
-
         private void OnDisable()
         {
             layoutService.SetVisibility(true);
             dynamicIconsProvider.Cleanup();
-        }
 
-        private void OnDestroy()
-        {
             installButton.clicked -= OnInstallButtonClicked;
             gameDetailsDocumentController.OnGameInfoChoosen -= OnGameIconClicked;
             gameDetailsDocumentController.OnGameRemovalRequested -= RemoveGame;
@@ -128,7 +125,7 @@ namespace Nofun.UI
                 runner.gameObject.SetActive(true);
                 runner.Launch(gamePath);
 
-                gameObject.SetActive(false);
+                ImmediateHide();
             }
         }
 
@@ -275,6 +272,16 @@ namespace Nofun.UI
             {
                 Debug.Log("Todo: Show error message not granted");
             }
+        }
+
+        public void ImmediateShow()
+        {
+            gameObject.SetActive(true);
+        }
+
+        public void ImmediateHide()
+        {
+            gameObject.SetActive(false);
         }
     }
 }

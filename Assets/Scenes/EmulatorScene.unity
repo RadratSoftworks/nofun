@@ -3666,6 +3666,7 @@ MonoBehaviour:
   uiDriver: {fileID: 838690310}
   settingDocument: {fileID: 1449817111}
   gameDetailsDocument: {fileID: 1098875883}
+  gameListDocumentController: {fileID: 178238050}
   fpsLimit: 60
   executableFilePath: e:\sushi.mpn
 --- !u!4 &1196160919
@@ -5238,7 +5239,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88800a7801f540b08668da3789d39689, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  transitionDuration: 0.5
+  transitionDuration: 0.3
 --- !u!1 &1761973212
 GameObject:
   m_ObjectHideFlags: 0

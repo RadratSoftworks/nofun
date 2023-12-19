@@ -70,6 +70,7 @@ namespace Nofun.UI
         private Button confirmButton;
 
         public event Action Finished;
+        public event Action ExitGameRequested;
 
         public override void Awake()
         {
@@ -96,6 +97,9 @@ namespace Nofun.UI
             Button syncSizeButton = root.Q<Button>("SyncSizeButton");
             Button sourceCodeButton = root.Q<Button>("SourceCodeButton");
 
+            var exitGame = root.Q<Button>("ExitGameButton");
+            exitGame.clicked += DoExitGameAnimation;
+
             confirmButton.clicked += OnOKButtonClicked;
             cancelButton.clicked += OnCancelButtonClicked;
             syncSizeButton.clicked += OnSyncSizeButtonClicked;
@@ -121,7 +125,7 @@ namespace Nofun.UI
             root.Q<Label>("GameLabel").text = gameName;
         }
 
-        public void Show()
+        public void Show(bool showExitGameButton = false)
         {
             Load();
 
@@ -129,6 +133,9 @@ namespace Nofun.UI
 
             root.style.opacity = 0.0f;
             root.style.display = DisplayStyle.Flex;
+
+            VisualElement exitGameButtonGroup = root.Q("ExitGameButtonGroup");
+            exitGameButtonGroup.style.display = showExitGameButton ? DisplayStyle.Flex : DisplayStyle.None;
 
             documentStackManager.Push(this);
         }
@@ -183,6 +190,25 @@ namespace Nofun.UI
             newSetting.fps = int.Parse(fpsField.value);
 
             return settingManager.Set(gameName, newSetting);
+        }
+
+        private void DoExitGameAnimation()
+        {
+            dialogService.Show(
+                Severity.Info,
+                ButtonType.OK,
+                translationService.Translate("Exit_Game_Confirmation"),
+                translationService.Translate("Exit_Game_Confirmation_Details"),
+                value =>
+                {
+                    if (value == 0)
+                    {
+                        documentStackManager.Pop(this, () =>
+                        {
+                            ExitGameRequested?.Invoke();
+                        });
+                    }
+                });
         }
 
         private void DoCloseAnimation(bool saveAgain = false)

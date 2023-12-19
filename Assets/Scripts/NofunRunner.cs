@@ -51,6 +51,7 @@ namespace Nofun
         [Header("UI")]
         [SerializeField] private SettingDocumentController settingDocument;
         [SerializeField] private GameDetailsDocumentController gameDetailsDocument;
+        [SerializeField] private GameListDocumentController gameListDocumentController;
 
         [Header("Settings")]
         [Range(1, 60)][SerializeField] private int fpsLimit = 30;
@@ -91,28 +92,50 @@ namespace Nofun
 
         private void OnDestroy()
         {
+            settingDocument.Finished -= FinishSettingDocument;
+            settingDocument.ExitGameRequested -= HandleExitGame;
+
+            if (system != null)
+            {
+                system.Stop();
+            }
+        }
+
+        private void FinishSettingDocument()
+        {
+            GameSetting? setting = settingManager.Get(system.GameName);
+            if (setting != null)
+            {
+                graphicDriver.FpsLimit = setting.Value.fps;
+
+                if (setting.Value.screenMode != ScreenMode.Fullscreen)
+                {
+                    screenManager.ScreenOrientation = setting.Value.orientation;
+                }
+            }
+
+            settingActive = false;
+            JobScheduler.Paused = false;
+        }
+
+        private IEnumerator ShowGameListDelay()
+        {
+            yield return new WaitForSeconds(0.2f);
+            gameListDocumentController.ImmediateShow();
+        }
+
+        private void HandleExitGame()
+        {
+            settingActive = false;
+            JobScheduler.Paused = false;
+
             system.Stop();
+            StartCoroutine(ShowGameListDelay());
         }
 
         private void OpenGameSetting()
         {
-            settingDocument.Show();
-            settingDocument.Finished += () =>
-            {
-                GameSetting? setting = settingManager.Get(system.GameName);
-                if (setting != null)
-                {
-                    graphicDriver.FpsLimit = setting.Value.fps;
-
-                    if (setting.Value.screenMode != ScreenMode.Fullscreen)
-                    {
-                        screenManager.ScreenOrientation = setting.Value.orientation;
-                    }
-                }
-
-                settingActive = false;
-                JobScheduler.Paused = false;
-            };
+            settingDocument.Show(showExitGameButton: true);
 
             settingActive = true;
             JobScheduler.Paused = true;
@@ -125,26 +148,17 @@ namespace Nofun
 
         private void Awake()
         {
+            Application.targetFrameRate = 60;
+            SetupLogger();
+
             settingManager = new(Application.persistentDataPath);
             timeDriver = new TimeDriver();
 
             gameDetailsDocument.Setup(settingManager);
         }
 
-        public void Launch(string gamePath)
+        private void Start()
         {
-            executableFilePath = gamePath;
-            launchRequested = true;
-
-            StartGameImpl();
-        }
-
-        public void StartGameImpl()
-        {
-            Application.targetFrameRate = 60;
-
-            SetupLogger();
-
             Stream gameStream = null;
 
 #if UNITY_EDITOR
@@ -159,13 +173,8 @@ namespace Nofun
             {
                 gameStream = new MophunAndroidFileStream();
             }
-            catch (System.Exception ex)
+            catch (System.Exception _)
             {
-                NofunMessageBoxController.Show(messageBoxPrefab, Driver.UI.Severity.Info, Driver.UI.ButtonType.OK,
-                    null, "Please open the .mpn file in a file explorer for now!", value => Application.Quit());
-
-                failed = true;
-
                 return;
             }
 #else
@@ -175,26 +184,32 @@ namespace Nofun
             {
                 targetExecutable = cmdLines[1];
             }
+            else
+            {
+                return;
+            }
 #endif
 #endif
 
 #if UNITY_EDITOR || !UNITY_ANDROID
-            if (targetExecutable == null)
-            {
-                dialogService.Show(Severity.Info, ButtonType.OK,
-                    null,
-                    translationService.Translate("Request_DragGameFileToEmulator"),
-                    value => Application.Quit());
-
-                failed = true;
-
-                return;
-            }
-
             gameStream = new FileStream(targetExecutable, FileMode.Open, FileAccess.ReadWrite,
                 FileShare.Read);
 #endif
 
+            StartGameImpl(gameStream, targetExecutable);
+        }
+
+        public void Launch(string gamePath)
+        {
+            executableFilePath = gamePath;
+            launchRequested = true;
+
+            FileStream stream = new FileStream(gamePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+            StartGameImpl(stream, gamePath);
+        }
+
+        public void StartGameImpl(Stream gameStream, string targetExecutable)
+        {
             try
             {
                 executable = new VMGPExecutable(gameStream);
@@ -215,6 +230,9 @@ namespace Nofun
 
             settingDocument.Setup(settingManager, system.GameName);
 
+            settingDocument.Finished += FinishSettingDocument;
+            settingDocument.ExitGameRequested += HandleExitGame;
+
             if (settingManager.Get(system.GameName) == null)
             {
                 OpenGameSetting();
@@ -226,6 +244,12 @@ namespace Nofun
                 {
                     system.Run();
                 }
+
+                system = null;
+                started = false;
+                failed = false;
+
+                GC.Collect();
             }));
 
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
@@ -271,13 +295,10 @@ namespace Nofun
 
             if (!started)
             {
+                launchRequested = false;
+
                 StartCoroutine(InitializeGameRun());
                 started = true;
-            }
-
-            if (system.ShouldStop)
-            {
-                Application.Quit();
             }
 
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR

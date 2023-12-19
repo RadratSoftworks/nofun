@@ -63,9 +63,15 @@
                 </Bindings>
             </ui:GroupBox>
         </ui:ScrollView>
-        <ui:VisualElement name="SettingButtons">
-            <ui:Button text="Cancel" display-tooltip-when-elided="true" name="CancelButton" />
-            <ui:Button text="Confirm" display-tooltip-when-elided="true" name="ConfirmButton" />
+        <ui:VisualElement name="SettingButtons" style="flex-grow: 0; flex-basis: 3%; flex-shrink: 0;">
+            <ui:VisualElement name="ExitGameButtonGroup" style="flex-grow: 1; flex-direction: row; flex-shrink: 1;">
+                <ui:Button text="Exit game" display-tooltip-when-elided="true" name="ExitGameButton" style="flex-shrink: 1; flex-grow: 1; flex-direction: row;" />
+                <ui:VisualElement style="flex-grow: 1; flex-direction: row;" />
+            </ui:VisualElement>
+            <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+                <ui:Button text="Cancel" display-tooltip-when-elided="true" name="CancelButton" style="flex-shrink: 1; flex-grow: 1;" />
+                <ui:Button text="Confirm" display-tooltip-when-elided="true" name="ConfirmButton" style="flex-shrink: 1; flex-grow: 1;" />
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
