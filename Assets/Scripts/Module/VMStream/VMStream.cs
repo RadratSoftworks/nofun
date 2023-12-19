@@ -22,7 +22,7 @@ using System;
 namespace Nofun.Module.VMStream
 {
     [Module]
-    public partial class VMStream
+    public partial class VMStream : IDisposable
     {
         private VMSystem system;
         private SimpleObjectManager<IVMHostStream> streams;
@@ -129,6 +129,14 @@ namespace Nofun.Module.VMStream
             {
                 stream.OnClose();
                 streams.Remove(handle);
+            }
+        }
+
+        public void Dispose()
+        {
+            foreach (var stream in streams)
+            {
+                stream.OnClose();
             }
         }
     };

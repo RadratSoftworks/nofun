@@ -45,6 +45,7 @@ namespace Nofun.Parser
         private List<VMGPPoolItem> poolItems;
 
         private List<VMGPResourceInfo> resourceInfos;
+        private Stream fileStreamReference;
 
         public VMGPExecutable(Stream fileStream)
         {
@@ -97,6 +98,7 @@ namespace Nofun.Parser
         {
             reader = new BinaryReader(fileStream);
             header = new VMGPHeader(reader);
+            fileStreamReference = fileStream;
         }
 
         public void GetCodeSection(Span<byte> codeSection)
@@ -132,9 +134,10 @@ namespace Nofun.Parser
             reader.Read(data);
         }
 
-        void IDisposable.Dispose()
+        public void Dispose()
         {
             reader.Dispose();
+            fileStreamReference.Close();
         }
 
         public VMGPHeader Header => header;

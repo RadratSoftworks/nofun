@@ -56,6 +56,7 @@ namespace Nofun
         [Header("Settings")]
         [Range(1, 60)][SerializeField] private int fpsLimit = 30;
         [SerializeField] private string executableFilePath = "E:\\spacebox.mpn";
+        [SerializeField] private bool immediatelyRun = false;
 
         private VMGPExecutable executable;
         private VMSystem system;
@@ -192,11 +193,18 @@ namespace Nofun
 #endif
 
 #if UNITY_EDITOR || !UNITY_ANDROID
-            gameStream = new FileStream(targetExecutable, FileMode.Open, FileAccess.ReadWrite,
-                FileShare.Read);
+#if UNITY_EDITOR
+            if (immediatelyRun)
+            {
 #endif
+                gameStream = new FileStream(targetExecutable, FileMode.Open, FileAccess.ReadWrite,
+                    FileShare.Read);
 
-            StartGameImpl(gameStream, targetExecutable);
+                StartGameImpl(gameStream, targetExecutable);
+#if UNITY_EDITOR
+            }
+#endif
+#endif
         }
 
         public void Launch(string gamePath)
@@ -206,6 +214,21 @@ namespace Nofun
 
             FileStream stream = new FileStream(gamePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
             StartGameImpl(stream, gamePath);
+        }
+
+        private void Reset()
+        {
+            system.Dispose();
+
+            system = null;
+            started = false;
+            failed = false;
+            launchRequested = false;
+
+            executable.Dispose();
+            executable = null;
+
+            GC.Collect();
         }
 
         public void StartGameImpl(Stream gameStream, string targetExecutable)
@@ -245,11 +268,7 @@ namespace Nofun
                     system.Run();
                 }
 
-                system = null;
-                started = false;
-                failed = false;
-
-                GC.Collect();
+                Reset();
             }));
 
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
@@ -295,8 +314,6 @@ namespace Nofun
 
             if (!started)
             {
-                launchRequested = false;
-
                 StartCoroutine(InitializeGameRun());
                 started = true;
             }

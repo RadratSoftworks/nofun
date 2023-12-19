@@ -16,11 +16,13 @@
 
 using Nofun.Util;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Nofun.Module
 {
-    public class SimpleObjectManager<T> where T : class
+    public class SimpleObjectManager<T>: IEnumerable<T> where T : class
     {
         private Dictionary<int, T> objects;
         private int nextFd;
@@ -64,7 +66,7 @@ namespace Nofun.Module
             if (objects.ContainsKey(handle))
             {
                 T obj = objects[handle];
-                
+
                 if (obj is IDisposable)
                 {
                     (obj as IDisposable).Dispose();
@@ -97,6 +99,22 @@ namespace Nofun.Module
             objects.Add(handleToUse, value);
 
             return handleToUse++;
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            foreach (var i in objects.Values)
+            {
+                if (i != null)
+                {
+                    yield return i;
+                }
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

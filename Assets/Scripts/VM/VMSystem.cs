@@ -30,7 +30,7 @@ using Nofun.Settings;
 
 namespace Nofun.VM
 {
-    public partial class VMSystem
+    public partial class VMSystem : IDisposable
     {
         private const uint ProgramStartOffset = VMMemory.DataAlignment;
         private const int InstructionPerRun = 10000;
@@ -228,6 +228,13 @@ namespace Nofun.VM
 
             inputDriver.EndFrame();
             graphicDriver.EndFrame();
+        }
+
+        public void Dispose()
+        {
+            VSoundModule.Dispose();
+            VMusicModule.Dispose();
+            VMStreamModule.Dispose();
         }
 
         public bool ShouldStop => shouldStop;
