@@ -3668,7 +3668,8 @@ MonoBehaviour:
   gameDetailsDocument: {fileID: 1098875883}
   gameListDocumentController: {fileID: 178238050}
   fpsLimit: 60
-  executableFilePath: e:\sushi.mpn
+  executableFilePath: D:\Games\Mophun_Archive_2.1\Games_S60_PPC\Carmageddon 3D\CarmegeddonMobile3D_[v1.2]_[multiscreen]_red_blood_decrypted_decompressed.mpn
+  immediatelyRun: 0
 --- !u!4 &1196160919
 Transform:
   m_ObjectHideFlags: 0

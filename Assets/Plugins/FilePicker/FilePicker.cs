@@ -20,6 +20,8 @@ using System.Linq;
 
 #if UNITY_ANDROID
 using UnityEngine;
+#elif UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX
+using Nofun.Plugins.Private;
 #endif
 
 namespace Nofun.Plugins

@@ -134,6 +134,30 @@ MonoBehaviour:
     m_Localized: Search
     m_Metadata:
       m_Items: []
+  - m_Id: 2083077693104128
+    m_Localized: Exit game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075648
+    m_Localized: Are you sure you want to exit the game?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075649
+    m_Localized: Yes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075650
+    m_Localized: No
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075651
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075652
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

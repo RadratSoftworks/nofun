@@ -18,6 +18,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
+using ScreenOrientation = Nofun.Settings.ScreenOrientation;
 
 namespace Nofun
 {
@@ -45,6 +46,7 @@ namespace Nofun
 
         public event System.Action<Settings.ScreenOrientation> ScreenOrientationChanged;
         private Coroutine confirmScreenSizeChangeCoroutine;
+        private bool isConfirmingPotrait = false;
 
         public Settings.ScreenOrientation ScreenOrientation
         {
@@ -103,14 +105,16 @@ namespace Nofun
 
         private IEnumerator ConfirmScreenSizeChange(bool isConfirmingPotrait)
         {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 2; i++)
             {
                 if (isConfirmingPotrait && (Screen.width > Screen.height))
                 {
+                    confirmScreenSizeChangeCoroutine = null;
                     yield break;
                 }
                 else if (!isConfirmingPotrait && (Screen.width <= Screen.height))
                 {
+                    confirmScreenSizeChangeCoroutine = null;
                     yield break;
                 }
                 else
@@ -119,7 +123,9 @@ namespace Nofun
                 }
             }
 
-            screenOrientation = Settings.ScreenOrientation.Landscape;
+            screenOrientation = isConfirmingPotrait ? ScreenOrientation.Potrait : ScreenOrientation.Landscape;
+            confirmScreenSizeChangeCoroutine = null;
+
             UpdateCanvasOrientation();
         }
 
@@ -130,20 +136,32 @@ namespace Nofun
             {
                 if (confirmScreenSizeChangeCoroutine != null)
                 {
+                    if (!isConfirmingPotrait)
+                    {
+                        return;
+                    }
+
                     StopCoroutine(confirmScreenSizeChangeCoroutine);
                 }
 
                 confirmScreenSizeChangeCoroutine = StartCoroutine(ConfirmScreenSizeChange(false));
+                isConfirmingPotrait = false;
             }
 
             if ((Screen.width <= Screen.height) && (screenOrientation != Settings.ScreenOrientation.Potrait))
             {
                 if (confirmScreenSizeChangeCoroutine != null)
                 {
+                    if (isConfirmingPotrait)
+                    {
+                        return;
+                    }
+
                     StopCoroutine(confirmScreenSizeChangeCoroutine);
                 }
 
                 confirmScreenSizeChangeCoroutine = StartCoroutine(ConfirmScreenSizeChange(true));
+                isConfirmingPotrait = true;
             }
         }
 #endif

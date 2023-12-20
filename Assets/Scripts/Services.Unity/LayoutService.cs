@@ -13,6 +13,7 @@ namespace Nofun.Services.Unity
 
         private ScreenManager screenManager;
         private bool anyCanvasActivated = false;
+        private bool? pendingRequestVisible = null;
 
         public Canvas Canvas => (screenManager.ScreenOrientation == Settings.ScreenOrientation.Potrait) ? canvasPotrait : canvasLandscape;
 
@@ -28,18 +29,19 @@ namespace Nofun.Services.Unity
 
             if (screenOrientation == Settings.ScreenOrientation.Potrait)
             {
-                currentCanvasVisibile = anyCanvasActivated ? canvasLandscape.gameObject.activeSelf : true;
+                currentCanvasVisibile = pendingRequestVisible ?? (anyCanvasActivated ? canvasLandscape.gameObject.activeSelf : true);
                 canvasPotrait.gameObject.SetActive(currentCanvasVisibile);
                 canvasLandscape.gameObject.SetActive(false);
             }
             else
             {
-                currentCanvasVisibile = anyCanvasActivated ? canvasPotrait.gameObject.activeSelf : true;
+                currentCanvasVisibile = pendingRequestVisible ?? (anyCanvasActivated ? canvasPotrait.gameObject.activeSelf : true);
                 canvasPotrait.gameObject.SetActive(false);
                 canvasLandscape.gameObject.SetActive(currentCanvasVisibile);
             }
 
             anyCanvasActivated = true;
+            pendingRequestVisible = null;
         }
 
         private void OnEnable()
@@ -54,9 +56,13 @@ namespace Nofun.Services.Unity
 
         public void SetVisibility(bool isVisible)
         {
+            if (!anyCanvasActivated)
+            {
+                pendingRequestVisible = isVisible;
+            }
+
             if (Canvas != null)
             {
-                anyCanvasActivated = true;
                 Canvas.gameObject.SetActive(isVisible);
             }
         }

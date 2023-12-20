@@ -196,7 +196,7 @@ namespace Nofun.UI
         {
             dialogService.Show(
                 Severity.Info,
-                ButtonType.OK,
+                ButtonType.YesNo,
                 translationService.Translate("Exit_Game_Confirmation"),
                 translationService.Translate("Exit_Game_Confirmation_Details"),
                 value =>

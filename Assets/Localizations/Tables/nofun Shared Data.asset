@@ -127,6 +127,30 @@ MonoBehaviour:
     m_Key: GameList_Search
     m_Metadata:
       m_Items: []
+  - m_Id: 2083077693104128
+    m_Key: Exit_Game_Confirmation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075648
+    m_Key: Exit_Game_Confirmation_Details
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075649
+    m_Key: Yes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075650
+    m_Key: No
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075651
+    m_Key: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075652
+    m_Key: OK
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

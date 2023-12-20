@@ -21,6 +21,7 @@ using System;
 using Nofun.Driver.UI;
 using DG.Tweening;
 using Nofun.Services;
+using VContainer;
 
 namespace Nofun.UI
 {
@@ -28,6 +29,8 @@ namespace Nofun.UI
     {
         [SerializeField]
         private float popInOutDuration = 0.7f;
+
+        [Inject] private ITranslationService translationService;
 
         private Button leftButton;
         private Button rightButton;
@@ -140,7 +143,7 @@ namespace Nofun.UI
                         leftButton.style.display = DisplayStyle.None;
                         rightButton.style.display = DisplayStyle.Flex;
 
-                        rightButton.text = "OK";
+                        rightButton.text = translationService.Translate("OK");
                         break;
                     }
 
@@ -150,8 +153,8 @@ namespace Nofun.UI
                         leftButton.style.display = DisplayStyle.Flex;
                         rightButton.style.display = DisplayStyle.Flex;
 
-                        leftButton.text = "Cancel";
-                        rightButton.text = "OK";
+                        leftButton.text = translationService.Translate("Cancel");
+                        rightButton.text = translationService.Translate("OK");
                         break;
                     }
 
@@ -161,8 +164,8 @@ namespace Nofun.UI
                         leftButton.style.display = DisplayStyle.Flex;
                         rightButton.style.display = DisplayStyle.Flex;
 
-                        leftButton.text = "No";
-                        rightButton.text = "Yes";
+                        leftButton.text = translationService.Translate("No");
+                        rightButton.text = translationService.Translate("Yes");
                         break;
                     }
 
@@ -172,8 +175,8 @@ namespace Nofun.UI
                         leftButton.style.display = DisplayStyle.Flex;
                         rightButton.style.display = DisplayStyle.Flex;
 
-                        leftButton.text = "Cancel";
-                        rightButton.text = "Yes";
+                        leftButton.text = translationService.Translate("Cancel");
+                        rightButton.text = translationService.Translate("Yes");
                         break;
                     }
 
