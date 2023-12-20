@@ -221,6 +221,12 @@ $@"
             }
 
             ModuleSyntaxReceiver receiver = (ModuleSyntaxReceiver)context.SyntaxReceiver;
+            
+            // Skip if no modules (for asmdef hacks)
+            if (receiver.moduleCalls.Count == 0)
+            {
+                return;
+            }
 
             foreach (var module in receiver.moduleCalls)
             {

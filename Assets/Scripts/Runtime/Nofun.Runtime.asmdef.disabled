@@ -1,0 +1,17 @@
+{
+    "name": "Nofun.Runtime",
+    "rootNamespace": "",
+    "references": [
+        "GUID:447c4b1f37b75c545b021b573e57d664",
+        "GUID:30dc250414ddb5c4ab93d12d886a43aa"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

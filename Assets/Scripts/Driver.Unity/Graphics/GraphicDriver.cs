@@ -25,8 +25,9 @@ using UnityEngine.UI;
 using UnityEngine.Rendering;
 using Nofun.Module.VMGP3D;
 using System.Linq;
-using Unity.VisualScripting;
 using System.Collections;
+using Nofun.Services;
+using VContainer;
 
 namespace Nofun.Driver.Unity.Graphics
 {
@@ -63,8 +64,10 @@ namespace Nofun.Driver.Unity.Graphics
         private const string Render3DTransparentTestUniformName = "_TransparentTest";
 
         private const string ZClearValueUniformName = "_ClearValue";
-
         private const int TMPSpawnPerAlloc = 5;
+
+        private ScreenManager screenManager;
+        private ILayoutService layoutService;
 
         private RenderTexture screenTextureBackBuffer;
 
@@ -154,6 +157,36 @@ namespace Nofun.Driver.Unity.Graphics
         private float[] lightTypes;
         private int lightCount;
         private bool billboarding = false;
+
+        [Inject]
+        public void Construct(ScreenManager injectScreenManager, ILayoutService injectLayoutService)
+        {
+            screenManager = injectScreenManager;
+            layoutService = injectLayoutService;
+        }
+
+        private void Awake()
+        {
+            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
+        }
+
+        private void OnDestroy()
+        {
+            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+        }
+
+        private void OnBeginCameraRendering(ScriptableRenderContext renderContext, Camera camera)
+        {
+            if (camera == mophunCamera)
+            {
+                commandBuffer.SetRenderTarget(camera.targetTexture);
+
+                renderContext.ExecuteCommandBuffer(commandBuffer);
+                CommandBufferPool.Release(commandBuffer);
+
+                commandBuffer = null;
+            }
+        }
 
         private Tuple<Mesh, int> GetPushedSubMesh(Func<BufferPusher, int> pushAction)
         {
@@ -430,7 +463,7 @@ namespace Nofun.Driver.Unity.Graphics
         {
             yield return null;
 
-            RawImage displayImage = ScreenManager.Instance.CurrentDisplay;
+            RawImage displayImage = screenManager.CurrentDisplay;
             RectTransform imageTransform = displayImage.GetComponent<RectTransform>();
 
             if (displayImage.texture != screenTextureBackBuffer)
@@ -438,8 +471,8 @@ namespace Nofun.Driver.Unity.Graphics
                 displayImage.texture = screenTextureBackBuffer;
                 if (!fullscreen)
                 {
-                    AspectRatioFitter fitter = displayImage.AddComponent<AspectRatioFitter>();
-                    PrepareNonFullscreenFitDisplay(imageTransform, fitter, screenSize, ScreenManager.Instance.ScreenOrientation);
+                    AspectRatioFitter fitter = displayImage.gameObject.AddComponent<AspectRatioFitter>();
+                    PrepareNonFullscreenFitDisplay(imageTransform, fitter, screenSize, screenManager.ScreenOrientation);
                 }
                 else
                 {
@@ -461,10 +494,10 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void Initialize(Vector2 size, bool softwareScissor = false)
         {
-            ScreenManager.Instance.ScreenOrientationChanged += OnOrientationChanged;
+            screenManager.ScreenOrientationChanged += OnOrientationChanged;
 
-            RawImage displayImage = ScreenManager.Instance.CurrentDisplay;
-            Canvas canvas = ScreenManager.Instance.CurrentCanvas;
+            RawImage displayImage = screenManager.CurrentDisplay;
+            Canvas canvas = layoutService.Canvas;
 
             RectTransform transform = displayImage.GetComponent<RectTransform>();
 
@@ -489,7 +522,7 @@ namespace Nofun.Driver.Unity.Graphics
                 // May take few more frames, but don't risk it
                 if (Application.isMobilePlatform)
                 {
-                    if (ScreenManager.Instance.ScreenOrientation != Settings.ScreenOrientation.Potrait)
+                    if (screenManager.ScreenOrientation != Settings.ScreenOrientation.Potrait)
                     {
                         size = new Vector2(size.y, size.x);
                     }
@@ -503,8 +536,8 @@ namespace Nofun.Driver.Unity.Graphics
 
             if (!fullscreen)
             {
-                AspectRatioFitter fitter = displayImage.AddComponent<AspectRatioFitter>();
-                PrepareNonFullscreenFitDisplay(transform, fitter, size, ScreenManager.Instance.ScreenOrientation);
+                AspectRatioFitter fitter = displayImage.gameObject.AddComponent<AspectRatioFitter>();
+                PrepareNonFullscreenFitDisplay(transform, fitter, size, screenManager.ScreenOrientation);
             }
 
             displayImage.texture = screenTextureBackBuffer;
@@ -676,24 +709,14 @@ namespace Nofun.Driver.Unity.Graphics
 
             if (commandBuffer == null)
             {
-                commandBuffer = new CommandBuffer();
-                commandBuffer.name = "Mophun render buffer";
-            }
-
-            if (mophunCamera.renderingPath == RenderingPath.DeferredShading)
-            {
-                mophunCamera.RemoveCommandBuffer(CameraEvent.AfterGBuffer, commandBuffer);
-            }
-            else
-            {
-                mophunCamera.RemoveCommandBuffer(CameraEvent.AfterForwardOpaque, commandBuffer);
+                commandBuffer = CommandBufferPool.Get("Mophun render buffer");
             }
 
             commandBuffer.Clear();
 
             commandBuffer.SetRenderTarget(screenTextureBackBuffer);
             commandBuffer.SetViewport(GetUnityScreenRect(serverSideState.viewportRect));
-            
+
             began = true;
             in3DMode = !mode2D;
 
@@ -864,7 +887,7 @@ namespace Nofun.Driver.Unity.Graphics
         {
             DateTime currentTime = DateTime.Now;
 
-#region Calculate FPS
+            #region Calculate FPS
             currentFps++;
 
             if ((previousTime == null) || ((currentTime - previousTime).TotalSeconds > 1.0f))
@@ -874,7 +897,7 @@ namespace Nofun.Driver.Unity.Graphics
 
                 previousTime = currentTime;
             }
-#endregion
+            #endregion
 
             FlushBatch();
 
@@ -888,14 +911,7 @@ namespace Nofun.Driver.Unity.Graphics
             {
                 if (began)
                 {
-                    if (mophunCamera.renderingPath == RenderingPath.DeferredShading)
-                    {
-                        mophunCamera.AddCommandBuffer(CameraEvent.AfterGBuffer, commandBuffer);
-                    }
-                    else
-                    {
-                        mophunCamera.AddCommandBuffer(CameraEvent.AfterForwardOpaque, commandBuffer);
-                    }
+                    mophunCamera.Render();
 
                     fontMeshUsed = 0;
                     meshBatcher.Reset();
@@ -1141,7 +1157,7 @@ namespace Nofun.Driver.Unity.Graphics
                                 lightCount++;
                             }
                         }
-                        
+
                         rebuildLightParams = false;
                     }
 
@@ -1229,7 +1245,7 @@ namespace Nofun.Driver.Unity.Graphics
             };
 
             // Need to flip the center, the 3D here is normal, no need to flip Y like 2D (DrawRectBoard is designed for drawing 2d texture)
-            DrawRectBoardGeneral(destRect, uvs, center.x, -center.y, FixedUtil.Fixed11PointToFloat(billboard.rotation) * VMGP3D.FullCircleDegrees, colors, z: posMoved.z);
+            DrawRectBoardGeneral(destRect, uvs, center.x, -center.y, FixedUtil.Fixed11PointToFloat(billboard.rotation) * MathUtil.FullCircleDegrees, colors, z: posMoved.z);
             Cull = previousCull;
         }
 
@@ -1255,7 +1271,7 @@ namespace Nofun.Driver.Unity.Graphics
                 });
             }
         }
-        
+
         public void ClearLights()
         {
             bool clearedYet = true;
@@ -1567,7 +1583,7 @@ namespace Nofun.Driver.Unity.Graphics
                 {
                     clientSideState.specular = value;
                     HandleFixedStateChangedClient();
-                    
+
                     JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.specular = value;
@@ -1585,7 +1601,7 @@ namespace Nofun.Driver.Unity.Graphics
                 {
                     clientSideState.transparentTest = value;
                     HandleFixedStateChangedClient();
-                    
+
                     JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.transparentTest = value;
@@ -1603,7 +1619,7 @@ namespace Nofun.Driver.Unity.Graphics
                 {
                     clientSideState.fog = value;
                     HandleFixedStateChangedClient();
-                    
+
                     JobScheduler.Instance.PostponeToUnityThread(() =>
                     {
                         serverSideState.fog = value;
@@ -1647,7 +1663,7 @@ namespace Nofun.Driver.Unity.Graphics
                 }
             }
         }
-        
+
         public NativeVector3D CameraPosition
         {
             get => clientSideState.cameraPosition.ToMophun();
@@ -1668,5 +1684,5 @@ namespace Nofun.Driver.Unity.Graphics
         }
 
         public int MaxLights => ClientState.MaximumLight;
-    } 
+    }
 }

@@ -1,0 +1,22 @@
+{
+    "name": "Nofun.Driver",
+    "rootNamespace": "",
+    "references": [
+        "GUID:447c4b1f37b75c545b021b573e57d664",
+        "GUID:5af15bc9872bbf94f8b4ddf22d4fb972",
+        "GUID:4f441eaa17d635d4bb6259ee283d2058"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "NoAlloq.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

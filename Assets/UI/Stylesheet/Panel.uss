@@ -8,3 +8,13 @@
 {
     color: black;
 }
+
+.unity-base-field__input > .unity-text-element
+{
+    color: black
+}
+
+.filter-root
+{
+    background-color: rgba(80, 80, 80, 0.6)
+}

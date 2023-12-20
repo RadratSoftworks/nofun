@@ -1,0 +1,16 @@
+{
+    "name": "Nofun.Parser",
+    "rootNamespace": "",
+    "references": [
+        "GUID:447c4b1f37b75c545b021b573e57d664"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

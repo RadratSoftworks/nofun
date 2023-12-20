@@ -23,7 +23,7 @@ using System.Runtime.InteropServices;
 namespace Nofun.Module.VSound
 {
     [Module]
-    public partial class VSound
+    public partial class VSound : IDisposable
     {
         private const int SND_OK = 0;
         private const int SND_ERR = -1;
@@ -64,7 +64,7 @@ namespace Nofun.Module.VSound
                     soundHeader[0].bitsPerSample, soundHeader[0].format == (uint)NativeVSndFormat.ADPCM);
 
                 return soundManager.Add(soundFromDriver);
-            } 
+            }
             catch (Exception ex)
             {
                 Logger.Error(LogClass.VMGPSound, $"Error while creating PCM sound object: {ex}");
@@ -159,6 +159,14 @@ namespace Nofun.Module.VSound
             }
 
             return SND_OK;
+        }
+
+        public void Dispose()
+        {
+            foreach (var sound in soundManager)
+            {
+                sound.Stop();
+            }
         }
     }
 }

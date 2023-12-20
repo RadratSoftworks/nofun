@@ -30,8 +30,6 @@ namespace Nofun.Module.VMGP3D
     {
         private const int MatrixOrientationRowMajor = 0;
         private const int MatrixOrientationColumnMajor = 0x2000;
-        public const int FullCircleDegrees = 360;
-        public const double FullCircleRads = Math.PI * 2;
 
         private int currentMatrixOrientation = MatrixOrientationColumnMajor;
 
@@ -188,26 +186,26 @@ namespace Nofun.Module.VMGP3D
         [ModuleCall]
         private void vMatrixRotateX(short d)
         {
-            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * FullCircleDegrees, Vector3.right));
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * MathUtil.FullCircleDegrees, Vector3.right));
         }
 
         [ModuleCall]
         private void vMatrixRotateY(short d)
         {
-            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * FullCircleDegrees, Vector3.up));
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * MathUtil.FullCircleDegrees, Vector3.up));
         }
 
         [ModuleCall]
         private void vMatrixRotateZ(short d)
         {
-            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * FullCircleDegrees, Vector3.forward));
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * MathUtil.FullCircleDegrees, Vector3.forward));
         }
-        
+
         [ModuleCall]
         private void vMatrixRotateVector(VMPtr<NativeVector3D> axisPtr, short d)
         {
             NativeVector3D axis = axisPtr.Read(system.Memory);
-            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * FullCircleDegrees, -axis.ToUnity()));
+            currentMatrix *= Matrix4x4.Rotate(Quaternion.AngleAxis(FixedUtil.Fixed11PointToFloat(d) * MathUtil.FullCircleDegrees, -axis.ToUnity()));
         }
 
         [ModuleCall]

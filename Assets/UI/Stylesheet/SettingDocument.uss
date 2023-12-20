@@ -1,7 +1,7 @@
 #Root2
 {
     padding: 20px;
-    background-color: rgba(85, 85, 85, 0.8);
+    background-color: rgba(85, 85, 85, 0.9);
 }
 
 .unity-base-dropdown
@@ -18,7 +18,7 @@
 #GameLabel
 {
     font-size: 48px;
-    font-style: bold;
+    -unity-font-style: bold;
     -unity-text-align: middle-center;
     margin-bottom: 10px;
 }
@@ -50,7 +50,7 @@
 .unity-group-box > .unity-group-box__label
 {
     font-size: 36px;
-    font-style: bold;
+    -unity-font-style: bold;
 }
 
 #SettingView > .unity-group-box

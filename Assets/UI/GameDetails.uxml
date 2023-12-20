@@ -1,0 +1,27 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/Stylesheet/GameDetails.uss?fileID=7433441132597879392&amp;guid=8c4152cd88344156bde3cb7db1875f5d&amp;type=3#GameDetails" />
+    <Style src="project://database/Assets/UI/Stylesheet/Panel.uss?fileID=7433441132597879392&amp;guid=18de9ee0a1f69514f81ff93f1676a13c&amp;type=3#Panel" />
+    <ui:VisualElement name="Container" class="filter-root" style="flex-grow: 1; align-items: stretch; justify-content: flex-end;">
+        <ui:VisualElement name="Root" class="game-details-root" style="flex-grow: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 60px; padding-right: 40px; padding-bottom: 80px; padding-left: 40px; border-top-left-radius: 30px; border-top-right-radius: 30px; align-content: flex-end; align-self: auto; flex-shrink: 0;">
+            <ui:VisualElement name="GameInfo" style="flex-grow: 0; flex-shrink: 0; flex-direction: row;">
+                <ui:VisualElement style="flex-grow: 0; justify-content: flex-start; align-items: center; flex-shrink: 0;">
+                    <ui:VisualElement name="GameIcon" style="flex-grow: 0; width: 0; height: 100%; flex-shrink: 0; justify-content: center; align-items: center;" />
+                </ui:VisualElement>
+                <ui:VisualElement style="flex-grow: 4; flex-shrink: 4; margin-left: 4%; margin-right: 4%;">
+                    <ui:Label text="The Legend of Testing" name="GameName" style="font-size: 50px; height: 71px;" />
+                    <ui:Label text="Vendor" name="GameVendor" style="font-size: 30px; margin-top: 4px; margin-right: 4px; margin-bottom: 4px; margin-left: 4px;" />
+                    <ui:Label text="Label" name="GameVersion" style="font-size: 30px;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="GameOptions" style="flex-grow: 0; justify-content: flex-start; flex-direction: row; flex-basis: auto; flex-shrink: 0; margin-top: 10%;">
+                <ui:Button text="&#10;" name="GameStartButton" style="border-top-left-radius: 24px; border-top-right-radius: 24px; border-bottom-right-radius: 24px; border-bottom-left-radius: 24px; height: auto; -unity-font-definition: url(&apos;project://database/Assets/UI/Fonts/Font%20Awesome%206%20Free-Solid-900%20SDF.asset?fileID=11400000&amp;guid=475a64ab75841af4bad6ebd0d2a33d81&amp;type=2#Font Awesome 6 Free-Solid-900 SDF&apos;); font-size: 32px; flex-direction: row; justify-content: center; flex-shrink: 1; flex-grow: 1; padding-top: 2px; padding-bottom: 2px; margin-right: 12px;">
+                    <ui:Label text="\uf04b" style="-unity-font-definition: url(&apos;project://database/Assets/UI/Fonts/Font%20Awesome%206%20Free-Solid-900%20SDF.asset?fileID=11400000&amp;guid=475a64ab75841af4bad6ebd0d2a33d81&amp;type=2#Font Awesome 6 Free-Solid-900 SDF&apos;); color: rgb(0, 0, 0); font-size: 60px; padding-right: 5px; padding-left: 5px; margin-right: 10px; margin-bottom: 0; margin-left: 10px; margin-top: 0; padding-top: 0; padding-bottom: 0;" />
+                    <ui:Label text="Play" name="PlayLabel" style="-unity-font-definition: url(&apos;project://database/Assets/TextMesh%20Pro/Fonts/LiberationSans.ttf?fileID=12800000&amp;guid=e3265ab4bf004d28a9537516768c1c75&amp;type=3#LiberationSans&apos;); font-size: 40px; color: rgb(0, 0, 0); margin-left: 8px;" />
+                </ui:Button>
+                <ui:Button text="\uf08d" name="PinToScreenButton" style="flex-shrink: 0; flex-grow: 0; border-top-left-radius: 100px; border-top-right-radius: 100px; border-bottom-right-radius: 100px; border-bottom-left-radius: 100px; -unity-font-definition: url(&apos;project://database/Assets/UI/Fonts/Font%20Awesome%206%20Free-Solid-900.otf?fileID=12800000&amp;guid=4e6074b9bb43b304b85f72e83a86048e&amp;type=3#Font Awesome 6 Free-Solid-900&apos;); font-size: 60px; margin-left: 12px; margin-right: 12px; width: auto; padding-left: 30px; padding-top: 10px; padding-right: 30px; padding-bottom: 10px;" />
+                <ui:Button text="\uf013" name="SettingsButton" style="flex-shrink: 0; flex-grow: 0; border-top-left-radius: 100px; border-top-right-radius: 100px; border-bottom-right-radius: 100px; border-bottom-left-radius: 100px; -unity-font-definition: url(&apos;project://database/Assets/UI/Fonts/Font%20Awesome%206%20Free-Solid-900.otf?fileID=12800000&amp;guid=4e6074b9bb43b304b85f72e83a86048e&amp;type=3#Font Awesome 6 Free-Solid-900&apos;); font-size: 60px; margin-left: 12px; margin-right: 12px; width: auto; padding-left: 24px; padding-top: 24px; padding-right: 24px; padding-bottom: 24px;" />
+                <ui:Button text="\uf1f8" name="RemoveButton" style="flex-shrink: 0; flex-grow: 0; border-top-left-radius: 80px; border-top-right-radius: 80px; border-bottom-right-radius: 80px; border-bottom-left-radius: 80px; -unity-font-definition: url(&apos;project://database/Assets/UI/Fonts/Font%20Awesome%206%20Free-Solid-900.otf?fileID=12800000&amp;guid=4e6074b9bb43b304b85f72e83a86048e&amp;type=3#Font Awesome 6 Free-Solid-900&apos;); font-size: 60px; margin-left: 12px; margin-right: 12px; padding-left: 26px; padding-right: 26px; padding-top: 24px; padding-bottom: 24px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

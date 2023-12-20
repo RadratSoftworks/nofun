@@ -1,0 +1,17 @@
+{
+    "name": "Nofun.Module.Shared",
+    "rootNamespace": "",
+    "references": [
+        "GUID:4b5009bf7ac8fee4abc5425e290dde07",
+        "GUID:447c4b1f37b75c545b021b573e57d664"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

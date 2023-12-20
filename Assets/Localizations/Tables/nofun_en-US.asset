@@ -1,0 +1,163 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: nofun_en-US
+  m_EditorClassIdentifier: 
+  m_LocaleId:
+    m_Code: en-US
+  m_SharedData: {fileID: 11400000, guid: 198be8f0d9d907049947f8336106f789, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 256887201792
+    m_Localized: Error
+    m_Metadata:
+      m_Items: []
+  - m_Id: 995877429248
+    m_Localized: The game file is missing or corrupted. Please delete this game!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665693204480
+    m_Localized: Can't find game information in this file!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665693204481
+    m_Localized: Can't find game title in this file!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398784
+    m_Localized: Game has already been installed!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398785
+    m_Localized: Success
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398786
+    m_Localized: Game has been installed!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398787
+    m_Localized: Not mophun file!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398788
+    m_Localized: Settings saved
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398789
+    m_Localized: New setting will be effective on next launch.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398790
+    m_Localized: Please drag and drop your mpn file to the emulator shortcut/executable!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398791
+    m_Localized: The game is not compatible with the emulator! Make sure it is decrypted
+      & decompressed!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190687911936
+    m_Localized: Graphics
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849920
+    m_Localized: Screen mode
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849921
+    m_Localized: Screen size
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849922
+    m_Localized: FPS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849923
+    m_Localized: Software scissor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849924
+    m_Localized: System
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849925
+    m_Localized: Device
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849926
+    m_Localized: Version
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849927
+    m_Localized: Set screen size to device size
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849928
+    m_Localized: About
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849929
+    m_Localized: (C) 2023- Radrat Softworks. Source code is released on Github under
+      Apache License 2.0.<br><br>Thanks Mr. JaGoTu for providing decompression algorithm.<br><br>Thanks
+      Mr. 1upus for helping with games' encryption.<br><br>Thanks for the effort
+      of Kahvibreak server for preserving needed resources.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100390619566080
+    m_Localized: Orientation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100827875758080
+    m_Localized: Potrait
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100827875758081
+    m_Localized: Landscape
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113751688204288
+    m_Localized: Go to source code
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113751738535936
+    m_Localized: Search
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077693104128
+    m_Localized: Exit game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075648
+    m_Localized: Are you sure you want to exit the game?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075649
+    m_Localized: Yes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075650
+    m_Localized: No
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075651
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075652
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

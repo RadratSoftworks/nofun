@@ -24,7 +24,7 @@ using System.IO;
 namespace Nofun.Module.VMusic
 {
     [Module]
-    public partial class VMusic
+    public partial class VMusic : IDisposable
     {
         private const int MUSIC_OK = 0;
         private const int MUSIC_ERR = -1;
@@ -46,6 +46,14 @@ namespace Nofun.Module.VMusic
         {
             this.system = system;
             this.musicContainer = new();
+        }
+
+        public void Dispose()
+        {
+            foreach (var music in musicContainer)
+            {
+                music.Stop();
+            }
         }
 
         [ModuleCall]
@@ -74,9 +82,9 @@ namespace Nofun.Module.VMusic
             }
             catch (Exception ex)
             {
-                Logger.Error(LogClass.VMusic, $"Failed to load music (err={ex.ToString()}");    
+                Logger.Error(LogClass.VMusic, $"Failed to load music (err={ex.ToString()}");
             }
-            
+
             return MUSIC_ERR;
         }
 

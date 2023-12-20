@@ -20,6 +20,8 @@ using UnityEngine.UIElements;
 using System;
 using Nofun.Driver.UI;
 using DG.Tweening;
+using Nofun.Services;
+using VContainer;
 
 namespace Nofun.UI
 {
@@ -27,6 +29,8 @@ namespace Nofun.UI
     {
         [SerializeField]
         private float popInOutDuration = 0.7f;
+
+        [Inject] private ITranslationService translationService;
 
         private Button leftButton;
         private Button rightButton;
@@ -37,13 +41,19 @@ namespace Nofun.UI
 
         private Action<int> pendingAction;
 
-        public static void Show(GameObject boxPrefab, IUIDriver.Severity severity, IUIDriver.ButtonType buttonType, string title, string content, Action<int> buttonSubmitAct)
+        public static void Show(GameObject messageBox, Severity severity, ButtonType buttonType, string title, string content, Action<int> buttonSubmitAct, float? customSortingOrder = null)
         {
-            GameObject messageBox = Instantiate(boxPrefab);
             NofunMessageBoxController messageBoxController = messageBox.GetComponent<NofunMessageBoxController>();
 
+            if (customSortingOrder != null)
+            {
+                UIDocument document = messageBox.GetComponent<UIDocument>();
+                document.sortingOrder = customSortingOrder.Value;
+            }
+
             messageBoxController.Show(severity, title, content, buttonType,
-                value => {
+                value =>
+                {
                     Destroy(messageBox);
                     buttonSubmitAct?.Invoke(value);
                 });
@@ -54,7 +64,7 @@ namespace Nofun.UI
             base.Awake();
 
             root = document.rootVisualElement;
-            
+
             titleLabel = root.Q<Label>("TitleValue");
             contentLabel = root.Q<Label>("TextValue");
 
@@ -100,7 +110,7 @@ namespace Nofun.UI
             SubmitAndClose(0);
         }
 
-        public void Show(IUIDriver.Severity severity, string title, string message, IUIDriver.ButtonType buttonType, Action<int> buttonPressed)
+        public void Show(Severity severity, string title, string message, ButtonType buttonType, Action<int> buttonPressed)
         {
             if (buttonPressed == null)
             {
@@ -118,7 +128,7 @@ namespace Nofun.UI
                 titleLabel.text = title;
                 titleLabel.style.display = DisplayStyle.Flex;
             }
-            else 
+            else
             {
                 titleLabel.style.display = DisplayStyle.None;
             }
@@ -127,53 +137,53 @@ namespace Nofun.UI
 
             switch (buttonType)
             {
-                case IUIDriver.ButtonType.OK:
-                {
-                    leftFarButton.style.display = DisplayStyle.None;
-                    leftButton.style.display = DisplayStyle.None;
-                    rightButton.style.display = DisplayStyle.Flex;
+                case ButtonType.OK:
+                    {
+                        leftFarButton.style.display = DisplayStyle.None;
+                        leftButton.style.display = DisplayStyle.None;
+                        rightButton.style.display = DisplayStyle.Flex;
 
-                    rightButton.text = "OK";
-                    break;
-                }
+                        rightButton.text = translationService.Translate("OK");
+                        break;
+                    }
 
-                case IUIDriver.ButtonType.OKCancel:
-                {
-                    leftFarButton.style.display = DisplayStyle.None;
-                    leftButton.style.display = DisplayStyle.Flex;
-                    rightButton.style.display = DisplayStyle.Flex;
+                case ButtonType.OKCancel:
+                    {
+                        leftFarButton.style.display = DisplayStyle.None;
+                        leftButton.style.display = DisplayStyle.Flex;
+                        rightButton.style.display = DisplayStyle.Flex;
 
-                    leftButton.text = "Cancel";
-                    rightButton.text = "OK";
-                    break;
-                }
+                        leftButton.text = translationService.Translate("Cancel");
+                        rightButton.text = translationService.Translate("OK");
+                        break;
+                    }
 
-                case IUIDriver.ButtonType.YesNo:
-                {
-                    leftFarButton.style.display = DisplayStyle.None;
-                    leftButton.style.display = DisplayStyle.Flex;
-                    rightButton.style.display = DisplayStyle.Flex;
+                case ButtonType.YesNo:
+                    {
+                        leftFarButton.style.display = DisplayStyle.None;
+                        leftButton.style.display = DisplayStyle.Flex;
+                        rightButton.style.display = DisplayStyle.Flex;
 
-                    leftButton.text = "No";
-                    rightButton.text = "Yes";
-                    break;
-                }
+                        leftButton.text = translationService.Translate("No");
+                        rightButton.text = translationService.Translate("Yes");
+                        break;
+                    }
 
-                case IUIDriver.ButtonType.YesNoCancel:
-                {
-                    leftFarButton.style.display = DisplayStyle.Flex;
-                    leftButton.style.display = DisplayStyle.Flex;
-                    rightButton.style.display = DisplayStyle.Flex;
+                case ButtonType.YesNoCancel:
+                    {
+                        leftFarButton.style.display = DisplayStyle.Flex;
+                        leftButton.style.display = DisplayStyle.Flex;
+                        rightButton.style.display = DisplayStyle.Flex;
 
-                    leftButton.text = "Cancel";
-                    rightButton.text = "Yes";
-                    break;
-                }
+                        leftButton.text = translationService.Translate("Cancel");
+                        rightButton.text = translationService.Translate("Yes");
+                        break;
+                    }
 
                 default:
-                {
-                    throw new ArgumentException("Invalid button type");
-                }
+                    {
+                        throw new ArgumentException("Invalid button type");
+                    }
             }
 
             root.style.display = DisplayStyle.Flex;

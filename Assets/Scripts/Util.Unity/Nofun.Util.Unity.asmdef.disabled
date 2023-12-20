@@ -1,0 +1,20 @@
+{
+    "name": "Nofun.Util.Unity",
+    "rootNamespace": "",
+    "references": [
+        "GUID:447c4b1f37b75c545b021b573e57d664"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "DOTween.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

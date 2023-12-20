@@ -29,9 +29,16 @@ namespace Nofun.Data
             _connection.CreateTable<Model.GameInfo>();
         }
 
-        public void AddGame(Model.GameInfo game)
+        public bool AddGame(Model.GameInfo game)
         {
-            _connection.Insert(game);
+            if (_connection.Insert(game) == 0)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         }
 
         public void RemoveGame(Model.GameInfo game)
@@ -40,5 +47,12 @@ namespace Nofun.Data
         }
 
         public Model.GameInfo[] AllGames => _connection.Table<Model.GameInfo>().ToArray();
+
+
+        public Model.GameInfo[] GamesByKeyword(string keyword)
+        {
+            var table = _connection.Table<Model.GameInfo>();
+            return table.Where(x => x.Name.Contains(keyword)).ToArray();
+        }
     }
 }

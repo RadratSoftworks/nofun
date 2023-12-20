@@ -1,0 +1,27 @@
+{
+    "name": "Nofun.VM",
+    "rootNamespace": "",
+    "references": [
+        "GUID:4b5009bf7ac8fee4abc5425e290dde07",
+        "GUID:5af15bc9872bbf94f8b4ddf22d4fb972",
+        "GUID:447c4b1f37b75c545b021b573e57d664",
+        "GUID:f52966fcdea14ae4092313667f6cbe06",
+        "GUID:4f441eaa17d635d4bb6259ee283d2058",
+        "GUID:67ac2bc21a9e7c440b4a687bceeb0d66",
+        "GUID:9bc6cf0f3e6d5a440996ae0b37d94bdc",
+        "GUID:30dc250414ddb5c4ab93d12d886a43aa",
+        "GUID:7820fa4e88a500648ab87d32049dec68"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "NoAlloq.dll",
+        "System.IO.Hashing.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

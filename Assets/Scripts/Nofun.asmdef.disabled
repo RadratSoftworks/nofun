@@ -1,0 +1,32 @@
+{
+    "name": "Nofun",
+    "rootNamespace": "",
+    "references": [
+        "GUID:4f441eaa17d635d4bb6259ee283d2058",
+        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc",
+        "GUID:447c4b1f37b75c545b021b573e57d664",
+        "GUID:fcb329993d0436e4b9411076a3e29856",
+        "GUID:f52966fcdea14ae4092313667f6cbe06",
+        "GUID:f82c67c6c377e6a4182cfb062e75a7be",
+        "GUID:30dc250414ddb5c4ab93d12d886a43aa",
+        "GUID:3b7c5d4507708394fbc6b519d73bf6a4",
+        "GUID:39717a4ce781aff4faecde5065888cef",
+        "GUID:9bc6cf0f3e6d5a440996ae0b37d94bdc",
+        "GUID:5af15bc9872bbf94f8b4ddf22d4fb972",
+        "GUID:d8b63aba1907145bea998dd612889d6b",
+        "GUID:a428429dc3e18944280257c947b8e0fc",
+        "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5",
+        "GUID:776d03a35f1b52c4a9aed9f56d7b4229"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "DOTween.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

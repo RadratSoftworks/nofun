@@ -88,13 +88,41 @@ namespace Nofun.Parser
 
         private static bool IsMetadataStream(BinaryReader reader)
         {
-            byte []magic = reader.ReadBytes(4);
+            byte[] magic = reader.ReadBytes(4);
             return IsMetadataMagic(magic);
         }
 
         public static bool IsMetadataMagic(Span<byte> magic)
         {
             return (magic[0] == 'M') && (magic[1] == 'E') && (magic[2] == 'T') && (magic[3] == 'A');
+        }
+    }
+
+    public static class VMGPExecutableExtension
+    {
+        public static VMMetaInfoReader GetMetaInfo(this VMGPExecutable executable)
+        {
+            Span<byte> magic = stackalloc byte[4];
+
+            for (int i = 0; i < executable.ResourceCount; i++)
+            {
+                executable.ReadResourceData((uint)i, magic, 0);
+                if (VMMetaInfoReader.IsMetadataMagic(magic))
+                {
+                    byte[] wholeMetadata = new byte[executable.GetResourceSize((uint)i)];
+                    executable.ReadResourceData((uint)i, wholeMetadata, 0);
+
+                    using (MemoryStream stream = new MemoryStream(wholeMetadata))
+                    {
+                        using (BinaryReader reader = new BinaryReader(stream))
+                        {
+                            return new VMMetaInfoReader(reader);
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }

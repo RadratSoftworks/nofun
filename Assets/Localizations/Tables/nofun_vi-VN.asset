@@ -1,0 +1,175 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: nofun_vi-VN
+  m_EditorClassIdentifier: 
+  m_LocaleId:
+    m_Code: vi-VN
+  m_SharedData: {fileID: 11400000, guid: 198be8f0d9d907049947f8336106f789, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 256887201792
+    m_Localized: "L\u1ED7i"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 995877429248
+    m_Localized: "T\u1EC7p tr\xF2 ch\u01A1i kh\xF4ng t\u1ED3n t\u1EA1i ho\u1EB7c
+      \u0111\xE3 b\u1ECB h\u1ECFng. Vui l\xF2ng x\xF3a tr\xF2 ch\u01A1i n\xE0y!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665693204480
+    m_Localized: "Kh\xF4ng th\u1EC3 t\xECm th\u1EA5y th\xF4ng tin tr\xF2 ch\u01A1i
+      t\u1EEB t\u1EC7p \u0111\u01B0\u1EE3c cho!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665693204481
+    m_Localized: "Kh\xF4ng th\u1EC3 t\xECm th\u1EA5y t\xEAn tr\xF2 ch\u01A1i t\u1EEB
+      t\u1EC7p \u0111\u01B0\u1EE3c cho!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398784
+    m_Localized: "Tr\xF2 ch\u01A1i \u0111\xE3 \u0111\u01B0\u1EE3c c\xE0i \u0111\u1EB7t
+      tr\u01B0\u1EDBc \u0111\xF3!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398785
+    m_Localized: "Th\xE0nh c\xF4ng"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398786
+    m_Localized: "Tr\xF2 ch\u01A1i \u0111\xE3 \u0111\u01B0\u1EE3c c\xE0i \u0111\u1EB7t!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398787
+    m_Localized: "\u0110\xE2y kh\xF4ng ph\u1EA3i t\u1EC7p tr\xF2 ch\u01A1i Mophun!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398788
+    m_Localized: "C\xE0i \u0111\u1EB7t \u0111\xE3 \u0111\u01B0\u1EE3c l\u01B0u"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398789
+    m_Localized: "C\xE0i \u0111\u1EB7t m\u1EDBi s\u1EBD \u0111\u01B0\u1EE3c \xE1p
+      d\u1EE5ng \u1EDF l\u1EA7n m\u1EDF \u1EE9ng d\u1EE5ng k\u1EBF ti\u1EBFp."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398790
+    m_Localized: "Xin h\xE3y k\xE9o th\u1EA3 t\u1EC7p mpn l\xEAn tr\xEAn shortcut/t\u1EC7p
+      th\u1EF1c thi gi\u1EA3 l\u1EADp!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7665697398791
+    m_Localized: "Tr\xF2 ch\u01A1i kh\xF4ng t\u01B0\u01A1ng th\xEDch v\u1EDBi gi\u1EA3
+      l\u1EADp. Xin h\xE3y ch\u1EAFc ch\u1EAFn r\u1EB1ng n\xF3 \u0111\xE3 \u0111\u01B0\u1EE3c
+      gi\u1EA3i m\xE3 v\xE0 gi\u1EA3i n\xE9n!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190687911936
+    m_Localized: "\u0110\u1ED3 h\u1ECDa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849920
+    m_Localized: "Ch\u1EBF \u0111\u1ED9 m\xE0n h\xECnh"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849921
+    m_Localized: "K\xEDch th\u01B0\u1EDBc m\xE0n h\xECnh"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849922
+    m_Localized: FPS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849924
+    m_Localized: "H\u1EC7 th\u1ED1ng"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849925
+    m_Localized: "Thi\u1EBFt b\u1ECB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849926
+    m_Localized: "Phi\xEAn b\u1EA3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849927
+    m_Localized: "\u0110\u1EB7t k\xEDch th\u01B0\u1EDBc m\xE0n h\xECnh gi\u1ED1ng
+      v\u1EDBi th\xF4ng s\u1ED1 thi\u1EBFt b\u1ECB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849928
+    m_Localized: "V\u1EC1 \u1EE9ng d\u1EE5ng"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849929
+    m_Localized: "(C) 2023- Radrat Softworks. M\xE3 ngu\u1ED3n \u0111\u01B0\u1EE3c
+      ph\xE1t h\xE0nh tr\xEAn Github theo Gi\u1EA5y ph\xE9p Apache 2.0.<br><br>C\u1EA3m
+      \u01A1n \xF4ng JaGoTu \u0111\xE3 cung c\u1EA5p thu\u1EADt to\xE1n gi\u1EA3i
+      n\xE9n.<br><br>C\u1EA3m \u01A1n \xF4ng 1upus \u0111\xE3 gi\xFAp m\xE3 h\xF3a
+      tr\xF2 ch\u01A1i.<br><br>C\u1EA3m \u01A1n nh\u1EEFng n\u1ED7 l\u1EF1c c\u1EE7a 
+      server Kahvibreak trong vi\u1EC7c b\u1EA3o t\u1ED3n c\xE1c d\u1EEF li\u1EC7u
+      quan tr\u1ECDng."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100390619566080
+    m_Localized: "H\u01B0\u1EDBng m\xE0n h\xECnh"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100827875758080
+    m_Localized: "D\u1ECDc"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100827875758081
+    m_Localized: Ngang
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99190880849923
+    m_Localized: Software scissor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113751688204288
+    m_Localized: "\u0110i t\u1EDBi m\xE3 ngu\u1ED3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113751738535936
+    m_Localized: "T\xECm ki\u1EBFm"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077693104128
+    m_Localized: "Tho\xE1t tr\xF2 ch\u01A1i"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075648
+    m_Localized: "B\u1EA1n c\xF3 ch\u1EAFc ch\u1EAFn mu\u1ED1n tho\xE1t tr\xF2 ch\u01A1i
+      kh\xF4ng?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075649
+    m_Localized: "C\xF3"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075650
+    m_Localized: "Kh\xF4ng"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075651
+    m_Localized: "H\u1EE7y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2083077714075652
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

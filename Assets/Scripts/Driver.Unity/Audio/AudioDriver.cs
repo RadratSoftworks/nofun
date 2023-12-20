@@ -20,6 +20,7 @@ using UnityEngine;
 using Nofun.Driver.Audio;
 using System.Collections.Generic;
 using System.IO;
+using Nofun.Module.VMGPCaps;
 
 namespace Nofun.Driver.Unity.Audio
 {

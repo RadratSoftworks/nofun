@@ -16,27 +16,12 @@
 
 using System;
 using System.IO;
+using Nofun.Services;
 
 namespace Nofun.Driver.UI
 {
     public interface IUIDriver
     {
-        public enum ButtonType
-        {
-            OK,
-            OKCancel,
-            YesNo,
-            YesNoCancel
-        };
-
-        public enum Severity
-        {
-            Error,
-            Warning,
-            Info,
-            Question
-        };
-
         void Show(Severity severity, string title, string message, ButtonType buttonType, Action<int> buttonPressed);
     }
 }

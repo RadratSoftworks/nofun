@@ -21,6 +21,8 @@ using UnityEngine.UIElements;
 using DG.Tweening;
 using System;
 using System.Collections.Generic;
+using Nofun.Services;
+using VContainer;
 
 namespace Nofun.UI
 {
@@ -61,17 +63,14 @@ namespace Nofun.UI
 
         private GameSettingsManager settingManager;
         private string gameName;
-        private bool isFirst = false;
+
+        [Inject] private ITranslationService translationService;
+        [Inject] private IDialogService dialogService;
 
         private Button confirmButton;
 
-        [SerializeField]
-        private GameObject messageBoxPrefab;
-
-        [SerializeField]
-        private float fadeInOutDuration = 0.4f;
-
-        public event Action Finished;
+        public event Action<bool> Finished;
+        public event Action ExitGameRequested;
 
         public override void Awake()
         {
@@ -98,6 +97,9 @@ namespace Nofun.UI
             Button syncSizeButton = root.Q<Button>("SyncSizeButton");
             Button sourceCodeButton = root.Q<Button>("SourceCodeButton");
 
+            var exitGame = root.Q<Button>("ExitGameButton");
+            exitGame.clicked += DoExitGameAnimation;
+
             confirmButton.clicked += OnOKButtonClicked;
             cancelButton.clicked += OnCancelButtonClicked;
             syncSizeButton.clicked += OnSyncSizeButtonClicked;
@@ -123,7 +125,7 @@ namespace Nofun.UI
             root.Q<Label>("GameLabel").text = gameName;
         }
 
-        public void Show()
+        public void Show(bool showExitGameButton = false)
         {
             Load();
 
@@ -132,7 +134,10 @@ namespace Nofun.UI
             root.style.opacity = 0.0f;
             root.style.display = DisplayStyle.Flex;
 
-            DOTween.To(() => root.style.opacity.value, value => root.style.opacity = (float)value, 1.0f, fadeInOutDuration);
+            VisualElement exitGameButtonGroup = root.Q("ExitGameButtonGroup");
+            exitGameButtonGroup.style.display = showExitGameButton ? DisplayStyle.Flex : DisplayStyle.None;
+
+            documentStackManager.Push(this);
         }
 
         public void Load()
@@ -152,7 +157,6 @@ namespace Nofun.UI
 
                 softwareScissorCheck.value = false;
 
-                isFirst = true;
                 confirmButton.text = "Start";
             }
             else
@@ -168,8 +172,6 @@ namespace Nofun.UI
                 systemVersionDropdown.index = (int)setting.Value.systemVersion;
 
                 softwareScissorCheck.value = setting.Value.enableSoftwareScissor;
-
-                isFirst = false;
                 confirmButton.text = "Save";
             }
         }
@@ -190,28 +192,51 @@ namespace Nofun.UI
             return settingManager.Set(gameName, newSetting);
         }
 
-        private void DoCloseAnimation(bool saveAgain = false)
+        private void DoExitGameAnimation()
+        {
+            dialogService.Show(
+                Severity.Info,
+                ButtonType.YesNo,
+                translationService.Translate("Exit_Game_Confirmation"),
+                translationService.Translate("Exit_Game_Confirmation_Details"),
+                value =>
+                {
+                    if (value == 0)
+                    {
+                        documentStackManager.Pop(this, () =>
+                        {
+                            ExitGameRequested?.Invoke();
+                        });
+                    }
+                });
+        }
+
+        private void DoCloseAnimation(bool saveAgain = false, bool isCancel = false)
         {
             VisualElement root = document.rootVisualElement;
             root.style.opacity = 1.0f;
 
-            DOTween.To(() => root.style.opacity.value, value => document.rootVisualElement.style.opacity = (float)value, 0.0f, fadeInOutDuration)
-                .OnComplete(() =>
-                {
-                    root.style.display = DisplayStyle.None;
+            documentStackManager.Pop(this, () =>
+            {
+                root.style.display = DisplayStyle.None;
 
-                    if (saveAgain)
-                    {
-                        NofunMessageBoxController.Show(messageBoxPrefab, Driver.UI.IUIDriver.Severity.Info, Driver.UI.IUIDriver.ButtonType.OK, "Settings saved", "New setting will be effective on next launch.",
-                            value => {
-                                Finished?.Invoke();
-                            });
-                    }
-                    else
-                    {
-                        Finished?.Invoke();
-                    }
-                });
+                if (saveAgain)
+                {
+                    dialogService.Show(
+                        Severity.Info,
+                        ButtonType.OK,
+                        translationService.Translate("Settings_Saved"),
+                        translationService.Translate("Settings_Saved_Details"),
+                        value =>
+                        {
+                            Finished?.Invoke(isCancel);
+                        });
+                }
+                else
+                {
+                    Finished?.Invoke(isCancel);
+                }
+            });
         }
 
         public void OnSyncSizeButtonClicked()
@@ -223,14 +248,7 @@ namespace Nofun.UI
 
         public void OnCancelButtonClicked()
         {
-            if (isFirst)
-            {
-                Application.Quit();
-            }
-            else
-            {
-                DoCloseAnimation();
-            }
+            DoCloseAnimation(isCancel: true);
         }
 
         public void OnOKButtonClicked()
