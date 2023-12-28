@@ -78,7 +78,7 @@ namespace Nofun.VM
                 Logger.Warning(LogClass.Loader, $"Slicing relocation data failed with: {e}");
                 return null;
             }
-   
+
             if (item.poolType == PoolItemType.SectionRelativeReloc)
             {
                 UInt32 value = BinaryPrimitives.ReadUInt32LittleEndian(targetValue);
@@ -164,7 +164,7 @@ namespace Nofun.VM
                 case PoolItemType.ImportSymbol:
                     {
                         string value = executable.GetString(poolItem.metaOffset);
-                        return new PoolData(resolver.Resolve(value), value);
+                        return new PoolData(resolver?.Resolve(value), value);
                     }
 
                 case PoolItemType.LocalSymbol:
@@ -177,7 +177,7 @@ namespace Nofun.VM
                     {
                         if ((poolItem.metaOffset - 1) < poolItems.Count)
                         {
-                            return new PoolData((uint)poolDatas[(int)poolItem.metaOffset - 1].ImmediateInteger + poolItem.targetOffset); 
+                            return new PoolData((uint)poolDatas[(int)poolItem.metaOffset - 1].ImmediateInteger + poolItem.targetOffset);
                         }
                         else
                         {
@@ -229,7 +229,7 @@ namespace Nofun.VM
         {
             UInt32 codeBaseAddress = baseAddress;
             UInt32 dataBaseAddress = baseAddress + EstimatedCodeSectionSize();
-            UInt32 bssBaseAddress = dataBaseAddress + EstimatedDataSize(); 
+            UInt32 bssBaseAddress = dataBaseAddress + EstimatedDataSize();
 
             Span<byte> codeSpan = programMemory.Slice(0, (int)EstimatedCodeSectionSize());
             Span<byte> dataSpan = programMemory.Slice((int)EstimatedCodeSectionSize(), (int)EstimatedDataSize());

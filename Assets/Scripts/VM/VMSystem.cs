@@ -32,7 +32,7 @@ namespace Nofun.VM
 {
     public partial class VMSystem : IDisposable
     {
-        private const uint ProgramStartOffset = VMMemory.DataAlignment;
+        public const uint ProgramStartOffset = VMMemory.DataAlignment;
         private const int InstructionPerRun = 10000;
 
         private VMMemory memory;
