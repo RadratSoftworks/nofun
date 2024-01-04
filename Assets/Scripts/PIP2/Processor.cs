@@ -19,7 +19,7 @@ using System.Collections.Generic;
 
 namespace Nofun.PIP2
 {
-    public abstract class Processor : Processor.IRegIndexer, Processor.IReg16Indexer, Processor.IReg8Indexer
+    public abstract class Processor : Processor.IRegIndexer, Processor.IReg16Indexer, Processor.IReg8Indexer, IDisposable
     {
         public interface IRegIndexer
         {
@@ -68,6 +68,16 @@ namespace Nofun.PIP2
         public abstract void Run(int instructionPerRun);
         public abstract void Stop();
 
+        public virtual void PostInitialize(uint entryPoint)
+        {
+
+        }
+
+        public virtual void Dispose()
+        {
+
+        }
+
         public virtual ProcessorContext SaveContext()
         {
             return new ProcessorContext(registers);
@@ -78,9 +88,9 @@ namespace Nofun.PIP2
             registers = context.registers;
         }
 
-        public IRegIndexer Reg => this;
-        public IReg16Indexer Reg16 => this;
-        public IReg8Indexer Reg8 => this;
+        public virtual IRegIndexer Reg => this;
+        public virtual IReg16Indexer Reg16 => this;
+        public virtual IReg8Indexer Reg8 => this;
 
         /// <summary>
         /// Return a register reference, given a register index.

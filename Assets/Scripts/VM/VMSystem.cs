@@ -26,7 +26,9 @@ using System;
 using Nofun.Util;
 using System.IO;
 using System.Runtime.InteropServices;
+using Nofun.PIP2.Translator;
 using Nofun.Settings;
+using UnityEngine;
 
 namespace Nofun.VM
 {
@@ -109,9 +111,13 @@ namespace Nofun.VM
                 CreateCallListInvokeCode(MemoryMarshal.Cast<byte, uint>(memory.GetMemorySpan((int)listRunAddress, (int)VMMemory.DataAlignment)));
             }
 
+            // All code finalized, post-initialize the processor
+            processor.PoolDatas = result;
+
             if (constructorListAddress != 0)
             {
                 // Launch the constructor automatically
+                processor.PostInitialize(listRunAddress);
                 processor.Reg[Register.RA] = ProgramStartOffset;
                 processor.Reg[Register.P0] = constructorListAddress;
                 processor.Reg[Register.PC] = listRunAddress;
@@ -119,11 +125,11 @@ namespace Nofun.VM
             else
             {
                 // Launch the game code instead
+                processor.PostInitialize(ProgramStartOffset);
                 processor.Reg[Register.PC] = ProgramStartOffset;
             }
 
             processor.Reg[Register.SP] = stackStartAddress;
-            processor.PoolDatas = result;
         }
 
         private void GetMetadataInfoAndSetupPersonalFolder(string inputFileName)
@@ -173,7 +179,8 @@ namespace Nofun.VM
             totalSize += VMMemory.DataAlignment;
 
             memory = new VMMemory(totalSize);
-            processor = new PIP2.Interpreter.Interpreter(new PIP2.ProcessorConfig()
+
+            /*processor = new PIP2.Interpreter.Interpreter(new PIP2.ProcessorConfig()
             {
                 ReadCode = memory.ReadMemory32,
                 ReadDword = memory.ReadMemory32,
@@ -184,7 +191,18 @@ namespace Nofun.VM
                 WriteByte = memory.WriteMemory8,
                 MemoryCopy = memory.MemoryCopy,
                 MemorySet = memory.MemorySet
-            });
+            });*/
+
+            processor = new PIP2.Translator.Translator(new PIP2.ProcessorConfig(),
+                Path.GetFileName(createParameters.inputFileName),
+                memory, new TranslatorOptions()
+                {
+                    cacheRootPath = IntPtr.Zero,
+                    divideByZeroResultZero = true,
+                    enableCache = false,
+                    entryPoint = 0,
+                    textBase = ProgramStartOffset
+                });
 
             LoadModulesAndProgram(loader);
             GetMetadataInfoAndSetupPersonalFolder(createParameters.inputFileName);
@@ -235,6 +253,8 @@ namespace Nofun.VM
             VSoundModule.Dispose();
             VMusicModule.Dispose();
             VMStreamModule.Dispose();
+
+            processor.Dispose();
         }
 
         public bool ShouldStop => shouldStop;

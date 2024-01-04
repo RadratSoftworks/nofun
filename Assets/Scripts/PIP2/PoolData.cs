@@ -65,5 +65,6 @@ namespace Nofun.PIP2
         public float? ImmediateFloat => (dataType == PoolDataType.ImmFloat) ? immFloat : null;
         public Action Function => (dataType == PoolDataType.Import) ? function : null;
         public string Name => name;
+        public bool IsInCode { get; set; }
     }
 }

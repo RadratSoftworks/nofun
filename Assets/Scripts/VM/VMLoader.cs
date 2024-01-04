@@ -144,7 +144,10 @@ namespace Nofun.VM
             switch (poolItem.itemTarget)
             {
                 case 1:
-                    return new PoolData(poolItem.targetOffset + codeAddress, symbolName);
+                    return new PoolData(poolItem.targetOffset + codeAddress, symbolName)
+                    {
+                        IsInCode = true
+                    };
 
                 case 2:
                     return new PoolData(poolItem.targetOffset + dataAddress, symbolName);
@@ -177,7 +180,11 @@ namespace Nofun.VM
                     {
                         if ((poolItem.metaOffset - 1) < poolItems.Count)
                         {
-                            return new PoolData((uint)poolDatas[(int)poolItem.metaOffset - 1].ImmediateInteger + poolItem.targetOffset);
+                            return new PoolData((uint)poolDatas[(int)poolItem.metaOffset - 1].ImmediateInteger +
+                                                poolItem.targetOffset)
+                            {
+                                IsInCode = poolDatas[(int)poolItem.metaOffset - 1].IsInCode
+                            };
                         }
                         else
                         {
