@@ -83,23 +83,28 @@ namespace Nofun.VM
             {
                 UInt32 value = BinaryPrimitives.ReadUInt32LittleEndian(targetValue);
 
+                bool isInCode = false;
+                UInt32 valuePool = 0;
+
                 switch (item.metaOffset)
                 {
                     case 1:
                         {
-                            BinaryPrimitives.WriteUInt32LittleEndian(targetValue, value + codeAddress);
+                            valuePool = value + codeAddress;
+                            isInCode = true;
+
                             break;
                         }
 
                     case 2:
                         {
-                            BinaryPrimitives.WriteUInt32LittleEndian(targetValue, value + dataAddress);
+                            valuePool = value + dataAddress;
                             break;
                         }
 
                     case 4:
                         {
-                            BinaryPrimitives.WriteUInt32LittleEndian(targetValue, value + bssAddress);
+                            valuePool = value + bssAddress;
                             break;
                         }
 
@@ -109,7 +114,13 @@ namespace Nofun.VM
                         }
                 }
 
-                return null;
+                BinaryPrimitives.WriteUInt32LittleEndian(targetValue, valuePool);
+
+                // This is mostly for the translator, in order to detect calls in potential VTable
+                return new PoolData(valuePool)
+                {
+                    IsCodePointerRelocatedInData = isInCode
+                };
             }
             else
             {

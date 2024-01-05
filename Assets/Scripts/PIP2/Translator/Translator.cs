@@ -75,6 +75,10 @@ namespace Nofun.PIP2.Translator
                     {
                         poolItems[i] |= 0x4000000000000000;
                     }
+                    else if (poolDatas[i].IsCodePointerRelocatedInData)
+                    {
+                        poolItems[i] |= 0x1000000000000000;
+                    }
                 }
             }
 

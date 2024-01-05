@@ -125,6 +125,10 @@ namespace Nofun
                                 {
                                     val |= 0x4000000000000000;
                                 }
+                                else if (x.IsCodePointerRelocatedInData)
+                                {
+                                    val |= 0x1000000000000000;
+                                }
 
                                 return val;
                             }

@@ -66,5 +66,6 @@ namespace Nofun.PIP2
         public Action Function => (dataType == PoolDataType.Import) ? function : null;
         public string Name => name;
         public bool IsInCode { get; set; }
+        public bool IsCodePointerRelocatedInData { get; set; }
     }
 }
