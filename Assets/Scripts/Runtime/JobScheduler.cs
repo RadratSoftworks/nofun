@@ -21,10 +21,14 @@ namespace Nofun
 
         public static JobScheduler Instance { get; private set; }
         public static bool Paused { get; set; }
+
         private Thread unityThread;
         private Queue<Job> jobs;
-
         private List<Job> postponedJobs;
+        private List<Job> postponedJobs2;
+        private Queue<Job> jobPool;
+        private AutoResetEvent postponeDoneFlushed;
+
         private bool flushablePostponed = false;
 
         private void Start()
@@ -32,9 +36,14 @@ namespace Nofun
             unityThread = Thread.CurrentThread;
             Paused = false;
             jobs = new();
+            jobPool = new();
 
             postponedJobs = new();
+            postponedJobs2 = new();
             Instance = this;
+
+            postponeDoneFlushed = new AutoResetEvent(false);
+            postponeDoneFlushed.Set();
         }
 
         private void Update()
@@ -55,23 +64,67 @@ namespace Nofun
                     {
                         job.evt.Set();
                     }
+
+                    lock (jobPool)
+                    {
+                        jobPool.Enqueue(job);
+                    }
                 }
             }
 
             if (flushablePostponed)
             {
-                lock (postponedJobs)
+                lock (postponedJobs2)
                 {
-                    postponedJobs.ForEach(job =>
+                    postponedJobs2.ForEach(job =>
                     {
                         job.caller();
                         job.evt?.Set();
+
+                        lock (jobPool)
+                        {
+                            jobPool.Enqueue(job);
+                        }
                     });
 
-                    postponedJobs.Clear();
+                    postponedJobs2.Clear();
+
                     flushablePostponed = false;
+                    postponeDoneFlushed.Set();
                 }
             }
+        }
+
+        private Job RetrieveOrCreateJob(Action act, bool useEvent = false)
+        {
+            Job job = null;
+
+            lock (jobPool)
+            {
+                if (jobPool.Count != 0)
+                {
+                    job = jobPool.Dequeue();
+                    job.caller = act;
+
+                    if (useEvent)
+                    {
+                        if (job.evt == null)
+                        {
+                            job.evt = new AutoResetEvent(false);
+                        }
+                        else
+                        {
+                            job.evt.Reset();
+                        }
+                    }
+                }
+                else
+                {
+                    job = new Job(act, useEvent ? new AutoResetEvent(false) : null);
+                }
+            }
+
+            return job;
         }
 
         public void PostponeToUnityThread(Action act, bool toBeginning = false)
@@ -80,26 +133,29 @@ namespace Nofun
             {
                 if (toBeginning)
                 {
-                    postponedJobs.Insert(0, new Job(act));
+                    postponedJobs.Insert(0, RetrieveOrCreateJob(act));
                 }
                 else
                 {
-                    postponedJobs.Add(new Job(act));
+                    postponedJobs.Add(RetrieveOrCreateJob(act));
                 }
             }
         }
 
         public void FlushPostponed()
         {
-            AutoResetEvent evt = new AutoResetEvent(false);
+            postponeDoneFlushed.WaitOne();
+            postponeDoneFlushed.Reset();
 
             lock (postponedJobs)
             {
-                postponedJobs.Add(new Job(() => { }, evt));
+                lock (postponedJobs2)
+                {
+                    (postponedJobs2, postponedJobs) = (postponedJobs, postponedJobs2);
+                }
+
                 flushablePostponed = true;
             }
-
-            evt.WaitOne();
         }
 
         public void RunOnUnityThread(Action act)
@@ -108,7 +164,7 @@ namespace Nofun
             {
                 lock (jobs)
                 {
-                    jobs.Enqueue(new Job(act));
+                    jobs.Enqueue(RetrieveOrCreateJob(act));
                 }
             }
             else
@@ -121,11 +177,14 @@ namespace Nofun
         {
             if (Thread.CurrentThread != unityThread)
             {
-                AutoResetEvent evt = new AutoResetEvent(false);
+                AutoResetEvent evt;
 
                 lock (jobs)
                 {
-                    jobs.Enqueue(new Job(act, evt));
+                    Job job = RetrieveOrCreateJob(act, true);
+                    evt = job.evt;
+
+                    jobs.Enqueue(job);
                 }
 
                 evt.WaitOne();
