@@ -9,6 +9,11 @@ namespace Nofun.PIP2.Translator
 {
     public class Translator : Processor, Processor.IRegIndexer, IDisposable, Processor.IReg16Indexer, Processor.IReg8Indexer
     {
+        enum ExceptionCode
+        {
+            NotCompiledFunction = 1
+        }
+
         private delegate void HleHandler(IntPtr userData, int hleNum);
 
         private IntPtr enginePtr;
@@ -24,6 +29,19 @@ namespace Nofun.PIP2.Translator
 
         private void HandleHleCall(IntPtr userData, int num)
         {
+            if (num < 0)
+            {
+                if (Enum.IsDefined(typeof(ExceptionCode), -num))
+                {
+                    ExceptionCode code = (ExceptionCode)(-num);
+                    switch (code)
+                    {
+                        case ExceptionCode.NotCompiledFunction:
+                            throw new InvalidOperationException($"Not compiled function called! PC={Reg[Register.PC]:X8}");
+                    }
+                }
+            }
+
             PoolData poolData = GetPoolData((uint)num);
             if (poolData.DataType != PoolDataType.Import)
             {
