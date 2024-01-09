@@ -80,12 +80,15 @@ namespace Nofun
                     {
                         job.caller();
                         job.evt?.Set();
+                    });
 
-                        lock (jobPool)
+                    lock (jobPool)
+                    {
+                        foreach (var job in postponedJobs2)
                         {
                             jobPool.Enqueue(job);
                         }
-                    });
+                    }
 
                     postponedJobs2.Clear();
 
@@ -145,17 +148,9 @@ namespace Nofun
         public void FlushPostponed()
         {
             postponeDoneFlushed.WaitOne();
-            postponeDoneFlushed.Reset();
 
-            lock (postponedJobs)
-            {
-                lock (postponedJobs2)
-                {
-                    (postponedJobs2, postponedJobs) = (postponedJobs, postponedJobs2);
-                }
-
-                flushablePostponed = true;
-            }
+            (postponedJobs2, postponedJobs) = (postponedJobs, postponedJobs2);
+            flushablePostponed = true;
         }
 
         public void RunOnUnityThread(Action act)
