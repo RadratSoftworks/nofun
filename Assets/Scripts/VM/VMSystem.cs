@@ -184,29 +184,34 @@ namespace Nofun.VM
 
             memory = new VMMemory(totalSize);
 
-            /*processor = new PIP2.Interpreter.Interpreter(new PIP2.ProcessorConfig()
+            if (createParameters.useLLVM)
             {
-                ReadCode = memory.ReadMemory32,
-                ReadDword = memory.ReadMemory32,
-                ReadWord = memory.ReadMemory16,
-                ReadByte = memory.ReadMemory8,
-                WriteDword = memory.WriteMemory32,
-                WriteWord = memory.WriteMemory16,
-                WriteByte = memory.WriteMemory8,
-                MemoryCopy = memory.MemoryCopy,
-                MemorySet = memory.MemorySet
-            });*/
-
-            processor = new PIP2.Translator.Translator(new PIP2.ProcessorConfig(),
-                Path.GetFileName(createParameters.inputFileName),
-                memory, new TranslatorOptions()
+                processor = new PIP2.Translator.Translator(new PIP2.ProcessorConfig(),
+                    Path.GetFileName(createParameters.inputFileName),
+                    memory, new TranslatorOptions()
+                    {
+                        cacheRootPath = IntPtr.Zero,
+                        divideByZeroResultZero = true,
+                        enableCache = false,
+                        entryPoint = 0,
+                        textBase = ProgramStartOffset
+                    });
+            }
+            else
+            {
+                processor = new PIP2.Interpreter.Interpreter(new PIP2.ProcessorConfig()
                 {
-                    cacheRootPath = IntPtr.Zero,
-                    divideByZeroResultZero = true,
-                    enableCache = false,
-                    entryPoint = 0,
-                    textBase = ProgramStartOffset
+                    ReadCode = memory.ReadMemory32,
+                    ReadDword = memory.ReadMemory32,
+                    ReadWord = memory.ReadMemory16,
+                    ReadByte = memory.ReadMemory8,
+                    WriteDword = memory.WriteMemory32,
+                    WriteWord = memory.WriteMemory16,
+                    WriteByte = memory.WriteMemory8,
+                    MemoryCopy = memory.MemoryCopy,
+                    MemorySet = memory.MemorySet
                 });
+            }
 
             LoadModulesAndProgram(loader);
             GetMetadataInfoAndSetupPersonalFolder(createParameters.inputFileName);

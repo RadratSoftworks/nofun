@@ -57,6 +57,7 @@ namespace Nofun
         [Range(1, 60)][SerializeField] private int fpsLimit = 30;
         [SerializeField] private string executableFilePath = "E:\\spacebox.mpn";
         [SerializeField] private bool immediatelyRun = false;
+        [SerializeField] private bool enableLLVM = false;
 
         private VMGPExecutable executable;
         private VMSystem system;
@@ -271,7 +272,7 @@ namespace Nofun
             {
                 executable = new VMGPExecutable(gameStream);
                 system = new VMSystem(executable, new VMSystemCreateParameters(graphicDriver, inputDriver, audioDriver, timeDriver, uiDriver,
-                    Application.persistentDataPath, targetExecutable));
+                    Application.persistentDataPath, targetExecutable, enableLLVM));
             }
             catch (System.Exception _)
             {
