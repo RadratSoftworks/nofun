@@ -152,7 +152,7 @@ namespace Nofun.PIP2.Interpreter
 
                 if (handler == null)
                 {
-                    throw new InvalidOperationException("Unimplemented opcode " + ((Opcode)(value & 0xFF)).ToString());
+                    throw new InvalidOperationException($"Unimplemented opcode {(Opcode)(value & 0xFF)} at PC={registers[Register.PCIndex]}");
                 }
 
                 registers[Register.PCIndex] += InstructionSize;

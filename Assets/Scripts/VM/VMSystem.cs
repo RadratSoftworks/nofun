@@ -82,6 +82,7 @@ namespace Nofun.VM
 
             assembler.PUSH_RA();
             assembler.MOV(Register.S1, Register.P0);
+            assembler.MOV(Register.S2, Register.P1);
 
             Label loopPoint = assembler.L;
             assembler.LDW(Register.S0, Register.S1, Assembler.Constant(0));
@@ -92,7 +93,9 @@ namespace Nofun.VM
             assembler.JP(loopPoint);
             assembler.L = targetJump;
 
+            assembler.CALLr(Register.S2);
             assembler.RET_RA();
+
             assembler.Assemble(memorySpan);
         }
 
@@ -118,8 +121,9 @@ namespace Nofun.VM
             {
                 // Launch the constructor automatically
                 processor.PostInitialize(listRunAddress);
-                processor.Reg[Register.RA] = ProgramStartOffset;
+                processor.Reg[Register.RA] = 0;
                 processor.Reg[Register.P0] = constructorListAddress;
+                processor.Reg[Register.P1] = ProgramStartOffset;
                 processor.Reg[Register.PC] = listRunAddress;
             }
             else
@@ -167,16 +171,16 @@ namespace Nofun.VM
             VMLoader loader = new VMLoader(executable);
 
             // Make a gap after all program data to avoid weird stack manipulation
-            uint totalSize = ProgramStartOffset + loader.EstimateNeededProgramSize() + VMMemory.DataAlignment + executable.Header.stackSize;
+            uint totalSize = ProgramStartOffset + loader.EstimateNeededProgramSize() + VMMemory.DataAlignment;
 
-            stackStartAddress = totalSize;
+            listRunAddress = totalSize;
+            totalSize += VMMemory.DataAlignment;
+
+            stackStartAddress = totalSize + executable.Header.stackSize;
             heapAddress = stackStartAddress + VMMemory.DataAlignment;       // Make a gap to avoid weird stack manipulation
 
             roundedHeapSize = MemoryUtil.AlignUp(executable.Header.dynamicDataHeapSize * 4 / 3, VMMemory.DataAlignment);
-            totalSize += VMMemory.DataAlignment + roundedHeapSize;
-
-            listRunAddress = heapAddress + roundedHeapSize;
-            totalSize += VMMemory.DataAlignment;
+            totalSize = heapAddress + roundedHeapSize;
 
             memory = new VMMemory(totalSize);
 
