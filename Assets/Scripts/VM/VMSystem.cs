@@ -186,13 +186,16 @@ namespace Nofun.VM
 
             if (createParameters.useLLVM)
             {
+                string cacheRootPath = Path.Join(persistentDataPath, "__LLVMCache");
+                Directory.CreateDirectory(cacheRootPath);
+
                 processor = new PIP2.Translator.Translator(new PIP2.ProcessorConfig(),
                     Path.GetFileName(createParameters.inputFileName),
                     memory, new TranslatorOptions()
                     {
-                        cacheRootPath = IntPtr.Zero,
+                        cacheRootPath = cacheRootPath,
                         divideByZeroResultZero = true,
-                        enableCache = false,
+                        enableCache = true,
                         entryPoint = 0,
                         textBase = ProgramStartOffset
                     });
