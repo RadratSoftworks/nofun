@@ -32,7 +32,7 @@ namespace Nofun.UI
     public class GameListDocumentController : FlexibleUIDocumentController
     {
         private static readonly string GameDatabaseFileName = "games.db";
-        private string GameDatabasePath => $"{Application.streamingAssetsPath}/{GameDatabaseFileName}";
+        private string GameDatabasePath => $"{Application.persistentDataPath}/{GameDatabaseFileName}";
 
         private Button installButton;
         private VisualElement gameList;
@@ -65,6 +65,16 @@ namespace Nofun.UI
         public override void Awake()
         {
             base.Awake();
+
+            if (!File.Exists(GameDatabasePath))
+            {
+                TextAsset asset = Resources.Load(GameDatabaseFileName) as TextAsset;
+
+                if (asset != null)
+                {
+                    File.WriteAllBytes(GameDatabasePath, asset.bytes);
+                }
+            }
 
             gameDatabase = new GameDatabase(GameDatabasePath);
             dynamicIconsProvider = new DynamicIconsProvider(dynamicIconRendererContainer);
