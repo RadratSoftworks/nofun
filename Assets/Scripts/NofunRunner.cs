@@ -52,6 +52,7 @@ namespace Nofun
         [SerializeField] private SettingDocumentController settingDocument;
         [SerializeField] private GameDetailsDocumentController gameDetailsDocument;
         [SerializeField] private GameListDocumentController gameListDocumentController;
+        [SerializeField] private float waitTimeBeforeNotifyUserOfLLVM = 0.2f;
 
         [Header("Settings")]
         [Range(1, 60)][SerializeField] private int fpsLimit = 30;
@@ -67,6 +68,9 @@ namespace Nofun
         private bool failed = false;
         private bool settingActive = false;
         private bool launchRequested = false;
+
+        private bool llvmPrepared = false;
+        private int llvmPreparingDialogId = -1;
 
         [Inject] private ScreenManager screenManager;
         [Inject] private IDialogService dialogService;
@@ -298,6 +302,9 @@ namespace Nofun
 
             systemThread = new Thread(new ThreadStart(() =>
             {
+                system.PostInitialize();
+                llvmPrepared = true;
+
                 while (!system.ShouldStop)
                 {
                     system.Run();
@@ -336,6 +343,33 @@ namespace Nofun
 
             graphicDriver.FpsLimit = Mathf.Clamp(setting.Value.fps, 1, 120);
             systemThread.Start();
+
+            if (setting.Value.cpuBackend == CPUBackend.LLVM)
+            {
+                llvmPrepared = false;
+                llvmPreparingDialogId = -1;
+
+                float elapsedTime = 0.0f;
+
+                while (!llvmPrepared)
+                {
+                    if (waitTimeBeforeNotifyUserOfLLVM <= elapsedTime && llvmPreparingDialogId < 0)
+                    {
+                        llvmPreparingDialogId = dialogService.OpenBlocked(Severity.Info,
+                            translationService.Translate("Info_Title_PreparingLLVM"),
+                            translationService.Translate("Info_Description_PreparingLLVM"));
+                    }
+
+                    yield return null;
+
+                    elapsedTime += Time.deltaTime;
+                }
+
+                if (llvmPreparingDialogId >= 0)
+                {
+                    dialogService.CloseBlocked(llvmPreparingDialogId);
+                }
+            }
 
             yield break;
         }

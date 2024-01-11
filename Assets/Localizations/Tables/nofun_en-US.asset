@@ -158,6 +158,18 @@ MonoBehaviour:
     m_Localized: OK
     m_Metadata:
       m_Items: []
+  - m_Id: 10059088317358080
+    m_Localized: CPU Backend
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10068328046108672
+    m_Localized: Preparing LLVM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10068328079663104
+    m_Localized: Please wait while the emulator is preparing LLVM!
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

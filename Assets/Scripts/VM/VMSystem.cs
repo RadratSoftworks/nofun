@@ -49,6 +49,7 @@ namespace Nofun.VM
         private VMGPExecutable executable;
         private uint roundedHeapSize;
         private string persistentDataPath;
+        private string llvmCachePath;
 
         private uint constructorListAddress;
         private uint destructorListAddress;
@@ -168,6 +169,14 @@ namespace Nofun.VM
 
             callMap = new VMCallMap(this);
 
+            llvmCachePath = Path.Join(persistentDataPath, "__LLVMCache");
+            Directory.CreateDirectory(llvmCachePath);
+
+            GetMetadataInfoAndSetupPersonalFolder(createParameters.inputFileName);
+        }
+
+        public void PostInitialize()
+        {
             VMLoader loader = new VMLoader(executable);
 
             // Make a gap after all program data to avoid weird stack manipulation
@@ -184,41 +193,42 @@ namespace Nofun.VM
 
             memory = new VMMemory(totalSize);
 
-            if (createParameters.useLLVM)
+            switch (GameSetting.cpuBackend)
             {
-                string cacheRootPath = Path.Join(persistentDataPath, "__LLVMCache");
-                Directory.CreateDirectory(cacheRootPath);
+                case CPUBackend.LLVM:
+                    processor = new PIP2.Translator.Translator(new PIP2.ProcessorConfig(),
+                        gameName.ToValidFileName(),
+                        memory, new TranslatorOptions()
+                        {
+                            cacheRootPath = llvmCachePath,
+                            divideByZeroResultZero = true,
+                            enableCache = true,
+                            entryPoint = 0,
+                            textBase = ProgramStartOffset
+                        });
 
-                processor = new PIP2.Translator.Translator(new PIP2.ProcessorConfig(),
-                    Path.GetFileName(createParameters.inputFileName),
-                    memory, new TranslatorOptions()
+                    break;
+
+                case CPUBackend.Interpreter:
+                    processor = new PIP2.Interpreter.Interpreter(new PIP2.ProcessorConfig()
                     {
-                        cacheRootPath = cacheRootPath,
-                        divideByZeroResultZero = true,
-                        enableCache = true,
-                        entryPoint = 0,
-                        textBase = ProgramStartOffset
+                        ReadCode = memory.ReadMemory32,
+                        ReadDword = memory.ReadMemory32,
+                        ReadWord = memory.ReadMemory16,
+                        ReadByte = memory.ReadMemory8,
+                        WriteDword = memory.WriteMemory32,
+                        WriteWord = memory.WriteMemory16,
+                        WriteByte = memory.WriteMemory8,
+                        MemoryCopy = memory.MemoryCopy,
+                        MemorySet = memory.MemorySet
                     });
-            }
-            else
-            {
-                processor = new PIP2.Interpreter.Interpreter(new PIP2.ProcessorConfig()
-                {
-                    ReadCode = memory.ReadMemory32,
-                    ReadDword = memory.ReadMemory32,
-                    ReadWord = memory.ReadMemory16,
-                    ReadByte = memory.ReadMemory8,
-                    WriteDword = memory.WriteMemory32,
-                    WriteWord = memory.WriteMemory16,
-                    WriteByte = memory.WriteMemory8,
-                    MemoryCopy = memory.MemoryCopy,
-                    MemorySet = memory.MemorySet
-                });
+
+                    break;
             }
 
             LoadModulesAndProgram(loader);
-            GetMetadataInfoAndSetupPersonalFolder(createParameters.inputFileName);
         }
+
 
         public void Stop()
         {

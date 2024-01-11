@@ -170,6 +170,19 @@ MonoBehaviour:
     m_Localized: OK
     m_Metadata:
       m_Items: []
+  - m_Id: 10059088317358080
+    m_Localized: CPU Backend
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10068328046108672
+    m_Localized: "Chu\u1EA9n b\u1ECB LLVM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10068328079663104
+    m_Localized: "Xin h\xE3y ch\u1EDD m\xF4t l\xFAc \u0111\u1EC3 l\xFAc gi\u1EA3
+      l\u1EADp chu\u1EA9n b\u1ECB LLVM!"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -58,6 +58,7 @@ namespace Nofun.UI
         private DropdownField orientationDropdown;
         private DropdownField deviceDropdown;
         private DropdownField systemVersionDropdown;
+        private DropdownField cpuBackendDropdown;
 
         private Toggle softwareScissorCheck;
 
@@ -90,6 +91,7 @@ namespace Nofun.UI
             deviceDropdown = root.Q<DropdownField>("DeviceCombo");
             systemVersionDropdown = root.Q<DropdownField>("VersionCombo");
             softwareScissorCheck = root.Q<Toggle>("SoftwareScissorToggle");
+            cpuBackendDropdown = root.Q<DropdownField>("CPUBackendCombo");
             fpsField = root.Q<TextField>("FPSField");
 
             confirmButton = root.Q<Button>("ConfirmButton");
@@ -154,6 +156,7 @@ namespace Nofun.UI
                 deviceDropdown.index = (int)SystemDeviceModel.SonyEricssonT310;
                 orientationDropdown.index = (int)Settings.ScreenOrientation.Potrait;
                 systemVersionDropdown.index = (int)SystemVersion.Version150;
+                cpuBackendDropdown.index = (int)CPUBackend.Interpreter;
 
                 softwareScissorCheck.value = false;
 
@@ -170,6 +173,7 @@ namespace Nofun.UI
                 deviceDropdown.index = (int)setting.Value.deviceModel;
                 orientationDropdown.index = (int)setting.Value.orientation;
                 systemVersionDropdown.index = (int)setting.Value.systemVersion;
+                cpuBackendDropdown.index = (int)setting.Value.cpuBackend;
 
                 softwareScissorCheck.value = setting.Value.enableSoftwareScissor;
                 confirmButton.text = "Save";
@@ -188,6 +192,7 @@ namespace Nofun.UI
             newSetting.systemVersion = (SystemVersion)systemVersionDropdown.index;
             newSetting.enableSoftwareScissor = softwareScissorCheck.value;
             newSetting.fps = int.Parse(fpsField.value);
+            newSetting.cpuBackend = (CPUBackend)cpuBackendDropdown.index;
 
             return settingManager.Set(gameName, newSetting);
         }
