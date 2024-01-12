@@ -95,6 +95,19 @@ namespace Nofun.UI
             });
         }
 
+        public void ForceClose()
+        {
+            DOTween.To(() => root.transform.scale, value => root.transform.scale = value, Vector3.zero, popInOutDuration)
+                .SetEase(Ease.InOutBack)
+                .OnComplete(() =>
+            {
+                root.style.display = DisplayStyle.None;
+
+                pendingAction?.Invoke(0);
+                pendingAction = null;
+            });
+        }
+
         private void OnLeftFarButtonClicked()
         {
             SubmitAndClose(2);
@@ -177,6 +190,16 @@ namespace Nofun.UI
 
                         leftButton.text = translationService.Translate("Cancel");
                         rightButton.text = translationService.Translate("Yes");
+                        break;
+                    }
+
+                case ButtonType.None:
+                    {
+
+                        leftFarButton.style.display = DisplayStyle.None;
+                        leftButton.style.display = DisplayStyle.None;
+                        rightButton.style.display = DisplayStyle.None;
+
                         break;
                     }
 

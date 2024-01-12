@@ -31,9 +31,10 @@ namespace Nofun.VM
         public IUIDriver uiDriver;
         public string persistentDataPath;
         public string inputFileName;
+        public bool useLLVM;
 
         public VMSystemCreateParameters(IGraphicDriver graphicDriver, IInputDriver inputDriver, IAudioDriver audioDriver, ITimeDriver timeDriver,
-            IUIDriver uiDriver, string persistentDataPath, string inputFileName = "")
+            IUIDriver uiDriver, string persistentDataPath, string inputFileName = "", bool useLLVM = false)
         {
             this.graphicDriver = graphicDriver;
             this.inputDriver = inputDriver;
@@ -42,6 +43,7 @@ namespace Nofun.VM
             this.uiDriver = uiDriver;
             this.persistentDataPath = persistentDataPath;
             this.inputFileName = inputFileName;
+            this.useLLVM = useLLVM;
         }
     }
 }

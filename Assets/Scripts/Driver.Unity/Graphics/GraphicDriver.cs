@@ -904,7 +904,7 @@ namespace Nofun.Driver.Unity.Graphics
             bufferPusherInUse = 0;
             bufferPushers.ForEach(pusher =>
             {
-                JobScheduler.Instance.PostponeToUnityThread(() => pusher.Flush(), true);
+                pusher.Flush();
             });
 
             JobScheduler.Instance.PostponeToUnityThread(() =>

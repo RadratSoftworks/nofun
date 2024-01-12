@@ -30,5 +30,6 @@ namespace Nofun.Settings
         public int fps;
         public ScreenOrientation orientation;
         public SystemVersion systemVersion;
+        public CPUBackend cpuBackend;
     }
 }

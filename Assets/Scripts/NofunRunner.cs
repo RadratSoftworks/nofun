@@ -52,11 +52,13 @@ namespace Nofun
         [SerializeField] private SettingDocumentController settingDocument;
         [SerializeField] private GameDetailsDocumentController gameDetailsDocument;
         [SerializeField] private GameListDocumentController gameListDocumentController;
+        [SerializeField] private float waitTimeBeforeNotifyUserOfLLVM = 0.2f;
 
         [Header("Settings")]
         [Range(1, 60)][SerializeField] private int fpsLimit = 30;
         [SerializeField] private string executableFilePath = "E:\\spacebox.mpn";
         [SerializeField] private bool immediatelyRun = false;
+        [SerializeField] private bool enableLLVM = false;
 
         private VMGPExecutable executable;
         private VMSystem system;
@@ -66,6 +68,9 @@ namespace Nofun
         private bool failed = false;
         private bool settingActive = false;
         private bool launchRequested = false;
+
+        private bool llvmPrepared = false;
+        private int llvmPreparingDialogId = -1;
 
         [Inject] private ScreenManager screenManager;
         [Inject] private IDialogService dialogService;
@@ -204,13 +209,15 @@ namespace Nofun
 #endif
 #endif
 
-#if UNITY_EDITOR || !UNITY_ANDROID
 #if UNITY_EDITOR
             if (immediatelyRun)
             {
 #endif
+
+#if UNITY_EDITOR || !UNITY_ANDROID
                 gameStream = new FileStream(targetExecutable, FileMode.Open, FileAccess.ReadWrite,
                     FileShare.Read);
+#endif
 
                 gameListDocumentController.ImmediateHide();
                 launchRequested = true;
@@ -218,7 +225,6 @@ namespace Nofun
                 StartGameImpl(gameStream, targetExecutable);
 #if UNITY_EDITOR
             }
-#endif
 #endif
         }
 
@@ -271,7 +277,7 @@ namespace Nofun
             {
                 executable = new VMGPExecutable(gameStream);
                 system = new VMSystem(executable, new VMSystemCreateParameters(graphicDriver, inputDriver, audioDriver, timeDriver, uiDriver,
-                    Application.persistentDataPath, targetExecutable));
+                    Application.persistentDataPath, targetExecutable, enableLLVM));
             }
             catch (System.Exception _)
             {
@@ -297,6 +303,9 @@ namespace Nofun
 
             systemThread = new Thread(new ThreadStart(() =>
             {
+                system.PostInitialize();
+                llvmPrepared = true;
+
                 while (!system.ShouldStop)
                 {
                     system.Run();
@@ -335,6 +344,33 @@ namespace Nofun
 
             graphicDriver.FpsLimit = Mathf.Clamp(setting.Value.fps, 1, 120);
             systemThread.Start();
+
+            if (setting.Value.cpuBackend == CPUBackend.LLVM)
+            {
+                llvmPrepared = false;
+                llvmPreparingDialogId = -1;
+
+                float elapsedTime = 0.0f;
+
+                while (!llvmPrepared)
+                {
+                    if (waitTimeBeforeNotifyUserOfLLVM <= elapsedTime && llvmPreparingDialogId < 0)
+                    {
+                        llvmPreparingDialogId = dialogService.OpenBlocked(Severity.Info,
+                            translationService.Translate("Info_Title_PreparingLLVM"),
+                            translationService.Translate("Info_Description_PreparingLLVM"));
+                    }
+
+                    yield return null;
+
+                    elapsedTime += Time.deltaTime;
+                }
+
+                if (llvmPreparingDialogId >= 0)
+                {
+                    dialogService.CloseBlocked(llvmPreparingDialogId);
+                }
+            }
 
             yield break;
         }

@@ -26,7 +26,9 @@ using System;
 using Nofun.Util;
 using System.IO;
 using System.Runtime.InteropServices;
+using Nofun.PIP2.Translator;
 using Nofun.Settings;
+using UnityEngine;
 
 namespace Nofun.VM
 {
@@ -47,6 +49,7 @@ namespace Nofun.VM
         private VMGPExecutable executable;
         private uint roundedHeapSize;
         private string persistentDataPath;
+        private string llvmCachePath;
 
         private uint constructorListAddress;
         private uint destructorListAddress;
@@ -80,6 +83,7 @@ namespace Nofun.VM
 
             assembler.PUSH_RA();
             assembler.MOV(Register.S1, Register.P0);
+            assembler.MOV(Register.S2, Register.P1);
 
             Label loopPoint = assembler.L;
             assembler.LDW(Register.S0, Register.S1, Assembler.Constant(0));
@@ -90,7 +94,9 @@ namespace Nofun.VM
             assembler.JP(loopPoint);
             assembler.L = targetJump;
 
+            assembler.CALLr(Register.S2);
             assembler.RET_RA();
+
             assembler.Assemble(memorySpan);
         }
 
@@ -109,21 +115,26 @@ namespace Nofun.VM
                 CreateCallListInvokeCode(MemoryMarshal.Cast<byte, uint>(memory.GetMemorySpan((int)listRunAddress, (int)VMMemory.DataAlignment)));
             }
 
+            // All code finalized, post-initialize the processor
+            processor.PoolDatas = result;
+
             if (constructorListAddress != 0)
             {
                 // Launch the constructor automatically
-                processor.Reg[Register.RA] = ProgramStartOffset;
+                processor.PostInitialize(listRunAddress);
+                processor.Reg[Register.RA] = 0;
                 processor.Reg[Register.P0] = constructorListAddress;
+                processor.Reg[Register.P1] = ProgramStartOffset;
                 processor.Reg[Register.PC] = listRunAddress;
             }
             else
             {
                 // Launch the game code instead
+                processor.PostInitialize(ProgramStartOffset);
                 processor.Reg[Register.PC] = ProgramStartOffset;
             }
 
             processor.Reg[Register.SP] = stackStartAddress;
-            processor.PoolDatas = result;
         }
 
         private void GetMetadataInfoAndSetupPersonalFolder(string inputFileName)
@@ -158,37 +169,66 @@ namespace Nofun.VM
 
             callMap = new VMCallMap(this);
 
+            llvmCachePath = Path.Join(persistentDataPath, "__LLVMCache");
+            Directory.CreateDirectory(llvmCachePath);
+
+            GetMetadataInfoAndSetupPersonalFolder(createParameters.inputFileName);
+        }
+
+        public void PostInitialize()
+        {
             VMLoader loader = new VMLoader(executable);
 
             // Make a gap after all program data to avoid weird stack manipulation
-            uint totalSize = ProgramStartOffset + loader.EstimateNeededProgramSize() + VMMemory.DataAlignment + executable.Header.stackSize;
+            uint totalSize = ProgramStartOffset + loader.EstimateNeededProgramSize() + VMMemory.DataAlignment;
 
-            stackStartAddress = totalSize;
+            listRunAddress = totalSize;
+            totalSize += VMMemory.DataAlignment;
+
+            stackStartAddress = totalSize + executable.Header.stackSize;
             heapAddress = stackStartAddress + VMMemory.DataAlignment;       // Make a gap to avoid weird stack manipulation
 
             roundedHeapSize = MemoryUtil.AlignUp(executable.Header.dynamicDataHeapSize * 4 / 3, VMMemory.DataAlignment);
-            totalSize += VMMemory.DataAlignment + roundedHeapSize;
-
-            listRunAddress = heapAddress + roundedHeapSize;
-            totalSize += VMMemory.DataAlignment;
+            totalSize = heapAddress + roundedHeapSize;
 
             memory = new VMMemory(totalSize);
-            processor = new PIP2.Interpreter.Interpreter(new PIP2.ProcessorConfig()
+
+            switch (GameSetting.cpuBackend)
             {
-                ReadCode = memory.ReadMemory32,
-                ReadDword = memory.ReadMemory32,
-                ReadWord = memory.ReadMemory16,
-                ReadByte = memory.ReadMemory8,
-                WriteDword = memory.WriteMemory32,
-                WriteWord = memory.WriteMemory16,
-                WriteByte = memory.WriteMemory8,
-                MemoryCopy = memory.MemoryCopy,
-                MemorySet = memory.MemorySet
-            });
+                case CPUBackend.LLVM:
+                    processor = new PIP2.Translator.Translator(new PIP2.ProcessorConfig(),
+                        gameName.ToValidFileName(),
+                        memory, new TranslatorOptions()
+                        {
+                            cacheRootPath = llvmCachePath,
+                            divideByZeroResultZero = true,
+                            enableCache = true,
+                            entryPoint = 0,
+                            textBase = ProgramStartOffset
+                        });
+
+                    break;
+
+                case CPUBackend.Interpreter:
+                    processor = new PIP2.Interpreter.Interpreter(new PIP2.ProcessorConfig()
+                    {
+                        ReadCode = memory.ReadMemory32,
+                        ReadDword = memory.ReadMemory32,
+                        ReadWord = memory.ReadMemory16,
+                        ReadByte = memory.ReadMemory8,
+                        WriteDword = memory.WriteMemory32,
+                        WriteWord = memory.WriteMemory16,
+                        WriteByte = memory.WriteMemory8,
+                        MemoryCopy = memory.MemoryCopy,
+                        MemorySet = memory.MemorySet
+                    });
+
+                    break;
+            }
 
             LoadModulesAndProgram(loader);
-            GetMetadataInfoAndSetupPersonalFolder(createParameters.inputFileName);
         }
+
 
         public void Stop()
         {
@@ -235,6 +275,8 @@ namespace Nofun.VM
             VSoundModule.Dispose();
             VMusicModule.Dispose();
             VMStreamModule.Dispose();
+
+            processor.Dispose();
         }
 
         public bool ShouldStop => shouldStop;

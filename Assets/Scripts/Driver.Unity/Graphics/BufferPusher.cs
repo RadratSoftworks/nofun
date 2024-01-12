@@ -44,6 +44,10 @@ namespace Nofun.Driver.Unity.Graphics
         private List<int> indicies;
         private List<SubMeshDescriptor> submeshes;
 
+        private List<Vertex> verticesSwap;
+        private List<int> indiciesSwap;
+        private List<SubMeshDescriptor> submeshesSwap;
+
         public Mesh BigMesh => bigMesh;
 
         public BufferPusher(int maxVerticesCount = 10000, int maxIndiciesCount = 30000)
@@ -67,13 +71,10 @@ namespace Nofun.Driver.Unity.Graphics
             vertices = new();
             indicies = new();
             submeshes = new();
-        }
 
-        public void Reset()
-        {
-            vertices.Clear();
-            indicies.Clear();
-            submeshes.Clear();
+            verticesSwap = new();
+            indiciesSwap = new();
+            submeshesSwap = new();
         }
 
         public int Push(MpMesh meshes)
@@ -143,14 +144,24 @@ namespace Nofun.Driver.Unity.Graphics
 
         public void Flush()
         {
-            if (vertices.Count != 0)
-            {
-                bigMesh.SetVertexBufferData(vertices, 0, 0, vertices.Count, 0, ShutUpFlags);
-                bigMesh.SetIndexBufferData(indicies, 0, 0, indicies.Count, ShutUpFlags);
-                bigMesh.SetSubMeshes(submeshes, ShutUpFlags);
-            }
+            List<Vertex> verticesBackup = vertices;
+            List<int> indiciesBackup = indicies;
+            List<SubMeshDescriptor> submeshesBackup = submeshes;
 
-            Reset();
+            JobScheduler.Instance.PostponeToUnityThread(() =>
+            {
+                bigMesh.SetVertexBufferData(verticesBackup, 0, 0, verticesBackup.Count, 0, ShutUpFlags);
+                bigMesh.SetIndexBufferData(indiciesBackup, 0, 0, indiciesBackup.Count, ShutUpFlags);
+                bigMesh.SetSubMeshes(submeshesBackup, ShutUpFlags);
+
+                verticesBackup.Clear();
+                indiciesBackup.Clear();
+                submeshesBackup.Clear();
+            }, true);
+
+            (verticesSwap, vertices) = (vertices, verticesSwap);
+            (indiciesSwap, indicies) = (indicies, indiciesSwap);
+            (submeshesSwap, submeshes) = (submeshes, submeshesSwap);
         }
     }
 }

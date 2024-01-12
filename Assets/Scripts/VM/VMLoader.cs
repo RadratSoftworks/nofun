@@ -83,23 +83,28 @@ namespace Nofun.VM
             {
                 UInt32 value = BinaryPrimitives.ReadUInt32LittleEndian(targetValue);
 
+                bool isInCode = false;
+                UInt32 valuePool = 0;
+
                 switch (item.metaOffset)
                 {
                     case 1:
                         {
-                            BinaryPrimitives.WriteUInt32LittleEndian(targetValue, value + codeAddress);
+                            valuePool = value + codeAddress;
+                            isInCode = true;
+
                             break;
                         }
 
                     case 2:
                         {
-                            BinaryPrimitives.WriteUInt32LittleEndian(targetValue, value + dataAddress);
+                            valuePool = value + dataAddress;
                             break;
                         }
 
                     case 4:
                         {
-                            BinaryPrimitives.WriteUInt32LittleEndian(targetValue, value + bssAddress);
+                            valuePool = value + bssAddress;
                             break;
                         }
 
@@ -109,7 +114,13 @@ namespace Nofun.VM
                         }
                 }
 
-                return null;
+                BinaryPrimitives.WriteUInt32LittleEndian(targetValue, valuePool);
+
+                // This is mostly for the translator, in order to detect calls in potential VTable
+                return new PoolData(valuePool)
+                {
+                    IsCodePointerRelocatedInData = isInCode
+                };
             }
             else
             {
@@ -144,7 +155,10 @@ namespace Nofun.VM
             switch (poolItem.itemTarget)
             {
                 case 1:
-                    return new PoolData(poolItem.targetOffset + codeAddress, symbolName);
+                    return new PoolData(poolItem.targetOffset + codeAddress, symbolName)
+                    {
+                        IsInCode = true
+                    };
 
                 case 2:
                     return new PoolData(poolItem.targetOffset + dataAddress, symbolName);
@@ -177,7 +191,11 @@ namespace Nofun.VM
                     {
                         if ((poolItem.metaOffset - 1) < poolItems.Count)
                         {
-                            return new PoolData((uint)poolDatas[(int)poolItem.metaOffset - 1].ImmediateInteger + poolItem.targetOffset);
+                            return new PoolData((uint)poolDatas[(int)poolItem.metaOffset - 1].ImmediateInteger +
+                                                poolItem.targetOffset)
+                            {
+                                IsInCode = poolDatas[(int)poolItem.metaOffset - 1].IsInCode
+                            };
                         }
                         else
                         {

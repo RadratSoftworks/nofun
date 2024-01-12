@@ -7,7 +7,8 @@ namespace Nofun.Services
         OK,
         OKCancel,
         YesNo,
-        YesNoCancel
+        YesNoCancel,
+        None
     };
 
     public enum Severity
@@ -22,5 +23,9 @@ namespace Nofun.Services
     {
         public void Show(Severity severity, ButtonType buttonType, string title, string details,
             Action<int> onButtonSubmit);
+
+        public int OpenBlocked(Severity severity, string title, string details);
+
+        public void CloseBlocked(int popupId);
     }
 }

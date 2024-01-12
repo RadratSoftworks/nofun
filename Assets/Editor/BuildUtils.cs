@@ -16,7 +16,7 @@ namespace Nofun
     {
         struct ProgramInfo
         {
-            public List<uint> poolItems;
+            public List<ulong> poolItems;
             public uint startOffset;
         }
 
@@ -104,18 +104,33 @@ namespace Nofun
                             {
                                 if (x.Name == "vTerminateVMGP")
                                 {
-                                    return 0x80000001;
+                                    return 0x8000000100000000;
                                 }
                                 else
                                 {
-                                    return 0x80000000;
+                                    return 0x8000000000000000;
                                 }
                             }
                             else
                             {
-                                return x.DataType == PoolDataType.ImmInteger
+                                ulong val = x.DataType == PoolDataType.ImmInteger
                                     ? x.ImmediateInteger.Value
                                     : (uint)BitConverter.SingleToInt32Bits(x.ImmediateFloat.Value);
+
+                                if (x.Name.Equals("~C", StringComparison.OrdinalIgnoreCase) || x.Name.Equals("~D", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    val |= 0x2000000000000000;
+                                }
+                                else if (x.IsInCode)
+                                {
+                                    val |= 0x4000000000000000;
+                                }
+                                else if (x.IsCodePointerRelocatedInData)
+                                {
+                                    val |= 0x1000000000000000;
+                                }
+
+                                return val;
                             }
                         }).ToList()
                     };

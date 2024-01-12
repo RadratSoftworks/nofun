@@ -52,7 +52,7 @@ namespace Nofun.Plugins
             return true;
         }
 #elif UNITY_ANDROID
-        private static bool OpenPickFileDialogWhenGranted(FilterItem[] filters, Action<string> onPathReceived)
+        public static bool OpenPickFileDialog(FilterItem[] filters, Action<string> onPathReceived, string defaultPath = null)
         {
             if (NativeFilePicker.PickFile(
                 (string path) => onPathReceived(path),
@@ -65,33 +65,6 @@ namespace Nofun.Plugins
             else
             {
                 return true;
-            }
-        }
-
-        public static bool OpenPickFileDialog(FilterItem[] filters, Action<string> onPathReceived, string defaultPath = null)
-        {
-            switch (NativeFilePicker.CheckPermission(true))
-            {
-                case NativeFilePicker.Permission.Granted:
-                    return OpenPickFileDialogWhenGranted(filters, onPathReceived);
-
-                case NativeFilePicker.Permission.ShouldAsk:
-                    if (NativeFilePicker.RequestPermission(true) != NativeFilePicker.Permission.Granted)
-                    {
-                        Debug.LogError("Open file picker permission denied!");
-                        return false;
-                    }
-                    else
-                    {
-                        return OpenPickFileDialogWhenGranted(filters, onPathReceived);
-                    }
-
-                case NativeFilePicker.Permission.Denied:
-                    Debug.LogError("Open file picker permission denied!");
-                    return false;
-
-                default:
-                    return false;
             }
         }
 #endif
