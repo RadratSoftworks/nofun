@@ -100,7 +100,7 @@ namespace Nofun
 
         ~MophunAndroidFileStream()
         {
-            if (currentHandle != null)
+            if (currentHandle != IntPtr.Zero)
             {
                 CloseRouter(currentHandle);
             }

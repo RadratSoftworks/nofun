@@ -44,6 +44,11 @@
                         <UnityEngine.Localization.LocalizedString property="label" table="GUID:198be8f0d9d907049947f8336106f789" entry="Id(99190880849926)" />
                     </Bindings>
                 </ui:DropdownField>
+                <ui:DropdownField label="Version" index="1" choices="Interpreter,LLVM" name="CPUBackendCombo">
+                    <Bindings>
+                        <UnityEngine.Localization.LocalizedString property="label" table="GUID:198be8f0d9d907049947f8336106f789" entry="Id(10059088317358080)" />
+                    </Bindings>
+                </ui:DropdownField>
                 <ui:Button text="Set screen size to device screen size" name="SyncSizeButton" />
                 <Bindings>
                     <UnityEngine.Localization.LocalizedString property="text" entry="Id(99190880849924)" />

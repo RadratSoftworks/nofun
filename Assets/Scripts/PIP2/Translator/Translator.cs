@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Nofun.Util.Logging;
 using Nofun.VM;
+using AOT;
 
 namespace Nofun.PIP2.Translator
 {
@@ -27,28 +29,34 @@ namespace Nofun.PIP2.Translator
         private VMMemory memory;
         private bool notWorking;
 
-        private void HandleHleCall(IntPtr userData, int num)
+        private static Dictionary<IntPtr, Translator> translatorMap = new();
+
+        [MonoPInvokeCallback(typeof(HleHandler))]
+        private static void HandleHleCall(IntPtr userData, int num)
         {
-            if (num < 0)
+            if (translatorMap.TryGetValue(userData, out Translator translator))
             {
-                if (Enum.IsDefined(typeof(ExceptionCode), -num))
+                if (num < 0)
                 {
-                    ExceptionCode code = (ExceptionCode)(-num);
-                    switch (code)
+                    if (Enum.IsDefined(typeof(ExceptionCode), -num))
                     {
-                        case ExceptionCode.NotCompiledFunction:
-                            throw new InvalidOperationException($"Not compiled function called! PC={Reg[Register.PC]:X8}");
+                        ExceptionCode code = (ExceptionCode)(-num);
+                        switch (code)
+                        {
+                            case ExceptionCode.NotCompiledFunction:
+                                throw new InvalidOperationException($"Not compiled function called! PC={translator.Reg[Register.PC]:X8}");
+                        }
                     }
                 }
-            }
 
-            PoolData poolData = GetPoolData((uint)num);
-            if (poolData.DataType != PoolDataType.Import)
-            {
-                throw new InvalidOperationException("HLE call is not an import!");
-            }
+                PoolData poolData = translator.GetPoolData((uint)num);
+                if (poolData.DataType != PoolDataType.Import)
+                {
+                    throw new InvalidOperationException("HLE call is not an import!");
+                }
 
-            poolData.Function();
+                poolData.Function();
+            }
         }
 
         public Translator(ProcessorConfig config, string moduleName, VMMemory memory, TranslatorOptions options) : base(config)
@@ -123,6 +131,8 @@ namespace Nofun.PIP2.Translator
 
             Marshal.FreeHGlobal(configPtr);
             Marshal.FreeHGlobal(optionsPtr);
+
+            translatorMap.Add(enginePtr, this);
         }
 
         public override void Dispose()
@@ -130,6 +140,8 @@ namespace Nofun.PIP2.Translator
             if (enginePtr != IntPtr.Zero)
             {
                 TranslatorAPI.EngineDestroy(enginePtr);
+                translatorMap.Remove(enginePtr);
+
                 enginePtr = IntPtr.Zero;
             }
 
@@ -170,7 +182,7 @@ namespace Nofun.PIP2.Translator
                 try
                 {
                     TranslatorAPI.EngineExecute(enginePtr, Marshal.GetFunctionPointerForDelegate(hleHandler),
-                        IntPtr.Zero);
+                        enginePtr);
                 }
                 catch (Exception ex)
                 {

@@ -209,13 +209,15 @@ namespace Nofun
 #endif
 #endif
 
-#if UNITY_EDITOR || !UNITY_ANDROID
 #if UNITY_EDITOR
             if (immediatelyRun)
             {
 #endif
+
+#if UNITY_EDITOR || !UNITY_ANDROID
                 gameStream = new FileStream(targetExecutable, FileMode.Open, FileAccess.ReadWrite,
                     FileShare.Read);
+#endif
 
                 gameListDocumentController.ImmediateHide();
                 launchRequested = true;
@@ -223,7 +225,6 @@ namespace Nofun
                 StartGameImpl(gameStream, targetExecutable);
 #if UNITY_EDITOR
             }
-#endif
 #endif
         }
 
