@@ -148,7 +148,6 @@ namespace Nofun
             JobScheduler.Paused = false;
 
             system.Stop();
-            StartCoroutine(ShowGameListDelay());
         }
 
         private void OpenGameSetting()
@@ -312,6 +311,11 @@ namespace Nofun
                 }
 
                 Reset();
+
+                JobScheduler.Instance.RunOnUnityThread(() =>
+                {
+                    StartCoroutine(ShowGameListDelay());
+                });
             }));
 
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR

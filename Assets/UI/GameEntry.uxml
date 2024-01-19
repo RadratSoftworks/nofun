@@ -1,7 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/UI/Stylesheet/GameEntry.uss?fileID=7433441132597879392&amp;guid=bc475a5f2ab3418da768466c602d6424&amp;type=3#GameEntry" />
-    <ui:VisualElement name="root" class="game-entry" style="flex-grow: 1; width: 128px; height: 150px;">
-        <ui:VisualElement style="flex-grow: 3; flex-shrink: 3;">
+    <ui:VisualElement name="root" class="game-entry" style="flex-grow: 1; width: 180px; height: 210px;">
+        <ui:VisualElement name="VisualElement" style="flex-grow: 3; flex-shrink: 3;">
             <ui:VisualElement name="Icon" style="flex-grow: 1; margin-top: 10%; margin-right: 10%; margin-bottom: 10%; margin-left: 10%;" />
         </ui:VisualElement>
         <ui:Label tabindex="-1" text="Label" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Name" style="font-size: 14px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; -unity-text-align: upper-center; white-space: nowrap; overflow: hidden;" />

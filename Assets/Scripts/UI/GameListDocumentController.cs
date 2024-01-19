@@ -270,11 +270,19 @@ namespace Nofun.UI
         {
             bool permissionGranted = FilePicker.OpenPickFileDialog(new FilterItem[]
             {
+                #if UNITY_EDITOR || !UNITY_ANDROID
                 new FilterItem
                 {
                     name = "Mophun game",
                     spec = "mpn"
                 }
+                #else
+                new FilterItem
+                {
+                    name = "Mophun game",
+                    spec = "application/octet-stream"
+                }
+                #endif
             }, (string path) =>
             {
                 if (!string.IsNullOrEmpty(path))

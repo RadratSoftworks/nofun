@@ -78,7 +78,7 @@ namespace Nofun.Driver.Unity.Audio
         {
             if (type != SoundType.Midi)
             {
-                throw new ArgumentException("Sound type other than MIDI has not been implemented!");
+                throw new ArgumentException($"Sound type other than MIDI has not been implemented! Type={type}");
             }
 
             unsafe

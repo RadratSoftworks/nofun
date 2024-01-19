@@ -78,6 +78,10 @@ namespace Nofun.UI
                     var dynamicGameIcon = dynamicIconsProvider.GetIcon(preloadedDynamicGameIcon);
                     return new StyleBackground(Background.FromRenderTexture(dynamicGameIcon));
                 }
+                else
+                {
+                    return new StyleBackground(gameIconManifest.DefaultIcon);
+                }
             }
 
             return null;

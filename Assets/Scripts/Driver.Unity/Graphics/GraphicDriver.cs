@@ -471,7 +471,13 @@ namespace Nofun.Driver.Unity.Graphics
                 displayImage.texture = screenTextureBackBuffer;
                 if (!fullscreen)
                 {
-                    AspectRatioFitter fitter = displayImage.gameObject.AddComponent<AspectRatioFitter>();
+                    AspectRatioFitter fitter = displayImage.gameObject.GetComponent<AspectRatioFitter>();
+
+                    if (fitter == null)
+                    {
+                        fitter = displayImage.gameObject.AddComponent<AspectRatioFitter>();
+                    }
+
                     PrepareNonFullscreenFitDisplay(imageTransform, fitter, screenSize, screenManager.ScreenOrientation);
                 }
                 else
@@ -536,7 +542,13 @@ namespace Nofun.Driver.Unity.Graphics
 
             if (!fullscreen)
             {
-                AspectRatioFitter fitter = displayImage.gameObject.AddComponent<AspectRatioFitter>();
+                AspectRatioFitter fitter = displayImage.gameObject.GetComponent<AspectRatioFitter>();
+
+                if (fitter == null)
+                {
+                    fitter = displayImage.gameObject.AddComponent<AspectRatioFitter>();
+                }
+
                 PrepareNonFullscreenFitDisplay(transform, fitter, size, screenManager.ScreenOrientation);
             }
 
