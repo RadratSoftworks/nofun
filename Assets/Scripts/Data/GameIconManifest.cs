@@ -26,6 +26,8 @@ namespace Nofun.Data.Model
 
         public DynamicGameIcon[] DynamicIcons;
 
+        public Sprite DefaultIcon;
+
         public GameIcon FindGameIcon(string gameName)
         {
             gameName = gameName.Trim();
