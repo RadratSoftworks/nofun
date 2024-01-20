@@ -307,7 +307,15 @@ namespace Nofun
 
                 while (!system.ShouldStop)
                 {
-                    system.Run();
+                    try
+                    {    
+                        system.Run();
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Util.Logging.Logger.Error(Util.Logging.LogClass.Loader, $"System execution encounter exception: {ex}");
+                        break;
+                    }
                 }
 
                 Reset();
