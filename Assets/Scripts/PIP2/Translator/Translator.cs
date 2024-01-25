@@ -84,7 +84,14 @@ namespace Nofun.PIP2.Translator
                     }
                     else
                     {
-                        poolItems[i] = unchecked((long)0x8000000000000000);
+                        if (SpecialFunctionUtils.IsSpecialFunction(poolDatas[i].Name))
+                        {
+                            poolItems[i] = unchecked((long)(0x8000000200000000 | (ulong)SpecialFunctionUtils.GetSpecialFunction(poolDatas[i].Name)));
+                        }
+                        else
+                        {
+                            poolItems[i] = unchecked((long)0x8000000000000000);
+                        }
                     }
                 }
                 else

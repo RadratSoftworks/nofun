@@ -108,7 +108,14 @@ namespace Nofun
                                 }
                                 else
                                 {
-                                    return 0x8000000000000000;
+                                    if (SpecialFunctionUtils.IsSpecialFunction(x.Name))
+                                    {
+                                        return 0x8000000200000000 | (ulong)SpecialFunctionUtils.GetSpecialFunction(x.Name);
+                                    }
+                                    else
+                                    {
+                                        return 0x8000000000000000;
+                                    }
                                 }
                             }
                             else
