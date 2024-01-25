@@ -8,5 +8,7 @@ namespace Nofun.PIP2.Translator
         public ulong memorySize;
         public IntPtr poolItemsBase;
         public ulong poolItemsCount;
+        public IntPtr stackAllocateFunction;
+        public IntPtr stackFreeFunction;
     }
 }

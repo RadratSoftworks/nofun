@@ -32,5 +32,8 @@ namespace Nofun.PIP2
 
         public Action<UInt32, UInt32, UInt32> MemoryCopy;
         public Action<UInt32, byte, UInt32> MemorySet;
+
+        public Action TaskYield;
+        public Action TaskKill;
     }
 }

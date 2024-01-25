@@ -26,6 +26,7 @@ using System;
 using Nofun.Util;
 using System.IO;
 using System.Runtime.InteropServices;
+using Nofun.Module.VMGP;
 using Nofun.PIP2.Translator;
 using Nofun.Settings;
 using UnityEngine;
@@ -36,6 +37,7 @@ namespace Nofun.VM
     {
         public const uint ProgramStartOffset = VMMemory.DataAlignment;
         private const int InstructionPerRun = 10000;
+        private const int DefaultStackSize = 0x2000;
 
         private VMMemory memory;
         private VMCallMap callMap;
@@ -50,12 +52,15 @@ namespace Nofun.VM
         private uint roundedHeapSize;
         private string persistentDataPath;
         private string llvmCachePath;
+        private uint taskStackSectionSize;
 
         private uint constructorListAddress;
         private uint destructorListAddress;
         private uint listRunAddress;
         private uint stackStartAddress;
         private uint heapAddress;
+        private uint taskStackSectionAddress;
+        private uint taskTerminateSubAddress;
 
         private bool shouldStop = false;
         private string gameName;
@@ -74,6 +79,9 @@ namespace Nofun.VM
         public uint HeapStart => heapAddress;
         public uint HeapSize => roundedHeapSize;
         public uint HeapEnd => HeapStart + HeapSize;
+        public uint TaskStackSectionStart => taskStackSectionAddress;
+        public uint TaskStackSectionSize => taskStackSectionSize;
+        public uint TaskTerminateSubroutineAddress => taskTerminateSubAddress;
         public string PersistentDataPath => persistentDataPath;
         public string GameName => gameName;
 
@@ -100,6 +108,14 @@ namespace Nofun.VM
             assembler.Assemble(memorySpan);
         }
 
+        private void CreateTaskTerminateCode(Span<uint> memorySpan)
+        {
+            Assembler assembler = new Assembler();
+            assembler.KILLTASK();
+
+            assembler.Assemble(memorySpan);
+        }
+
         private void LoadModulesAndProgram(VMLoader loader)
         {
             RegisterModules();
@@ -114,6 +130,9 @@ namespace Nofun.VM
             {
                 CreateCallListInvokeCode(MemoryMarshal.Cast<byte, uint>(memory.GetMemorySpan((int)listRunAddress, (int)VMMemory.DataAlignment)));
             }
+
+            CreateTaskTerminateCode(MemoryMarshal.Cast<byte, uint>(memory.GetMemorySpan((int)taskTerminateSubAddress,
+                (int)VMMemory.DataAlignment)));
 
             // All code finalized, post-initialize the processor
             processor.PoolDatas = result;
@@ -185,11 +204,22 @@ namespace Nofun.VM
             listRunAddress = totalSize;
             totalSize += VMMemory.DataAlignment;
 
-            stackStartAddress = totalSize + executable.Header.stackSize;
+            taskTerminateSubAddress = totalSize;
+            totalSize += VMMemory.DataAlignment;
+
+            var stackSize = executable.Header.stackSize == 0 ? DefaultStackSize : executable.Header.stackSize;
+            executable.Header.stackSize = stackSize;
+
+            stackStartAddress = totalSize + stackSize;
             heapAddress = stackStartAddress + VMMemory.DataAlignment;       // Make a gap to avoid weird stack manipulation
 
             roundedHeapSize = MemoryUtil.AlignUp(executable.Header.dynamicDataHeapSize * 4 / 3, VMMemory.DataAlignment);
             totalSize = heapAddress + roundedHeapSize;
+
+            taskStackSectionAddress = totalSize;
+            taskStackSectionSize = StackAllocator.CalculateMaxTotalStackSize(stackSize);
+
+            totalSize += taskStackSectionSize;
 
             memory = new VMMemory(totalSize);
 
@@ -205,7 +235,9 @@ namespace Nofun.VM
                             enableCache = true,
                             entryPoint = 0,
                             textBase = ProgramStartOffset
-                        });
+                        },
+                        (x) => VMGPModule.StackAllocator.Allocate(x),
+                        (x) => VMGPModule.StackAllocator.Free(x));
 
                     break;
 
@@ -220,7 +252,9 @@ namespace Nofun.VM
                         WriteWord = memory.WriteMemory16,
                         WriteByte = memory.WriteMemory8,
                         MemoryCopy = memory.MemoryCopy,
-                        MemorySet = memory.MemorySet
+                        MemorySet = memory.MemorySet,
+                        TaskYield = () => { VMGPModule.YieldTask(); },
+                        TaskKill = () => { VMGPModule.TerminateTask(); }
                     });
 
                     break;

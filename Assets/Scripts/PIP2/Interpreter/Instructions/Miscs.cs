@@ -40,5 +40,15 @@ namespace Nofun.PIP2.Interpreter
         {
             Reg[encoding.d] = ~Reg[encoding.s];
         }
+
+        private void SLEEP(TwoSourcesEncoding encoding)
+        {
+            config.TaskYield();
+        }
+
+        private void KILLTASK(TwoSourcesEncoding encoding)
+        {
+            config.TaskKill();
+        }
     }
 }

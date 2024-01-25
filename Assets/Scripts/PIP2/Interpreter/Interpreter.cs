@@ -41,7 +41,7 @@ namespace Nofun.PIP2.Interpreter
                 I(ANDHi), I(SLLH), I(SRLH), I(SRAH), I(BEQI), I(BNEI), I(BGEI), null,    // 0x28
                 I(BGTI), I(BGTUI), I(BLEI), I(BLEUI), I(BLTI), I(BLTUI), I(BEQIB), I(BNEIB),    // 0x30
                 I(BGEIB), null, I(BGTIB), I(BGTUIB), I(BLEIB), I(BLEUIB), I(BLTIB), I(BLTUIB),    // 0x38
-                I(LDQ), I(JPr), I(CALLr), I(STORE), I(RESTORE), I(RET), null, null,    // 0x40
+                I(LDQ), I(JPr), I(CALLr), I(STORE), I(RESTORE), I(RET), I(KILLTASK), I(SLEEP),    // 0x40
                 I(SYSCPY), I(SYSSET), I(ADDi), I(ANDi), I(MULi), I(DIVi), I(DIVUi), I(ORi),    // 0x48
                 I(XORi), I(SUBi), I(STBd), I(STHd), I(STWd), I(LDBd), I(LDHd), I(LDWd),    // 0x50
                 I(LDBUd), I(LDHUd), I(LDI), I(JPl), I(CALLl), I(BEQ), I(BNE), I(BGE),    // 0x58

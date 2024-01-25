@@ -37,6 +37,8 @@ namespace Nofun.Module.VMGP
             this.spriteCache = new();
             this.tilemapCache = new();
             this.heapAllocator = new BlockAllocator(system.HeapSize);
+
+            InitializeTasks();
         }
 
         public void OnSystemLoaded()

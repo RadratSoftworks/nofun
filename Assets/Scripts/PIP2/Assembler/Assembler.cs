@@ -197,6 +197,17 @@ namespace Nofun.PIP2.Assembler
             });
         }
 
+        public void KILLTASK()
+        {
+            instructions.Add(new InstructionInfo()
+            {
+                opcode = Opcode.KILLTASK,
+                dest = 0,
+                operand1 = 0,
+                hasOrdinal = false
+            });
+        }
+
         public uint EstimateWordCount()
         {
             uint total = 0;

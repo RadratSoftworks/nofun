@@ -6,6 +6,8 @@ using System.Threading;
 using Nofun.Util.Logging;
 using Nofun.VM;
 using AOT;
+using UnityEngine;
+using Logger = Nofun.Util.Logging.Logger;
 
 namespace Nofun.PIP2.Translator
 {
@@ -17,6 +19,8 @@ namespace Nofun.PIP2.Translator
         }
 
         private delegate void HleHandler(IntPtr userData, int hleNum);
+        private delegate uint StackAllocateFunctionType(IntPtr userData, Int64 stackSize);
+        private delegate void StackFreeFunctionType(IntPtr userData, uint stackTop);
 
         private IntPtr enginePtr;
         private GCHandle pinnedMemoryHandle;
@@ -28,6 +32,12 @@ namespace Nofun.PIP2.Translator
         private TranslatorOptions translatorOptions;
         private VMMemory memory;
         private bool notWorking;
+
+        private Func<long, uint> stackAllocateFunction;
+        private Action<uint> stackFreeFunction;
+
+        private StackAllocateFunctionType stackAllocateFunctionTypeDelegate;
+        private StackFreeFunctionType stackFreeFunctionTypeDelegate;
 
         private static Dictionary<IntPtr, Translator> translatorMap = new();
 
@@ -59,13 +69,46 @@ namespace Nofun.PIP2.Translator
             }
         }
 
-        public Translator(ProcessorConfig config, string moduleName, VMMemory memory, TranslatorOptions options) : base(config)
+        [MonoPInvokeCallback(typeof(StackAllocateFunctionType))]
+        private static uint HandleStackAllocate(IntPtr engineInstance, long stackSize)
+        {
+            if (translatorMap.TryGetValue(engineInstance, out Translator translator))
+            {
+                return translator.AllocateStack(stackSize);
+            }
+
+            return 0;
+        }
+
+        [MonoPInvokeCallback(typeof(StackFreeFunctionType))]
+        private static void HandleStackFree(IntPtr engineInstance, uint stackTop)
+        {
+            if (translatorMap.TryGetValue(engineInstance, out Translator translator))
+            {
+                translator.FreeStack(stackTop);
+            }
+        }
+
+        public Translator(ProcessorConfig config, string moduleName, VMMemory memory, TranslatorOptions options,
+            Func<long, uint> stackAllocateFunction = null, Action<uint> stackFreeFunction = null) : base(config)
         {
             hleHandler = HandleHleCall;
 
             this.translatorOptions = options;
             this.moduleName = moduleName;
             this.memory = memory;
+            this.stackAllocateFunction = stackAllocateFunction;
+            this.stackFreeFunction = stackFreeFunction;
+
+            if (this.stackAllocateFunction != null)
+            {
+                stackAllocateFunctionTypeDelegate = HandleStackAllocate;
+            }
+
+            if (this.stackFreeFunction != null)
+            {
+                stackFreeFunctionTypeDelegate = HandleStackFree;
+            }
         }
 
         public override void PostInitialize(uint entryPoint)
@@ -123,7 +166,9 @@ namespace Nofun.PIP2.Translator
                 memoryBase = pinnedMemoryHandle.AddrOfPinnedObject(),
                 memorySize = (ulong)memory.MemorySize,
                 poolItemsBase = poolItemsPtr,
-                poolItemsCount = (ulong)poolItems.Length
+                poolItemsCount = (ulong)poolItems.Length,
+                stackAllocateFunction = (this.stackAllocateFunction == null) ? IntPtr.Zero : Marshal.GetFunctionPointerForDelegate(stackAllocateFunctionTypeDelegate),
+                stackFreeFunction = (this.stackFreeFunction == null) ? IntPtr.Zero : Marshal.GetFunctionPointerForDelegate(stackFreeFunctionTypeDelegate)
             };
 
             translatorOptions.entryPoint = entryPoint - translatorOptions.textBase;
@@ -202,6 +247,8 @@ namespace Nofun.PIP2.Translator
 
             runThread.Start();
             finishEvent.WaitOne();
+
+            throw new Exception("Finished execution!");
         }
 
         public override void Stop()
@@ -337,6 +384,26 @@ namespace Nofun.PIP2.Translator
             {
                 Reg[(uint)i * 4] = context.registers[i];
             }
+        }
+
+        private uint AllocateStack(long stackSize)
+        {
+            if (stackAllocateFunction == null)
+            {
+                return 0;
+            }
+
+            return stackAllocateFunction(stackSize);
+        }
+
+        private void FreeStack(uint stackTop)
+        {
+            if (stackFreeFunction == null)
+            {
+                return;
+            }
+
+            stackFreeFunction(stackTop);
         }
 
         public override int InstructionRan => 0;
