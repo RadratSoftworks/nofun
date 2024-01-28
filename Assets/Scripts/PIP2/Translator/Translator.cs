@@ -6,7 +6,6 @@ using System.Threading;
 using Nofun.Util.Logging;
 using Nofun.VM;
 using AOT;
-using UnityEngine;
 using Logger = Nofun.Util.Logging.Logger;
 
 namespace Nofun.PIP2.Translator
@@ -65,7 +64,18 @@ namespace Nofun.PIP2.Translator
                     throw new InvalidOperationException("HLE call is not an import!");
                 }
 
+#if !UNITY_EDITOR && NOFUN_PRODUCTION
+                    try
+                    {
+                        poolData.Function();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Trace(LogClass.PIP2, $"{ex}");
+                    }
+#else
                 poolData.Function();
+#endif
             }
         }
 
@@ -239,7 +249,11 @@ namespace Nofun.PIP2.Translator
                 catch (Exception ex)
                 {
                     Logger.Error(LogClass.PIP2, $"Exception thrown while running translator, PC={Reg[Register.PC]:x8}. Details: {ex}");
+
                     notWorking = true;
+                    finishEvent.Set();
+
+                    return;
                 }
 
                 finishEvent.Set();
