@@ -31,13 +31,20 @@ namespace Nofun.Data
 
         public bool AddGame(Model.GameInfo game)
         {
-            if (_connection.Insert(game) == 0)
+            try
+            {
+                if (_connection.Insert(game) == 0)
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            catch
             {
                 return false;
-            }
-            else
-            {
-                return true;
             }
         }
 
