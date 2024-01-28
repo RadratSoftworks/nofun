@@ -30,6 +30,7 @@ using System.Threading;
 using Nofun.UI;
 using Nofun.Settings;
 using System.Collections;
+using Nofun.PIP2;
 using Nofun.Services;
 using VContainer;
 
@@ -171,7 +172,7 @@ namespace Nofun
             settingManager = new(Application.persistentDataPath);
             timeDriver = new TimeDriver();
 
-            gameDetailsDocument.Setup(settingManager);
+            gameDetailsDocument.Setup(settingManager, gameListDocumentController);
         }
 
         private void Start()
@@ -290,7 +291,7 @@ namespace Nofun
                 return;
             }
 
-            settingDocument.Setup(settingManager, system.GameName);
+            settingDocument.Setup(settingManager, system.GameName, VMSystem.GetSuitableDefaultSetting(system.Executable));
 
             settingDocument.Finished += FinishSettingDocument;
             settingDocument.ExitGameRequested += HandleExitGame;
@@ -308,7 +309,7 @@ namespace Nofun
                 while (!system.ShouldStop)
                 {
                     try
-                    {    
+                    {
                         system.Run();
                     }
                     catch (System.Exception ex)
@@ -334,16 +335,7 @@ namespace Nofun
         private IEnumerator InitializeGameRun()
         {
             GameSetting? setting = settingManager.Get(system.GameName);
-            setting = setting ?? new GameSetting()
-            {
-                screenSizeX = 101,
-                screenSizeY = 80,
-                fps = 30,
-                screenMode = ScreenMode.CustomSize,
-                deviceModel = Module.VMGPCaps.SystemDeviceModel.SonyEricssonT300,
-                systemVersion = SystemVersion.Version150,
-                enableSoftwareScissor = false
-            };
+            setting = setting ?? VMSystem.GetSuitableDefaultSetting(system.Executable);
 
             system.GameSetting = setting.Value;
 

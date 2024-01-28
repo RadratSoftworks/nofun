@@ -63,6 +63,7 @@ namespace Nofun.UI
         private Toggle softwareScissorCheck;
 
         private GameSettingsManager settingManager;
+        private GameSetting? suggestedSetting;
         private string gameName;
 
         [Inject] private ITranslationService translationService;
@@ -118,10 +119,11 @@ namespace Nofun.UI
             }
         }
 
-        public void Setup(GameSettingsManager manager, string gameName)
+        public void Setup(GameSettingsManager manager, string gameName, GameSetting? suggestedSetting = null)
         {
             this.settingManager = manager;
             this.gameName = gameName;
+            this.suggestedSetting = suggestedSetting;
 
             VisualElement root = document.rootVisualElement;
             root.Q<Label>("GameLabel").text = gameName;
@@ -145,6 +147,14 @@ namespace Nofun.UI
         public void Load()
         {
             GameSetting? setting = settingManager.Get(gameName);
+            if (setting == null)
+            {
+                if (suggestedSetting != null)
+                {
+                    setting = suggestedSetting;
+                }
+            }
+
             if (setting == null)
             {
                 // Make some default value

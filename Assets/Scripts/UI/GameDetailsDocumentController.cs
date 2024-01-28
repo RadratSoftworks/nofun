@@ -1,9 +1,12 @@
 using System;
 using System.Collections;
+using System.IO;
 using DG.Tweening;
 using Nofun.Data.Model;
+using Nofun.Parser;
 using Nofun.Settings;
 using Nofun.Util.Unity;
+using Nofun.VM;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -30,6 +33,7 @@ namespace Nofun.UI
         public Action<string> OnGameInfoChoosen;
         public Action<GameInfo> OnGameRemovalRequested;
         private GameSettingsManager gameSettingsManager;
+        private IGameProvider gameProvider;
 
         public override void Awake()
         {
@@ -56,9 +60,10 @@ namespace Nofun.UI
             document.rootVisualElement.style.display = DisplayStyle.None;
         }
 
-        public void Setup(GameSettingsManager gameSettingsManager)
+        public void Setup(GameSettingsManager gameSettingsManager, IGameProvider gameProvider)
         {
             this.gameSettingsManager = gameSettingsManager;
+            this.gameProvider = gameProvider;
         }
 
         private void OnOuterDialogueClicked(PointerDownEvent evt)
@@ -85,8 +90,13 @@ namespace Nofun.UI
 
         private void OnSettingButtonClicked(PointerUpEvent evt)
         {
-            settingDocumentController.Setup(gameSettingsManager, activeGameInfo.Name);
-            settingDocumentController.Show();
+            using (FileStream stream = File.OpenRead(gameProvider.GetGamePath(activeGameInfo.GameFileName)))
+            {
+                VMGPExecutable executable = new VMGPExecutable(stream);
+
+                settingDocumentController.Setup(gameSettingsManager, activeGameInfo.Name, VMSystem.GetSuitableDefaultSetting(executable));
+                settingDocumentController.Show();
+            }
         }
 
         private IEnumerator FinalizeIcon(StyleBackground gameIconTexture)

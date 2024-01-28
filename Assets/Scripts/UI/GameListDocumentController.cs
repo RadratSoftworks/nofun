@@ -29,7 +29,7 @@ using VContainer;
 
 namespace Nofun.UI
 {
-    public class GameListDocumentController : FlexibleUIDocumentController
+    public class GameListDocumentController : FlexibleUIDocumentController, IGameProvider
     {
         private static readonly string GameDatabaseFileName = "games.db";
         private string GameDatabasePath => $"{Application.persistentDataPath}/{GameDatabaseFileName}";
@@ -55,7 +55,7 @@ namespace Nofun.UI
 
         private string GamePathRoot => $"{Application.persistentDataPath}/__Games";
 
-        private string GetGamePath(string gameFileName)
+        public string GetGamePath(string gameFileName)
         {
             return $"{GamePathRoot}/{gameFileName}";
         }
@@ -224,7 +224,19 @@ namespace Nofun.UI
                         return;
                     }
 
-                    var versionNumbers = (version == null) ? null : version.Split(".", StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToArray();
+                    int[] versionNumbers;
+
+                    try
+                    {
+                        versionNumbers = (version == null)
+                            ? null
+                            : version.Split(".", StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToArray();
+                    }
+                    catch
+                    {
+                        versionNumbers = new[] { 0, 0, 0 };
+                    }
+
                     GameInfo gameInfo = new GameInfo(titleName, vendor ?? null,
                         versionNumbers != null && versionNumbers.Length >= 1 ? versionNumbers[0] : 0,
                         versionNumbers != null && versionNumbers.Length >= 2 ? versionNumbers[1] : 0,
@@ -255,7 +267,7 @@ namespace Nofun.UI
                         LoadGameList();
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
                     dialogService.Show(Severity.Error,
                         ButtonType.OK,
