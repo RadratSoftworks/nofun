@@ -44,6 +44,8 @@ namespace Nofun.UI
         [SerializeField] private GameIconManifest gameIconManifest;
         [SerializeField] private Transform dynamicIconRendererContainer;
         [SerializeField] private GameDetailsDocumentController gameDetailsDocumentController;
+        [SerializeField] private Vector2 defaultIconSize = new Vector2(180.0f, 210.0f);
+        [SerializeField] private float iconPaddingReservePercentage = 6;
 
         [Header("Runner")]
         [SerializeField] private NofunRunner runner;
@@ -157,14 +159,30 @@ namespace Nofun.UI
 
             gameList.Clear();
 
+            Vector2? sizeIcon = null;
+
             foreach (var gameInfo in gameInfos)
             {
                 var gameInfoEntry = gameEntryTemplate.Instantiate();
+
+                if (sizeIcon == null)
+                {
+                    float actualResolvedWidth = gameList.resolvedStyle.width * (100.0f - iconPaddingReservePercentage) / 100.0f;
+                    int totalIconEachRow = Mathf.RoundToInt(actualResolvedWidth / defaultIconSize.x);
+                    float actualWidth = actualResolvedWidth / totalIconEachRow;
+                    float scaleFactor = actualWidth / defaultIconSize.x;
+
+                    sizeIcon = new Vector2(actualWidth, defaultIconSize.y * scaleFactor);
+                }
+
                 var gameInfoEntryBinder = new GameInfoEntryController(gameIconManifest, dynamicIconsProvider, gameDetailsDocumentController);
 
                 gameInfoEntryBinder.SetVisualElement(gameInfoEntry);
                 gameInfoEntryBinder.BindData(gameInfo);
                 gameInfoEntryBinder.OnGameInfoChoosen += OnGameIconClicked;
+
+                gameInfoEntry.style.width = sizeIcon.Value.x;
+                gameInfoEntry.style.height = sizeIcon.Value.y;
 
                 gameList.Add(gameInfoEntry);
             }
