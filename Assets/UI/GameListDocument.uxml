@@ -6,7 +6,7 @@
                 <UnityEngine.Localization.LocalizedString property="label" table="GUID:198be8f0d9d907049947f8336106f789" entry="Id(113751738535936)" />
             </Bindings>
         </ui:TextField>
-        <ui:ScrollView scroll-deceleration-rate="0,135" elasticity="0,1" name="ScrollView" style="flex-grow: 18; flex-shrink: 18;">
+        <ui:ScrollView name="ScrollView" mouse-wheel-scroll-size="900" style="flex-grow: 18; flex-shrink: 18;">
             <ui:VisualElement name="GameList" style="flex-grow: 1; flex-direction: row; flex-wrap: wrap; padding-left: 3%; padding-right: 3%;" />
         </ui:ScrollView>
         <ui:Button text="+" parse-escape-sequences="true" display-tooltip-when-elided="true" name="InstallButton" style="position: absolute; bottom: 40px; right: 40px; opacity: 1; font-size: 80px; border-top-left-radius: 80px; border-top-right-radius: 80px; border-bottom-right-radius: 80px; border-bottom-left-radius: 80px; width: 128px; height: 128px; background-color: rgb(219, 138, 46);" />
