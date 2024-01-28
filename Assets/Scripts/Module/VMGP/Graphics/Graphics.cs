@@ -19,6 +19,8 @@ using Nofun.Util;
 using Nofun.Util.Logging;
 using Nofun.VM;
 using System;
+using Nofun.Settings;
+using Logger = Nofun.Util.Logging.Logger;
 
 namespace Nofun.Module.VMGP
 {
@@ -134,7 +136,19 @@ namespace Nofun.Module.VMGP
                 return;
             }
 
+            NRectangle clipRect = system.GraphicDriver.ClipRect;
+
+            if (system.Version < SystemVersion.Version150)
+            {
+                system.GraphicDriver.ClipRect = new NRectangle(0, 0, system.GraphicDriver.ScreenWidth, system.GraphicDriver.ScreenHeight);
+            }
+
             system.GraphicDriver.FillRect(x0, y0, x1, y1, GetColor(foregroundColor));
+
+            if (system.Version < SystemVersion.Version150)
+            {
+                system.GraphicDriver.ClipRect = clipRect;
+            }
         }
 
         [ModuleCall]
@@ -178,7 +192,7 @@ namespace Nofun.Module.VMGP
         [ModuleCall]
         private void vCopyRect()
         {
-            
+
         }
     }
 }
